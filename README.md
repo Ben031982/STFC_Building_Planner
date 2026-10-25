@@ -32,7 +32,7 @@ Der Planner ist **eine einzige HTML-Datei**. Kein Server, keine Anmeldung, kein 
 - **Sicherer Speicher:** Speicherfehler werden gemeldet statt still zu scheitern, mit Belegungsanzeige und Warnung ab 70 %.
 - **Feinschliff:** Symbole, Diagramm mit Werten beim Darüberfahren, dezente Übergänge.
 
-Deine Daten aus 1.0 übernimmt 2.0 automatisch – einfach die neue Datei im selben Browser öffnen.
+Deine Daten aus 1.0 übernimmt 2.0 automatisch – einfach die neue Datei im selben Browser öffnen. Alle Änderungen im Detail: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
