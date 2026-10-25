@@ -1,0 +1,212 @@
+.plan {
+  position: relative;
+}
+.plan[draggable="true"] {
+  cursor: grab;
+}
+.plan.dragging {
+  opacity: 0.45;
+}
+.plan.dropBefore {
+  box-shadow: -4px 0 0 #39a2ff;
+}
+.plan.dropAfter {
+  box-shadow: 4px 0 0 #39a2ff;
+}
+.cardMove {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 3px;
+}
+.cardMove button {
+  border: 1px solid #315970;
+  background: #0b2739;
+  color: #cfe6f7;
+  border-radius: 4px;
+  width: 24px;
+  height: 22px;
+  font-size: 10px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+.cardMove button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.seqMv {
+  white-space: nowrap;
+}
+.seqMv button {
+  border: 1px solid #315970;
+  background: #0b2739;
+  color: #cfe6f7;
+  border-radius: 5px;
+  width: 32px;
+  height: 28px;
+  font-size: 14px;
+  padding: 0;
+  margin-left: 4px;
+  cursor: pointer;
+}
+.seqMv button:hover:not(:disabled) {
+  background: #14405c;
+}
+.seqMv button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+tr[data-sk] {
+  cursor: grab;
+}
+tr.sqDrag {
+  opacity: 0.45;
+}
+tr.sqBefore td {
+  box-shadow: inset 0 2px 0 #39a2ff;
+}
+tr.sqAfter td {
+  box-shadow: inset 0 -2px 0 #39a2ff;
+}
+#seqMsg {
+  margin: 6px 0;
+  font-size: 12px;
+}
+#backupInfo {
+  font-size: 12px;
+  line-height: 1.5;
+}
+#backupInfo .miniBtn {
+  width: auto;
+  margin: 3px 0 0;
+}
+#restoreInfo td {
+  padding: 4px 8px;
+}
+#scanInfo {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+#scanInfo .miniBtn {
+  width: auto;
+  margin: 3px 0 0;
+}
+#scanExports {
+  width: 100%;
+  margin-top: 7px;
+}
+#batchTable td,
+#batchTable th {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+#batchTable tr.bDis td {
+  opacity: 0.55;
+}
+.bTag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bNew {
+  background: #174834;
+  color: #7aeab0;
+}
+.bOld {
+  background: #173f64;
+  color: #8fcfff;
+}
+.bSame {
+  background: #5b4122;
+  color: #ffd993;
+}
+.bDup {
+  background: #2a3d4c;
+  color: #a9c0d0;
+}
+.bErr {
+  background: #5a2330;
+  color: #ff98a6;
+}
+.careList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.careItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #0b2739;
+  border-left: 3px solid #f2af4f;
+  font-size: 12.5px;
+}
+.careItem.info {
+  border-left-color: #3b9ee8;
+}
+.careItem .miniBtn {
+  white-space: nowrap;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.careOk {
+  color: #7aeab0;
+  font-size: 12.5px;
+}
+.evMark {
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: 0.75;
+}
+.evDot {
+  cursor: default;
+}
+.evForm {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 6px 0 10px;
+}
+.evForm input {
+  background: #071b2a;
+  border: 1px solid #31556f;
+  border-radius: 5px;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.evForm input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+}
+.evTag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #2a3d4c;
+  color: #cfe6f7;
+}
+.evDel {
+  border: 0;
+  background: none;
+  color: #ff98a6;
+  cursor: pointer;
+  font-size: 13px;
+}
+.seqShare {
+  display: block;
+  font-size: 10.5px;
+  color: #8fcfff;
+  margin-top: 2px;
+}

@@ -1,0 +1,310 @@
+.chipHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0 6px;
+}
+.chipHead .muted {
+  font-size: 12px;
+}
+.chipHead #newPlanBtn {
+  margin-left: auto;
+}
+.chipLbl {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: #8fa9bb;
+}
+.plans .plan {
+  flex: 0 0 236px;
+  height: auto;
+  padding: 8px 10px 8px 8px;
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  grid-template-areas: "img title title" "img lvl lvl" "img bar pct" "img badge move";
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  cursor: pointer;
+}
+.plans .plan .pt,
+.plans .plan .pt > div,
+.plans .plan .meta {
+  display: contents;
+}
+.plans .plan .pt img {
+  grid-area: img;
+  width: 52px;
+  height: 52px;
+  background: none;
+}
+.plans .plan h3 {
+  grid-area: title;
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plans .plan .mainStar {
+  font-size: 11px;
+}
+.plans .plan .pt .muted {
+  grid-area: lvl;
+  font-size: 11px;
+}
+.plans .plan .bar {
+  grid-area: bar;
+  height: 4px;
+  margin: 3px 0;
+}
+.plans .plan .meta span {
+  display: none;
+}
+.plans .plan .meta b {
+  grid-area: pct;
+  font-size: 11px;
+  color: #9ab2c4;
+  font-weight: 600;
+}
+.plans .plan > .statusBadge {
+  grid-area: badge;
+  justify-self: start;
+  margin: 2px 0 0;
+}
+.plans .plan .cardMove {
+  grid-area: move;
+  position: static;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.plans .plan:hover .cardMove,
+.plans .plan .cardMove:focus-within {
+  opacity: 1;
+}
+.hero {
+  padding: 16px;
+}
+.heroTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+.heroId {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.heroId img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  flex: none;
+}
+.heroIdTxt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.heroBadges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.heroBadges .statusBadge {
+  margin: 0;
+}
+.badgeMain {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #2a2312;
+  color: #ffd25d;
+}
+.hero h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.heroLvl {
+  color: #9ab2c4;
+  font-size: 13px;
+}
+.heroBar {
+  height: 6px;
+  border-radius: 6px;
+  background: #29475b;
+  overflow: hidden;
+  max-width: 360px;
+}
+.heroBar i {
+  display: block;
+  height: 100%;
+  background: #40a6ff;
+  min-width: 2%;
+}
+.heroProgRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: #9ab2c4;
+}
+.heroProgRow b {
+  color: #eaf4ff;
+}
+.heroProgRow .btn {
+  margin-left: auto;
+}
+.heroEta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+  border-left: 1px solid #23485f;
+}
+.heroLbl {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: #9ab2c4;
+}
+.heroEta strong {
+  font-size: 38px;
+  line-height: 1.1;
+}
+.heroEta #etaDetail {
+  color: #9ab2c4;
+  font-size: 13px;
+}
+.heroCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+@media (max-width: 1100px) {
+  .heroTop {
+    grid-template-columns: 1fr;
+  }
+  .heroEta {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+.careStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  font-size: 13px;
+}
+.careState {
+  font-weight: 700;
+}
+.careState.ok {
+  color: #7aeab0;
+}
+.careState.warn {
+  color: #f4a53a;
+}
+.careMeta {
+  color: #9ab2c4;
+}
+.careMeta b {
+  color: #eaf4ff;
+  font-weight: 500;
+}
+.linkBtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: #9ab2c4;
+}
+.linkBtn.due {
+  color: #f4a53a;
+}
+.careStrip #careJsonBtn {
+  margin-left: auto;
+  padding: 6px 12px;
+}
+#careList {
+  margin-top: 10px;
+}
+#careList:has(.careOk) {
+  display: none;
+}
+.resGrp td {
+  padding-top: 12px !important;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #8fa9bb;
+  border-bottom: 0 !important;
+}
+.resCommon td {
+  color: #7f93a6;
+}
+.resCommon .prog i {
+  background: #4a5d70;
+}
+.resBn td {
+  background: #1d1a10;
+}
+.resBn td:first-child {
+  box-shadow: inset 3px 0 0 #f4a53a;
+}
+.bnTag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #2a2312;
+  color: #f4a53a;
+  margin-left: 4px;
+}
+#seqRows td:nth-child(4),
+#mileRows td:nth-child(4) {
+  color: #8fa9bb;
+  font-size: 11px;
+}
+.snapItem {
+  position: relative;
+  padding-right: 70px !important;
+}
+.snapDel {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: none;
+  border: 1px solid #4a2c33;
+  color: #e08a96;
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.snapDel:hover {
+  background: #2a1418;
+}
+#snapView .snapGrid select {
+  margin-right: 6px;
+}
+.noPlans .grid > div:first-child > * {
+  display: none;
+}
+.noPlansHint {
+  padding: 16px;
+  color: #9ab2c4;
+  border: 1px dashed #2e5670;
+  border-radius: 7px;
+}

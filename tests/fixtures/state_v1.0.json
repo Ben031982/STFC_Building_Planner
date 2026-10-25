@@ -1,0 +1,628 @@
+{
+ "active": "plan-1792918800000",
+ "plans": [
+  {
+   "id": "plan-1792918800000",
+   "name": "Operations 76",
+   "kind": "operations",
+   "art": "auto",
+   "start": 75,
+   "target": 76,
+   "done": 0,
+   "total": 1,
+   "isMain": true,
+   "sources": [
+    {
+     "id": "src-1792918800000",
+     "name": "Upgrade-Planer-Textimport",
+     "type": "text",
+     "addedAt": "2026-10-25T09:00:00.000Z",
+     "size": 930,
+     "role": "text-import"
+    }
+   ],
+   "planData": {
+    "importedAt": "2026-10-25T09:00:00.000Z",
+    "target": {
+     "building": "Operations",
+     "start": 75,
+     "target": 76
+    },
+    "requiredBuildings": [
+     {
+      "name": "Operations",
+      "start": 75,
+      "target": 76
+     },
+     {
+      "name": "Shipyard",
+      "start": 74,
+      "target": 75
+     },
+     {
+      "name": "Refinery",
+      "start": 73,
+      "target": 75
+     },
+     {
+      "name": "Parsteel Generator A",
+      "start": 74,
+      "target": 75
+     }
+    ],
+    "resources": {
+     "Σ-Parsteel": {
+      "needed": 1500000000,
+      "cost": 2000000000,
+      "onHand": 500000000,
+      "base": 60000000000
+     },
+     "Σ-Tritanium": {
+      "needed": 0,
+      "cost": 30000000,
+      "onHand": 40000000,
+      "base": 900000000
+     },
+     "7★ Common Ore": {
+      "needed": 300000,
+      "cost": 600000,
+      "onHand": 300000,
+      "base": 12000000
+     },
+     "7★ Uncommon Gas": {
+      "needed": 90000,
+      "cost": 150000,
+      "onHand": 60000,
+      "base": 5000000
+     },
+     "7★ Rare Ore": {
+      "needed": 90000,
+      "cost": 120000,
+      "onHand": 30000,
+      "base": 3000000
+     },
+     "7★ Rare Crystal": {
+      "needed": 30000,
+      "cost": 80000,
+      "onHand": 50000,
+      "base": 2000000
+     },
+     "Σ-Dilithium": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 1000000000,
+      "base": 0
+     },
+     "7★ Common Gas": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 35037,
+      "base": 0
+     },
+     "7★ Common Crystal": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 35074,
+      "base": 0
+     },
+     "7★ Uncommon Ore": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 35111,
+      "base": 0
+     },
+     "7★ Uncommon Crystal": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 35185,
+      "base": 0
+     },
+     "7★ Rare Gas": {
+      "needed": 0,
+      "cost": 0,
+      "onHand": 35259,
+      "base": 0
+     }
+    },
+    "construction": {
+     "base": 6000000000,
+     "cost": 200000000,
+     "onHand": 200000000,
+     "needed": 0
+    },
+    "efficiencies": {
+     "Σ-Parsteel": 3000,
+     "Σ-Tritanium": 3000,
+     "7★ Common Ore": 2000,
+     "7★ Uncommon Gas": 3500,
+     "7★ Rare Ore": 2300,
+     "7★ Rare Crystal": 2300,
+     "Σ-Construction Time": 3700
+    },
+    "baseline": {
+     "at": "2026-10-25T09:00:00.000Z",
+     "building": "Operations",
+     "start": 75,
+     "target": 76,
+     "buildings": [
+      {
+       "name": "Operations",
+       "start": 75,
+       "target": 76
+      },
+      {
+       "name": "Shipyard",
+       "start": 74,
+       "target": 75
+      },
+      {
+       "name": "Refinery",
+       "start": 73,
+       "target": 75
+      },
+      {
+       "name": "Parsteel Generator A",
+       "start": 74,
+       "target": 75
+      }
+     ]
+    },
+    "customOrder": null,
+    "history": [
+     {
+      "at": "2026-10-25T09:00:00.000Z",
+      "kind": "Ausgangsstand",
+      "progress": {
+       "done": 0,
+       "total": 5
+      },
+      "resources": {
+       "Σ-Parsteel": {
+        "cost": 2000000000,
+        "onHand": 500000000,
+        "needed": 1500000000
+       },
+       "Σ-Tritanium": {
+        "cost": 30000000,
+        "onHand": 40000000,
+        "needed": 0
+       },
+       "Σ-Dilithium": {
+        "cost": 0,
+        "onHand": 1000000000,
+        "needed": 0
+       },
+       "7★ Common Ore": {
+        "cost": 600000,
+        "onHand": 300000,
+        "needed": 300000
+       },
+       "7★ Common Gas": {
+        "cost": 0,
+        "onHand": 35037,
+        "needed": 0
+       },
+       "7★ Common Crystal": {
+        "cost": 0,
+        "onHand": 35074,
+        "needed": 0
+       },
+       "7★ Uncommon Ore": {
+        "cost": 0,
+        "onHand": 35111,
+        "needed": 0
+       },
+       "7★ Uncommon Gas": {
+        "cost": 150000,
+        "onHand": 60000,
+        "needed": 90000
+       },
+       "7★ Uncommon Crystal": {
+        "cost": 0,
+        "onHand": 35185,
+        "needed": 0
+       },
+       "7★ Rare Ore": {
+        "cost": 120000,
+        "onHand": 30000,
+        "needed": 90000
+       },
+       "7★ Rare Gas": {
+        "cost": 0,
+        "onHand": 35259,
+        "needed": 0
+       },
+       "7★ Rare Crystal": {
+        "cost": 80000,
+        "onHand": 50000,
+        "needed": 30000
+       }
+      },
+      "construction": {
+       "cost": 200000000,
+       "onHand": 200000000,
+       "needed": 0
+      }
+     }
+    ]
+   },
+   "confirmation": {
+    "at": "2026-10-25T09:00:00.000Z",
+    "dataHash": "c1b7e0d1",
+    "start": 75,
+    "target": 76
+   }
+  }
+ ],
+ "snapshots": [
+  {
+   "id": "a0a6dfaf-128e-448b-a5c5-2ee33090a232",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-15T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-15T08-00-00-000Z.json",
+   "hash": "375b26acc799582ede8f4416485830cfb94c4dc990beef52d483de5f3435a010",
+   "values": {
+    "7★ Common Ore": 20000,
+    "7★ Common Gas": 20037,
+    "7★ Common Crystal": 20074,
+    "7★ Uncommon Ore": 20111,
+    "7★ Uncommon Gas": 20148,
+    "7★ Uncommon Crystal": 20185,
+    "7★ Rare Ore": 20222,
+    "7★ Rare Gas": 20259,
+    "7★ Rare Crystal": 20296,
+    "Σ-Parsteel": 400000000,
+    "Σ-Tritanium": 400000000,
+    "Σ-Dilithium": 400000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 400000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 400000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 400000000
+    }
+   },
+   "sigmaWarn": []
+  },
+  {
+   "id": "ceef6da9-7e72-404e-bbe6-be68195521c9",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-17T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-17T08-00-00-000Z.json",
+   "hash": "3977e793d6201ea837e89f2e39a1f750b3e75d5749deb7d570d80f7cb5aff2ca",
+   "values": {
+    "7★ Common Ore": 23000,
+    "7★ Common Gas": 23037,
+    "7★ Common Crystal": 23074,
+    "7★ Uncommon Ore": 23111,
+    "7★ Uncommon Gas": 23148,
+    "7★ Uncommon Crystal": 23185,
+    "7★ Rare Ore": 23222,
+    "7★ Rare Gas": 23259,
+    "7★ Rare Crystal": 23296,
+    "Σ-Parsteel": 520000000,
+    "Σ-Tritanium": 520000000,
+    "Σ-Dilithium": 520000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 520000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 520000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 520000000
+    }
+   },
+   "sigmaWarn": []
+  },
+  {
+   "id": "ac7f422a-b1f5-4d71-8933-4b58e27b5bfd",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-19T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-19T08-00-00-000Z.json",
+   "hash": "c4ad2f79546b84aaf1e2321b3c56dccc22e6958754683117aa98a55c18e05d97",
+   "values": {
+    "7★ Common Ore": 26000,
+    "7★ Common Gas": 26037,
+    "7★ Common Crystal": 26074,
+    "7★ Uncommon Ore": 26111,
+    "7★ Uncommon Gas": 26148,
+    "7★ Uncommon Crystal": 26185,
+    "7★ Rare Ore": 26222,
+    "7★ Rare Gas": 26259,
+    "7★ Rare Crystal": 26296,
+    "Σ-Parsteel": 640000000,
+    "Σ-Tritanium": 640000000,
+    "Σ-Dilithium": 640000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 640000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 640000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 640000000
+    }
+   },
+   "sigmaWarn": []
+  },
+  {
+   "id": "fef118eb-544e-4935-8244-da2cec5d834a",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-21T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-21T08-00-00-000Z.json",
+   "hash": "84ecfee54ea5b0d75e87b0532ba27c0e1f8b10292efdbcac6154b66aa13110d4",
+   "values": {
+    "7★ Common Ore": 29000,
+    "7★ Common Gas": 29037,
+    "7★ Common Crystal": 29074,
+    "7★ Uncommon Ore": 29111,
+    "7★ Uncommon Gas": 29148,
+    "7★ Uncommon Crystal": 29185,
+    "7★ Rare Ore": 29222,
+    "7★ Rare Gas": 29259,
+    "7★ Rare Crystal": 29296,
+    "Σ-Parsteel": 760000000,
+    "Σ-Tritanium": 760000000,
+    "Σ-Dilithium": 760000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 760000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 760000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 760000000
+    }
+   },
+   "sigmaWarn": []
+  },
+  {
+   "id": "375d4cea-f3f3-4d91-9da3-a48a56d408d0",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-23T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-23T08-00-00-000Z.json",
+   "hash": "fd3dc1c363ade397b43f1657413b977e4f998590eb61e805489c262f9102d0d7",
+   "values": {
+    "7★ Common Ore": 32000,
+    "7★ Common Gas": 32037,
+    "7★ Common Crystal": 32074,
+    "7★ Uncommon Ore": 32111,
+    "7★ Uncommon Gas": 32148,
+    "7★ Uncommon Crystal": 32185,
+    "7★ Rare Ore": 32222,
+    "7★ Rare Gas": 32259,
+    "7★ Rare Crystal": 32296,
+    "Σ-Parsteel": 880000000,
+    "Σ-Tritanium": 880000000,
+    "Σ-Dilithium": 880000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 880000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 880000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 880000000
+    }
+   },
+   "sigmaWarn": []
+  },
+  {
+   "id": "df8b2599-2e77-432f-b9eb-1b85c9e74c56",
+   "createdAt": "2026-10-25T09:00:00.000Z",
+   "exportedAt": "2026-10-25T08:00:00.000Z",
+   "fileName": "spocksclub-data-export_2026-10-25T08-00-00-000Z.json",
+   "hash": "dc13fa9baea6bcf0d0d53bc75d343dc879dfc50c6482ea1bfb09b13eecaccc39",
+   "values": {
+    "7★ Common Ore": 35000,
+    "7★ Common Gas": 35037,
+    "7★ Common Crystal": 35074,
+    "7★ Uncommon Ore": 35111,
+    "7★ Uncommon Gas": 35148,
+    "7★ Uncommon Crystal": 35185,
+    "7★ Rare Ore": 35222,
+    "7★ Rare Gas": 35259,
+    "7★ Rare Crystal": 35296,
+    "Σ-Parsteel": 1000000000,
+    "Σ-Tritanium": 1000000000,
+    "Σ-Dilithium": 1000000000
+   },
+   "bld": {
+    "0": 75,
+    "1": 74
+   },
+   "resourceCount": 12,
+   "buildingCount": 2,
+   "sigmaParts": {
+    "Σ-Parsteel": {
+     "606960769": 0,
+     "3569229621": 0,
+     "raw": 1000000000
+    },
+    "Σ-Tritanium": {
+     "155492671": 0,
+     "2516876655": 0,
+     "raw": 1000000000
+    },
+    "Σ-Dilithium": {
+     "101891666": 0,
+     "1970361654": 0,
+     "3016797203": 0,
+     "raw": 1000000000
+    }
+   },
+   "sigmaWarn": []
+  }
+ ],
+ "logs": [
+  "6 Snapshots übernommen (15.10.2026, 10:00:00 bis 25.10.2026, 09:00:00)",
+  "Zielplan als Entwurf angelegt: Operations 76",
+  "Upgrade-Plan importiert (Prüfbereit): Operations 76",
+  "Plandaten aktualisiert: Operations 76 (Aktiv)"
+ ],
+ "resources": [
+  [
+   "7★ Common Ore",
+   35000,
+   0
+  ],
+  [
+   "7★ Common Gas",
+   35037,
+   0
+  ],
+  [
+   "7★ Common Crystal",
+   35074,
+   0
+  ],
+  [
+   "7★ Uncommon Ore",
+   35111,
+   0
+  ],
+  [
+   "7★ Uncommon Gas",
+   35148,
+   0
+  ],
+  [
+   "7★ Uncommon Crystal",
+   35185,
+   0
+  ],
+  [
+   "7★ Rare Ore",
+   35222,
+   0
+  ],
+  [
+   "7★ Rare Gas",
+   35259,
+   0
+  ],
+  [
+   "7★ Rare Crystal",
+   35296,
+   0
+  ],
+  [
+   "Σ-Parsteel",
+   1000000000,
+   0
+  ],
+  [
+   "Σ-Tritanium",
+   1000000000,
+   0
+  ],
+  [
+   "Σ-Dilithium",
+   1000000000,
+   0
+  ]
+ ],
+ "milestones": [],
+ "schema": 137,
+ "packs": [
+  {
+   "id": "station",
+   "name": "Stationspack",
+   "validFrom": "",
+   "priceEUR": 100,
+   "source": "",
+   "contents": {}
+  }
+ ],
+ "backup": {
+  "since": "2026-10-25T09:00:00.000Z"
+ },
+ "fcLog": {
+  "plan-1792918800000": [
+   {
+    "d": "2026-10-25",
+    "eta": 1798102800000,
+    "driver": "7★ Uncommon Gas",
+    "packs": null
+   }
+  ]
+ }
+}

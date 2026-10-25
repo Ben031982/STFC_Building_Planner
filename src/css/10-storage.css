@@ -1,0 +1,50 @@
+/* Speicher-Absicherung (1.1): Hinweisleiste bei Speicherfehler, Belegungsanzeige */
+.storeAlert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #6b2e36;
+  border-radius: 10px;
+  background: #2a1418;
+  color: #ffd3d7;
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+}
+.storeAlert[hidden] {
+  display: none;
+}
+.storeAlert b {
+  color: #ff9aa2;
+}
+.storeAlert .btn {
+  flex: none;
+  margin-left: auto;
+}
+.storeUsage {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.storeUsage .storeHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.storeUsage .storeHead b {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 500;
+}
+.storeUsage .prog {
+  display: block;
+  width: 100%;
+}
+.storeUsage .muted,
+.storeUsage .amber {
+  margin-top: 6px;
+}
+.prog.warn i {
+  background: var(--am);
+}

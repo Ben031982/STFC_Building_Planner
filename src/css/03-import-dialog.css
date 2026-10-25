@@ -1,0 +1,205 @@
+.impBox {
+  width: min(1120px, 96vw);
+  height: min(880px, 94vh);
+  max-height: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.impHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid #24465d;
+  gap: 12px;
+}
+.impHead h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.impBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.impRail {
+  width: 250px;
+  flex: 0 0 250px;
+  border-right: 1px solid #24465d;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: #0d2436;
+  overflow: auto;
+}
+.impStepBtn {
+  text-align: left;
+  padding: 10px 11px;
+  border-radius: 7px;
+  border: 1px solid #29495f;
+  background: #0a2031;
+  color: #eaf4ff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+.impStepBtn.on {
+  border-color: #39a2ff;
+  background: #103149;
+}
+.impStepBtn.done {
+  border-color: #2f8f61;
+}
+.impStepBtn.on.done {
+  border-color: #39a2ff;
+}
+.impNum {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: #2a4a60;
+  margin-right: 7px;
+}
+.impStepBtn.done .impNum {
+  background: #2f8f61;
+}
+.impStepBtn.on .impNum {
+  background: #1688ef;
+}
+.impMain {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 20px;
+  overflow: auto;
+}
+.impSum {
+  width: 240px;
+  flex: 0 0 240px;
+  border-left: 1px solid #24465d;
+  padding: 14px 12px;
+  background: #0d2436;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.impSumBox {
+  background: #0a2031;
+  border: 1px solid #29495f;
+  border-radius: 7px;
+  padding: 10px;
+  line-height: 1.55;
+  font-size: 12px;
+}
+.impSumBox b {
+  font-size: 13px;
+}
+.impFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-top: 1px solid #24465d;
+  background: #0d2436;
+}
+.impFoot .btns {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.impPane {
+  display: none;
+}
+.impPane.on {
+  display: block;
+}
+.chip.err {
+  background: #5a2330;
+  color: #ffb3bf;
+}
+.chip.neutral {
+  background: #24384a;
+  color: #b8cbd8;
+}
+.impWarn {
+  border: 1px solid #c18a3c;
+  background: #2b2418;
+  border-radius: 7px;
+  padding: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.impSmall {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #8fb2c9;
+}
+details.impEdit summary {
+  cursor: pointer;
+  color: #9fd0ff;
+  margin: 8px 0;
+}
+@media (max-width: 900px) {
+  .impBody {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .impRail,
+  .impSum {
+    width: auto;
+    flex: none;
+    border: 0;
+  }
+  .impMain {
+    overflow: visible;
+  }
+}
+@media (max-width: 900px) {
+  .nextSteps {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.sd-active {
+  color: #41d88b;
+}
+.sd-review {
+  color: #75c2ff;
+}
+.sd-incomplete {
+  color: #ffd07a;
+}
+.sd-draft {
+  color: #9ab2c4;
+}
+.sd-stale {
+  color: #ff9daa;
+}
+.dangerZone summary {
+  cursor: pointer;
+  color: #ff98a6;
+  font-weight: 700;
+  font-size: 15px;
+}
+.dangerZone details[open] summary {
+  margin-bottom: 8px;
+}
+.confirmRow {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.confirmRow b {
+  display: inline !important;
+  margin: 0 !important;
+}

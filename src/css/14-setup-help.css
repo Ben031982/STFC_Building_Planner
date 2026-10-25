@@ -1,0 +1,156 @@
+/* Einrichtung und Begriffserklärungen (1.5) */
+.setup {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid #1f3a4d;
+  border-radius: 12px;
+  background: #0f1a26;
+}
+.setup[hidden] {
+  display: none;
+}
+.setupHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.setupHead h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.setupHead .prog {
+  width: 160px;
+}
+.setupHead .muted {
+  font-size: 12px;
+}
+.setupHead [data-setup="tut"] {
+  margin-left: auto;
+}
+.setupSteps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.sStep {
+  padding: 10px;
+  border: 1px solid #22313f;
+  border-radius: 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sStep b {
+  font-size: 13px;
+}
+.sStep.done {
+  border-color: #24563f;
+  background: #0f2119;
+}
+.sStep.done b:before {
+  content: "✓ ";
+  color: #5bd2a0;
+}
+.sStep.open b:before {
+  content: "○ ";
+  color: #f4a53a;
+}
+.sStep.next {
+  border-color: #46c2ee;
+}
+.sStep .miniBtn {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.setupFoot {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+.statHead {
+  display: flex;
+  align-items: center;
+}
+.termInfo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid #3a5266;
+  color: #93a7b9;
+  font: 700 10px/1 "IBM Plex Sans", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: help;
+  vertical-align: 1px;
+  flex: none;
+}
+.termInfo:hover,
+.termInfo:focus {
+  border-color: #46c2ee;
+  color: #46c2ee;
+  outline: none;
+}
+#termTip {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  padding: 10px 12px;
+  border: 1px solid #2b4054;
+  border-radius: 8px;
+  background: #152130;
+  color: #e7eef5;
+  font: 400 12.5px/1.5 "IBM Plex Sans", sans-serif;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+#termTip.on {
+  display: block;
+}
+#termTip b {
+  color: #f4a53a;
+  font-weight: 600;
+}
+@media (max-width: 1100px) {
+  .setupSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.stat > .statHead > .muted {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #93a7b9;
+}
+.heroCards .stat:first-child > .statHead > .muted {
+  color: #f4a53a;
+}
+#bottleneckDetail {
+  font-size: 13px;
+  color: #c9b696;
+}
+.setupAsk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #93a7b9;
+}
+#setupShowBtn {
+  margin-left: 10px;
+}
+#setupShowBtn[hidden] {
+  display: none;
+}
+.folderRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}

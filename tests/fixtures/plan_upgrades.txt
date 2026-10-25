@@ -1,0 +1,5 @@
+Included upgrades
+Building:Operations · Level 75 → 76
+Building:Shipyard · Level 74 → 75
+Building:Refinery · Level 73 → 75
+Building:Parsteel Generator A · Level 74 → 75

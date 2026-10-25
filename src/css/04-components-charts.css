@@ -1,0 +1,176 @@
+.stat {
+  background: #0a2031;
+  border: 1px solid #24465d;
+  border-radius: 6px;
+  padding: 9px;
+}
+.stat strong {
+  display: block;
+  font-size: 18px;
+  margin: 7px 0;
+}
+.tabs button,
+.btn,
+select {
+  border: 1px solid #345a72;
+  background: #0a2031;
+  color: #dceeff;
+  border-radius: 5px;
+  padding: 7px 9px;
+}
+.btn.primary,
+.tabs .on {
+  background: #1688ef;
+  border: 0;
+}
+.btn.danger {
+  background: #722b38;
+  border-color: #a54756;
+}
+.bottom {
+  display: grid;
+  grid-template-columns: 54% 46%;
+  gap: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 5px;
+  border-bottom: 1px solid #204157;
+  text-align: left;
+  font-size: 11px;
+}
+th {
+  color: #acc3d3;
+}
+.prog {
+  display: inline-block;
+  width: 78px;
+  height: 7px;
+  background: #29475b;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.prog i {
+  display: block;
+  height: 100%;
+  background: var(--g);
+}
+.red {
+  color: var(--r);
+}
+.green {
+  color: var(--g);
+}
+.chartHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chartStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 7px 0;
+}
+.chartStats div {
+  background: #091f30;
+  border-radius: 5px;
+  padding: 7px;
+}
+.chartStats b {
+  display: block;
+  color: #72bcff;
+  white-space: normal;
+  line-height: 1.25;
+  margin-top: 3px;
+}
+.chartNote {
+  margin-top: 6px;
+  padding: 7px 9px;
+  background: #122f43;
+  border-left: 3px solid #3b9ee8;
+  border-radius: 4px;
+  color: #a9c6d8;
+  font-size: 11px;
+}
+.chartBox {
+  height: 235px;
+  background: #081c2a;
+  border: 1px solid #1e4055;
+  border-radius: 5px;
+}
+.chartBox svg {
+  width: 100%;
+  height: 100%;
+}
+.axis {
+  stroke: #2a5068;
+  stroke-width: 1;
+}
+.series {
+  fill: none;
+  stroke: #39a2ff;
+  stroke-width: 3;
+}
+.trend {
+  fill: none;
+  stroke: #55d99a;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+.gridLine {
+  stroke: #1d3a4f;
+  stroke-width: 1;
+}
+.fcLine {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.fcReal {
+  stroke: #55d99a;
+}
+.fcCons {
+  stroke: #ffb86b;
+}
+.fcOpt {
+  stroke: #8fd0ff;
+}
+.fcLegend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.fcLegend i {
+  display: inline-block;
+  width: 18px;
+  border-top: 2px dashed;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+.fcCard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 8px 0;
+}
+.fcCard div {
+  background: #0a2031;
+  border: 1px solid #24465d;
+  border-radius: 6px;
+  padding: 9px;
+}
+.fcCard b {
+  display: block;
+  font-size: 17px;
+  margin: 4px 0;
+}
+.fcCard .real {
+  border-color: #2f8f61;
+}

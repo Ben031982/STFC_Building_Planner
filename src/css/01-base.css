@@ -1,0 +1,197 @@
+:root {
+  --b: #0a0f16;
+  --p: #101924;
+  --l: #1f2e3d;
+  --t: #e7eef5;
+  --m: #93a7b9;
+  --a: #46c2ee;
+  --g: #5bd2a0;
+  --r: #ff8a8a;
+  --am: #f4a53a;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #04111c;
+  color: var(--t);
+  font:
+    13px Segoe UI,
+    Arial;
+}
+.shell {
+  max-width: 1540px;
+  margin: auto;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 175px 1fr;
+  background: var(--b);
+}
+aside.side {
+  background: #071a2a;
+  border-right: 1px solid var(--l);
+  padding: 12px 9px;
+}
+.brand {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--l);
+}
+.nav button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: #b8cbd8;
+  text-align: left;
+  padding: 11px 9px;
+  border-radius: 6px;
+}
+.nav .on {
+  background: #1685eb;
+  color: #fff;
+}
+.navGrp {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: #7f97aa;
+  font-weight: 700;
+  padding: 14px 9px 5px;
+}
+.nav .navGrp:first-child {
+  padding-top: 8px;
+}
+#ni {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.navDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f4a53a;
+  display: none;
+}
+.navDot.on {
+  display: inline-block;
+}
+.work {
+  padding: 10px;
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.head h1 {
+  margin: 0;
+}
+.muted {
+  color: var(--m);
+}
+.plans {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+}
+.plans .plan {
+  flex: 0 0 232px;
+  scroll-snap-align: start;
+}
+.shell > main,
+.work,
+#dash,
+#dash .grid > div {
+  min-width: 0;
+}
+.plan,
+.panel {
+  background: linear-gradient(145deg, #102e44, #0a2131);
+  border: 1px solid var(--l);
+  border-radius: 7px;
+}
+.plan {
+  height: 165px;
+  padding: 9px;
+}
+.plan.active {
+  outline: 2px solid var(--a);
+}
+.pt {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+}
+.pt img {
+  width: 72px;
+  height: 60px;
+  object-fit: contain;
+  background: #071b2a;
+  border-radius: 5px;
+}
+.plan h3 {
+  margin: 3px 0;
+}
+.bar {
+  height: 8px;
+  background: #29475b;
+  border-radius: 9px;
+  overflow: hidden;
+  margin: 11px 0;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  background: #40a6ff;
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.panel {
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 210px repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+.importHelp {
+  background: #0b2535;
+  border: 1px solid #24465d;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  color: #b5ccdb;
+  line-height: 1.45;
+}
+.importHelp ol {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
+.importStep {
+  margin-top: 14px;
+  padding-top: 6px;
+  border-top: 1px solid #24465d;
+}
+.importInfo {
+  white-space: pre-line;
+  margin: 6px 0;
+}
+.nav button.off {
+  color: #6f879a;
+  cursor: default;
+}

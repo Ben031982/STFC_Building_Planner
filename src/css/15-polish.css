@@ -1,0 +1,112 @@
+/* Optik-Feinschliff (1.6) */
+.nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.nav button .ico {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: #7c93a8;
+}
+.nav button .icoFill {
+  fill: #0a0f16;
+}
+.nav button:hover .ico {
+  color: #b4c3d1;
+}
+.nav .on .ico,
+.nav .on:hover .ico {
+  color: #46c2ee;
+}
+#ni {
+  justify-content: flex-start;
+}
+#ni .navDot {
+  margin-left: auto;
+}
+.cIco {
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  vertical-align: -3px;
+  flex: none;
+  color: #93a7b9;
+}
+.heroCards .stat:first-child .cIco {
+  color: #f4a53a;
+}
+/* Engpass-Materialien in der Ressourcentabelle */
+.resSlow td:first-child {
+  box-shadow: inset 3px 0 0 rgba(244, 165, 58, 0.45);
+}
+/* Diagramm */
+.hovLine {
+  stroke: #46c2ee;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.hovDot {
+  fill: #46c2ee;
+  stroke: #0a0f16;
+  stroke-width: 2;
+}
+.chartTip {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  padding: 8px 10px;
+  border: 1px solid #2b4054;
+  border-radius: 8px;
+  background: #152130;
+  color: #e7eef5;
+  font: 12px/1.45 "IBM Plex Sans", sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.chartTip.on {
+  display: block;
+}
+.chartTip b {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 500;
+}
+/* Bewegung – nur wenn das System keine reduzierte Bewegung wünscht */
+@media (prefers-reduced-motion: no-preference) {
+  .view.on,
+  .tabPane.on,
+  #dash:not(.off) {
+    animation: viewIn 0.16s ease-out;
+  }
+  .firstPaint .prog i,
+  .firstPaint .bnBar i,
+  .firstPaint .heroBar i,
+  .firstPaint .bar i,
+  .firstPaint .setupHead .prog i {
+    transform-origin: left center;
+    animation: barGrow 0.7s ease-out;
+  }
+  .flash {
+    animation: flash 1.4s ease-out;
+  }
+}
+@keyframes viewIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes flash {
+  0% {
+    color: #46c2ee;
+    text-shadow: 0 0 14px rgba(70, 194, 238, 0.7);
+  }
+}

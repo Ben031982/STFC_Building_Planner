@@ -1,0 +1,9 @@
+Item costs & efficiencies
+Resource	Base Cost	Cost	Efficiency
+Σ-Parsteel	60000000000	2000000000	3.000 %
+Σ-Tritanium	900000000	30000000	3.000 %
+7★ Common Refined Ore	12000000	600000	2.000 %
+7★ Uncommon Refined Gas	5000000	150000	3.500 %
+7★ Rare Refined Ore	3000000	120000	2.300 %
+7★ Rare Refined Crystal	2000000	80000	2.300 %
+Σ-Construction Time	6000000000	200000000	3.700 %

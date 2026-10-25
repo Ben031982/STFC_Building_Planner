@@ -1,0 +1,67 @@
+/* Engpass-Karte (1.3) */
+.heroCards.bnWide {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+.bnList[hidden],
+.bnCard strong[hidden],
+.bnCard span[hidden] {
+  display: none;
+}
+.bnList {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bnRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(40px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.bnRow b {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bnBar {
+  height: 6px;
+  border-radius: 6px;
+  background: #22313f;
+  overflow: hidden;
+}
+.bnBar i {
+  display: block;
+  height: 100%;
+  background: #46c2ee;
+}
+.bnRow.first .bnBar i {
+  background: var(--am);
+}
+.bnNum {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bnFoot {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid #22313f;
+  font-size: 13px;
+}
+.bnFoot b {
+  color: #5bd2a0;
+  font-weight: 600;
+}
+.bnFoot b.flat {
+  color: #e7eef5;
+}
+.bnFoot .miniBtn {
+  margin-left: 6px;
+}
+.heroNote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #8296a9;
+}

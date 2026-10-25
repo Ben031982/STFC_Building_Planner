@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
+<title>Bens STFC Progress Planner v__VERSION__</title>
+<style>
+/* @@CSS@@ */
+</style>
+</head>
+<body
+  ><div class="shell"
+    ><aside class="side"
+      ><div class="brand"
+        ><svg viewBox="0 0 42 42" aria-hidden="true">
+          <path d="M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z" fill="none" stroke="#46C2EE" stroke-width="2" />
+          <rect x="12" y="24" width="4.5" height="7" rx="1" fill="#46C2EE" />
+          <rect x="18.75" y="19" width="4.5" height="12" rx="1" fill="#46C2EE" />
+          <rect x="25.5" y="13" width="4.5" height="18" rx="1" fill="#F4A53A" /></svg
+        ><div class="wm"
+          ><span class="wmA">BEN'S</span><span class="wmB">STFC PROGRESS</span><span class="wmC">PLANNER</span></div
+        ></div
+      ><div class="nav"
+        ><div class="navGrp">PLAN</div><button id="nd" class="on"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Übersicht</button
+        ><button id="navBld" data-tab="bld"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16h4v-4h4V8h4V4h2"/></svg>Bau-Reihenfolge</button
+        ><button id="navRes" data-tab="res"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 3.7v7.6L10 17.5l-6.5-3.7V6.2z"/><path d="M3.5 6.2L10 10l6.5-3.8M10 10v7.5"/></svg>Ressourcen &amp; Effizienzen</button
+        ><button id="navFc" data-tab="fc"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4.5-4.5 3 3L17 7"/><path d="M13 7h4v4"/></svg>Prognose &amp; Packs</button
+        ><button id="navHist" data-tab="hist"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2"/></svg>Verlauf</button><div class="navGrp">AUSWERTUNG</div
+        ><button id="nwk"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="14" height="12" rx="2"/><path d="M3 8.5h14M7 2.5v4M13 2.5v4"/></svg>Wochenbericht</button><button id="nw"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12M4 10h12M4 15h12"/><circle cx="8" cy="5" r="1.8" class="icoFill"/><circle cx="13" cy="10" r="1.8" class="icoFill"/><circle cx="7" cy="15" r="1.8" class="icoFill"/></svg>Was-wäre-wenn</button><div class="navGrp">DATEN</div
+        ><button id="ni"
+          ><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="6" ry="2.5"/><path d="M4 5v10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/></svg><span>Daten &amp; Import</span><i id="navDataDot" class="navDot" title="Backup fällig"></i></button
+        ><button id="ntut" style="margin-top: 14px; border-top: 1px solid var(--l); border-radius: 0; padding-top: 14px"
+          >? Einführung</button
+        ></div
+      ></aside
+    ><main
+      ><div class="work"
+        ><div id="storeAlert" class="storeAlert" role="alert" hidden></div
+        ><section id="dash" class="dash"
+          ><div class="chipHead"
+            ><span class="chipLbl">ZIELPLÄNE<span class="termInfo" tabindex="0" data-term="hauptplan">i</span></span
+            ><span class="muted">Ziehen oder ◀ ▶ ändert die Reihenfolge – der erste Plan ist der Hauptplan.</span
+            ><button class="btn primary" id="newPlanBtn">+ Neuer Plan</button></div
+          ><div id="plans" class="plans"></div
+          ><div id="updBar" class="updBar" hidden></div
+          ><section id="setupCard" class="setup" hidden></section
+          ><div class="grid"
+            ><div
+              ><section class="panel hero"
+                ><div class="heroTop"
+                  ><div class="heroId"
+                    ><img id="pImg" alt="" /><div class="heroIdTxt"
+                      ><div class="heroBadges"
+                        ><span id="heroMain" class="badgeMain">★ HAUPTPLAN</span
+                        ><span id="planStatusBadge" class="statusBadge"></span></div
+                      ><h2 id="pTitle"></h2
+                      ><div class="heroLvl"><span id="pLevel"></span> · <span id="pDone"></span></div
+                      ><div class="heroBar"><i id="pBar"></i></div
+                      ><div class="heroProgRow"
+                        ><span><b id="pProg"></b> erledigt</span
+                        ><button id="managePlanBtn" class="btn">Plandaten verwalten</button></div
+                      ><span hidden id="pName"></span><span hidden id="pStatusDot"></span></div></div
+                  ><div class="heroEta"
+                    ><span class="heroLbl">VORAUSSICHTLICH FERTIG<span id="fcQBadge" class="qBadge" hidden></span
+                      ><span class="termInfo" tabindex="0" data-term="qualitaet">i</span></span
+                    ><strong id="etaValue">Offen</strong><span id="etaDetail"></span
+                    ><span id="fcQLine" class="qLine" hidden></span></div></div
+                ><div class="heroCards"
+                  ><div class="stat bnCard"
+                    ><span class="statHead"
+                      ><svg class="cIco" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8M6 17h8M7 3c0 4 6 4 6 7s-6 3-6 7M13 3c0 4-6 4-6 7"/></svg
+                      ><span id="bottleneckLbl" class="muted">Engpass</span
+                      ><span class="termInfo" tabindex="0" data-term="engpass">i</span></span
+                    ><strong id="bottleneckValue">–</strong
+                    ><span id="bottleneckDetail"></span><div id="bottleneckList" class="bnList" hidden></div></div
+                  ><div class="stat"
+                    ><span class="muted"><svg class="cIco" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 3.5v8L10 17.5 3.5 14V6z"/><path d="M3.5 6L10 9.5 16.5 6M10 9.5v8"/></svg>Packs bis zum Ziel</span><strong id="packsValue">–</strong
+                    ><span id="packsDetail"></span></div
+                  ><div class="stat"
+                    ><span class="muted"><svg class="cIco" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="11" r="6"/><path d="M10 8v3l2 1.5M8 2.5h4"/></svg>Bauzeit</span><strong id="buildTimeValue">–</strong
+                    ><span id="buildTimeDetail"></span></div></div
+                ><div class="heroNote"
+                  >ⓘ Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine
+                  Effizienz nicht abgezogen wird oder der letzte Sync alt ist.</div
+                ></section
+              ><div id="nextCard" class="nextCard" style="display: none"
+                ><div class="nextHead"
+                  ><div
+                    ><b id="nextTitle" style="font-size: 14px"></b
+                    ><div id="planDataNotice" class="muted" style="margin-top: 3px"></div></div
+                  ><button id="nextBtn" class="btn primary" style="white-space: nowrap"></button></div
+                ><div id="nextSteps" class="nextSteps"></div></div
+              ><div id="pane-ov" class="tabPane on"
+                ><section class="panel" id="carePanel" style="margin-bottom: 12px; padding: 10px 14px"
+                  ><div class="careStrip"
+                    ><span id="careState" class="careState"></span><span id="careMeta" class="careMeta"></span
+                    ><button id="careBackupLink" class="linkBtn"></button
+                    ><button id="careJsonBtn" class="btn primary">Neue Exporte einlesen</button
+                    ><span id="careCount" hidden></span></div
+                  ><div id="careList" class="careList"></div></section
+                ><div class="bottom"
+                  ><section class="panel"
+                    ><h3>Ressourcen, aktueller Stand</h3
+                    ><table
+                      ><thead
+                        ><tr
+                          ><th>Ressource</th><th>Aktuell</th><th>Benötigt</th><th>Fehlt</th><th>Ø / Tag</th
+                          ><th>Fortschritt</th></tr
+                        ></thead
+                      ><tbody id="resRows"></tbody></table
+                    ><div id="resSource" class="muted" style="margin-top: 7px; font-size: 11px"></div></section
+                  ><div
+                    ><section class="panel" id="chartPanel"
+                      ><div class="chartHead"
+                        ><h3>Ressourcenentwicklung</h3
+                        ><select id="resourceSelect"></select></div
+                      ><div class="chartStats"
+                        ><div><span class="muted">Letzte Änderung</span><b id="lastDelta">–</b></div
+                        ><div><span class="muted">Ø pro Tag</span><b id="daily">–</b></div
+                        ><div><span class="muted">Ø pro Woche</span><b id="weekly">–</b></div></div
+                      ><div id="chartBox" class="chartBox"></div><div id="chartNote" class="chartNote"></div></section
+                    ><section class="panel"
+                      ><div class="chartHead"
+                        ><h3>Nächste Bauschritte</h3
+                        ><button id="allStepsBtn" class="miniBtn">Alle anzeigen</button></div
+                      ><table><tbody id="mileRows"></tbody></table></section></div></div></div
+              ><div id="pane-bld" class="tabPane"
+                ><section class="panel"
+                  ><div class="chartHead"
+                    ><h3>Pflichtgebäude in Bau-Reihenfolge</h3
+                    ><span
+                      ><span id="seqCount" class="muted"></span>
+                      <button id="seqReset" class="miniBtn" style="display: none; margin-left: 8px"
+                        >Auf Standard zurücksetzen</button
+                      ></span
+                    ></div
+                  ><div class="muted" style="font-size: 11px"
+                    >Reihenfolge per ↑ ↓ oder Ziehen anpassen. Die Grenze „kein Gebäude über dem OPS-Level“ wird
+                    geprüft.</div
+                  ><div id="seqMsg" class="red"></div
+                  ><table class="seqTable"
+                    ><thead
+                      ><tr><th>#</th><th>Gebäude</th><th>Stufe</th><th>Art</th><th></th></tr></thead
+                    ><tbody id="seqRows"></tbody></table
+                  ><div class="muted seqNote"
+                    >Reihenfolge nach Regel: Kerngebäude (Operations, Academy, R&amp;D, Shipyard, Defense Platforms)
+                    stufenweise; vor jedem OPS-Level die Kerngebäude bis zum aktuellen OPS-Level; Generatoren,
+                    Warehouses, Vaults und weitere Gebäude als Block vor dem nächsten OPS-Level; das Zielgebäude
+                    zuletzt. Kein Gebäude kann über dem OPS-Level liegen. Abhängigkeiten aus dem Spiel sind darin nicht
+                    enthalten.</div
+                  ></section
+                ></div
+              ><div id="pane-res" class="tabPane"
+                ><section class="panel"
+                  ><h3>Ressourcen und Effizienzen</h3
+                  ><table
+                    ><thead
+                      ><tr
+                        ><th>Ressource</th><th>Aktuell</th><th>Benötigt</th><th>Fehlt</th><th>Effizienz</th
+                        ><th>Fortschritt</th></tr
+                      ></thead
+                    ><tbody id="resRows2"></tbody></table
+                  ><div id="resSource2" class="muted" style="margin-top: 7px; font-size: 11px"></div
+                  ><div id="effConstr" class="muted" style="margin-top: 4px; font-size: 11px"></div
+                  ><div class="muted" style="margin-top: 4px; font-size: 11px"
+                    >ⓘ Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine
+                    Effizienz nicht abgezogen wird oder der letzte Sync alt ist.</div
+                  ></section></div
+              ><div id="pane-fc" class="tabPane"
+                ><section class="panel"
+                  ><h3>Fertigstellungsprognose</h3><div id="fcSummary"></div><div id="packCard" class="packCard"></div
+                  ><div class="histWrap"
+                    ><table class="histTable"
+                      ><thead
+                        ><tr
+                          ><th>Material</th><th>Fehlt</th><th>Rate realistisch</th><th>Konservativ</th
+                          ><th>Realistisch</th><th>Optimistisch</th><th>Datenbasis</th></tr
+                        ></thead
+                      ><tbody id="fcRows"></tbody></table></div
+                  ><div id="fcBuild" class="muted" style="margin-top: 8px; font-size: 12px"></div
+                  ><div class="chartNote" style="margin-top: 8px"
+                    >Raten aus den JSON-Snapshots der letzten 6 Wochen, Abschnitte mit mindestens 24 Stunden Abstand.
+                    Verbautes wird über die gesunkene Cost aus Plan-Importen herausgerechnet. Realistisch = Median,
+                    konservativ = unteres Viertel, optimistisch = oberes Viertel, jeweils nach Länge der Abschnitte
+                    gewichtet. Prognose ab 3 Abschnitten. 7★ Common
+                    zählt nicht für die Gesamtprognose (per Latinum kaufbar).</div
+                  ></section
+                ><section class="panel"
+                  ><h3>Abschnitte<span class="termInfo" tabindex="0" data-term="abschnitt">i</span></h3
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Auffällige Abschnitte werden automatisch markiert und nicht mitgerechnet: „vermutlich
+                    Pack/Ausgleich“ (mehr als das Dreifache des Medians) und „vermutlich Bau“ (stark negativ). Du kannst
+                    jede Markierung übersteuern.</p
+                  ><div class="histWrap"
+                    ><table class="histTable fcIv"
+                      ><thead
+                        ><tr><th>Zeitraum</th><th>Tage</th><th>Markierung</th><th>Behandlung</th></tr></thead
+                      ><tbody id="fcIntervals"></tbody></table></div></section></div
+              ><div id="pane-hist" class="tabPane"
+                ><section class="panel" id="eventPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3>Ereignisse</h3><span id="evCount" class="muted"></span></div
+                  ><p class="muted" style="margin: 4px 0 6px"
+                    >Automatisch: Plan-Importe, erkannte Sprünge (Pack/Ausgleich, Bau) und Gebäudeänderungen aus dem
+                    JSON. Eigene Ereignisse sind nur Markierungen und ändern keine Berechnung. Alle erscheinen auch als
+                    Linie im Diagramm „Ressourcenentwicklung“.</p
+                  ><div class="evForm"
+                    ><input id="evDate" type="date" /><input
+                      id="evText"
+                      type="text"
+                      maxlength="120"
+                      placeholder="z. B. 2 Stationspacks gekauft"
+                    /><button id="evAdd" class="btn">Ereignis eintragen</button></div
+                  ><div class="histWrap"
+                    ><table class="histTable"
+                      ><thead
+                        ><tr><th>Zeitpunkt</th><th>Art</th><th>Beschreibung</th><th></th></tr></thead
+                      ><tbody id="evRows"></tbody></table></div></section
+                ><section class="panel" id="planHistPanel"
+                  ><div class="chartHead"><h3>Plan-Verlauf</h3><span id="histCount" class="muted"></span></div
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Jeder Import und jede Fortschreibung des Upgrade-Plans wird als Messpunkt gespeichert. Σ-Werte gibt
+                    es nur hier, das JSON enthält sie nicht.</p
+                  ><div class="histWrap"
+                    ><table class="histTable"
+                      ><thead
+                        ><tr
+                          ><th>Zeitpunkt</th><th>Art</th><th>Stufen</th><th>Σ-Parsteel</th><th>Σ-Tritanium</th
+                          ><th>Σ-Dilithium</th></tr
+                        ></thead
+                      ><tbody id="histRows"></tbody></table></div
+                  ><h3 style="margin-top: 14px">Einkommen zwischen erstem und letztem Messpunkt</h3
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Einkommen = Bestandsänderung + Verbautes. Verbautes = Rückgang der verbleibenden Cost laut Spock's
+                    Club. Raten erst ab 24 Stunden Abstand.</p
+                  ><div class="histWrap"
+                    ><table class="histTable"
+                      ><thead
+                        ><tr
+                          ><th>Material</th><th>Bestand Δ</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th
+                          ><th>Ø pro Woche</th></tr
+                        ></thead
+                      ><tbody id="incomeRows"></tbody></table></div
+                  ><div
+                    id="incomeNote"
+                    class="chartNote"
+                    style="margin-top: 8px"
+                  ></div></section></div></div></div></section
+        ><section id="impView" class="view"
+          ><div class="head"
+            ><div
+              ><h1>Daten</h1
+              ><div class="muted"
+                >Account-Snapshots, Upgrade-Pläne, Sicherung und Stationspack an einer Stelle.<button
+                  id="setupShowBtn"
+                  class="miniBtn"
+                  hidden
+                >
+                  Einrichtung wieder einblenden</button
+                ></div
+              ></div
+            ><button id="impBack" class="btn primary">Zum Dashboard</button></div
+          ><section class="panel" style="margin-top: 12px"
+            ><div class="chartHead"><h3>Was ist fällig</h3><span id="impCareCount" class="muted"></span></div
+            ><div id="impCare" class="careList"></div></section
+          ><div class="impGrid"
+            ><section class="panel"
+              ><h3>Account-Snapshot (JSON)<span class="termInfo" tabindex="0" data-term="snapshot">i</span></h3
+              ><p class="muted" style="font-size: 12px; margin: 4px 0"
+                >In Spock's Club synchronisieren, dann exportieren. Regelmäßig, mehrmals pro Woche.</p
+              ><div id="impDrop">⇧<br />JSON-Datei(en) hierher ziehen oder klicken</div
+              ><div class="impBtns"
+                ><button id="impScan" class="btn primary">Neue Exporte einlesen</button
+                ><button id="impSnapsBtn" class="btn">Snapshot-Historie</button></div
+              ><div id="impScanInfo" class="muted" style="font-size: 12px; margin-top: 6px"></div
+              ><div id="lastImport" class="notice" style="white-space: pre-line; margin-top: 8px"
+                >Noch kein Snapshot importiert.</div
+              ><h4 style="margin: 12px 0 4px">Letzte Snapshots</h4
+              ><table class="histTable" style="width: 100%"><tbody id="impSnaps"></tbody></table></section
+            ><section class="panel"
+              ><div class="chartHead"
+                ><h3>Upgrade-Pläne</h3><button id="impNewPlan" class="miniBtn">+ Neuer Plan</button></div
+              ><div id="impUpdBar" class="updBar" hidden></div
+              ><p class="muted" style="font-size: 12px; margin: 4px 0"
+                >Texte aus dem Spock's-Upgrade-Planer (nur ein Item). Nötig bei neuem Ziel, nach einem Bau oder wenn
+                sich Effizienzen ändern.</p
+              ><table class="histTable" style="width: 100%"
+                ><thead
+                  ><tr><th>Plan</th><th>Status</th><th>Letzter Import</th><th></th></tr></thead
+                ><tbody id="impPlans"></tbody></table></section></div
+          ><div class="impGrid"
+            ><section class="panel"
+              ><h3>Sicherung</h3
+              ><p class="muted" style="font-size: 12px; margin: 4px 0 8px"
+                >Backups liegen als Dateien in einem Ordner deiner Wahl. Nach dem ersten Speichern sichert der Planner
+                nach jedem Import automatisch.</p
+              ><div class="impBtns"
+                ><button id="backup" class="btn primary">Backup jetzt speichern</button
+                ><button id="restoreBtn" class="btn">Backup wiederherstellen</button></div
+              ><input id="restoreFile" type="file" accept=".json" hidden /><div
+                id="backupInfo"
+                class="notice"
+                style="margin-top: 8px"
+              ></div
+              ><div id="storeUsage" class="storeUsage"></div></section
+            ><section class="panel"
+              ><div class="chartHead"
+                ><h3>Stationspack</h3><button id="packEditBtn2" class="miniBtn">Bearbeiten</button></div
+              ><div id="packSummary" class="muted" style="font-size: 13px; margin-top: 6px"></div
+              ><h3 style="margin-top: 16px">Letzte Änderungen</h3
+              ><div id="log" class="muted" style="font-size: 12px"></div></section></div
+          ><input id="file" type="file" accept=".json" multiple hidden /><details class="dangerZone"
+            ><summary>Gefahrenzone: Lokale Daten löschen</summary
+            ><p class="muted" style="margin: 0 0 8px"
+              >Entfernt alle Zielpläne, Snapshots und Einstellungen der App aus diesem Browser. Backup-Dateien im Ordner
+              bleiben erhalten – vorher am besten „Backup jetzt speichern“ im Dashboard.</p
+            ><button id="reset" class="btn danger">Lokale Daten löschen</button></details
+          ></section
+        ><section id="wkView" class="view"
+          ><div class="head"
+            ><div><h1>Wochenbericht</h1><div id="wkPlan" class="muted"></div></div
+            ><div class="wkNav"
+              ><button id="wkPrev" class="btn">◀</button><b id="wkLabel"></b><button id="wkNext" class="btn">▶</button
+              ><button id="wkBack" class="btn primary" style="margin-left: 10px">Zum Dashboard</button></div
+            ></div
+          ><div id="wkBody"></div></section
+        ><section id="wifView" class="view"
+          ><div class="head"><h1>Was-wäre-wenn</h1><button id="wifBack" class="btn primary">Zum Dashboard</button></div
+          ><div id="wifPlan" class="muted"></div
+          ><div class="wifGrid"
+            ><section class="panel"
+              ><h3>Stellschrauben</h3
+              ><div class="wifIn"
+                ><label>Stationspacks sofort<input id="wifNow" type="number" min="0" step="1" value="0" /></label
+                ><label>Stationspacks pro Woche<input id="wifWeek" type="number" min="0" step="1" value="0" /></label
+                ><label
+                  >Packinhalt ändern (%)<input
+                    id="wifPct"
+                    type="number"
+                    min="-90"
+                    max="500"
+                    step="5"
+                    value="0" /></label
+                ><div
+                  ><b style="font-size: 12.5px">Einmaliger Zuwachs</b
+                  ><div class="muted" style="font-size: 11px; margin: 2px 0 6px">z. B. Event-Belohnung oder Kisten</div
+                  ><div id="wifBonusRows" style="display: flex; flex-direction: column; gap: 6px"></div></div
+                ><button id="wifReset" class="miniBtn" style="align-self: flex-start">Zurücksetzen</button
+                ><p class="muted" style="font-size: 11px; margin: 0"
+                  >Szenarien werden nicht gespeichert und ändern keine Daten. Common-Materialien zählen wie in der
+                  Prognose nicht.</p
+                ></div
+              ></section
+            ><section class="panel"
+              ><h3>Ergebnis</h3><div id="wifSummary"></div
+              ><div class="histWrap"
+                ><table class="histTable" style="width: 100%"
+                  ><thead
+                    ><tr
+                      ><th>Material</th><th>Fehlt heute</th><th>Fehlt nach Sofort-Effekt</th><th>Fertig heute</th
+                      ><th>Fertig im Szenario</th><th>Gewinn</th></tr
+                    ></thead
+                  ><tbody id="wifRows"></tbody></table></div
+              ><div id="wifNote" class="chartNote" style="margin-top: 8px"></div></section></div></section
+        ><section id="snapView" class="view"
+          ><div class="head"><h1>Snapshot-Historie</h1><button id="back" class="btn">← Zurück zu Daten</button></div
+          ><div class="snapGrid"
+            ><section class="panel"><div id="snapList"></div></section
+            ><section class="panel"
+              ><h3>Snapshot-Vergleich</h3
+              ><div
+                ><select id="from"></select
+                ><select id="to"></select
+                ><button id="compare" class="btn primary">Vergleichen</button></div
+              ><div id="compareResult"></div></section></div></section
+        ><div class="footer">„Je besser die Daten, desto klarer der Weg.“</div></div
+      ></main
+    ></div
+  ><div id="modal" class="modal"
+    ><div class="box"
+      ><h2>Importvorschau</h2><div id="dup"></div><div id="sameWarn" class="warningBox" style="display: none"></div
+      ><table
+        ><thead
+          ><tr><th>Ressource</th><th>Bisher</th><th>Neu</th><th>Änderung</th></tr></thead
+        ><tbody id="preview"></tbody></table
+      ><div class="modalActions"
+        ><button id="cancel" class="btn">Abbrechen</button
+        ><button id="confirm" class="btn primary">Als Snapshot übernehmen</button></div
+      ></div
+    ></div
+  ><div id="batchModal" class="modal"
+    ><div class="box"
+      ><h2>Exporte übernehmen</h2><div id="batchHead" class="muted"></div
+      ><div style="max-height: 52vh; overflow: auto"
+        ><table id="batchTable" style="width: 100%; border-collapse: collapse"
+          ><thead
+            ><tr><th></th><th>Exportstand</th><th>Status</th><th>Hinweis</th></tr></thead
+          ><tbody id="batchRows"></tbody></table></div
+      ><div class="modalActions"
+        ><button id="batchCancel" class="btn">Abbrechen</button
+        ><button id="batchOk" class="btn primary">Ausgewählte übernehmen</button></div
+      ></div
+    ></div
+  ><div id="restoreModal" class="modal"
+    ><div class="box"
+      ><h2>Backup wiederherstellen</h2><div id="restoreInfo"></div
+      ><div class="warningBox"
+        >Alle aktuellen Daten in der App werden durch dieses Backup ersetzt. Vorher wird dein aktueller Stand als
+        eigenes Backup gesichert.</div
+      ><div class="modalActions"
+        ><button id="restoreCancel" class="btn">Abbrechen</button
+        ><button id="restoreOk" class="btn primary">Wiederherstellen</button></div
+      ></div
+    ></div
+  ><div id="newPlanModal" class="modal"
+    ><div class="box"
+      ><h2>Neuen Zielplan als Entwurf anlegen</h2
+      ><div class="formGrid"
+        ><input id="draftName" placeholder="Planname, z. B. Operations 76" /><select
+          id="draftArt"
+          title="Gebäudebild"
+        ></select
+        ><input id="draftStart" type="number" min="0" placeholder="Startlevel" /><input
+          id="draftTarget"
+          type="number"
+          min="1"
+          placeholder="Ziellevel" /></div
+      ><p class="muted"
+        >Der Plan bleibt gesperrt, bis Pflichtgebäude, Ressourcenbedarf, Bauzeit und Effizienzen vollständig vorliegen
+        und bestätigt wurden.</p
+      ><div class="modalActions"
+        ><button id="cancelDraft" class="btn">Abbrechen</button
+        ><button id="saveDraft" class="btn primary">Entwurf speichern</button></div
+      ></div
+    ></div
+  ><div id="planDataModal" class="modal"
+    ><div class="box modalWide"
+      ><div class="head"
+        ><div><h2 id="manageTitle">Plandaten</h2><span id="manageStatus" class="statusBadge"></span></div
+        ><button id="closeManage" class="btn">Schließen</button></div
+      ><h3>Zielplan bearbeiten</h3
+      ><div class="editGrid"
+        ><input id="editPlanName" placeholder="Planname" /><select id="editPlanArt" title="Gebäudebild"></select
+        ><input id="editPlanStart" type="number" min="0" placeholder="Startlevel" /><input
+          id="editPlanTarget"
+          type="number"
+          min="1"
+          placeholder="Ziellevel" /></div
+      ><div style="margin-top: 8px"
+        ><label
+          ><input type="checkbox" id="editMainPlan" /> Als Hauptplan markieren (Kachel rückt an die erste Stelle)</label
+        ></div
+      ><h3>Datenstand<span class="termInfo" tabindex="0" data-term="status">i</span></h3><div id="validationGrid" class="validationGrid"></div
+      ><div id="activationLock" class="planLock"></div><h3>Importquellen</h3
+      ><div class="ocrToolbar"
+        ><button id="openOcrBtn" class="btn primary">Upgrade-Plan importieren</button
+        ><span class="muted">Importierte Daten werden nie automatisch bestätigt.</span></div
+      ><div id="sourceList" class="sourceList"></div
+      ><p class="muted"
+        >Pflichtgebäude, Ressourcen und Effizienzen liest „Upgrade-Plan importieren“ aus kopiertem Text von
+        next.spocks.club. Der Datenstand oben setzt sich dabei automatisch.</p
+      ><h3>Bestätigung</h3
+      ><div class="checkCard"
+        ><label class="confirmRow"
+          ><input id="vConfirmed" type="checkbox" /><span
+            ><b>Ich habe die importierten Daten geprüft.</b><br /><span class="muted"
+              >Erst danach wird der Plan aktiv und berechnet Engpass, Bauzeit und Fertigstellung.</span
+            ></span
+          ></label
+        ></div
+      ><p class="muted">Ändern sich Ziel oder Levelspanne, wird die Bestätigung automatisch zurückgesetzt.</p
+      ><details class="dangerZone"
+        ><summary>Zielplan löschen</summary
+        ><p>Der Hauptplan kann nicht gelöscht werden. Markiere bei Bedarf zuerst einen anderen Plan als Hauptplan.</p
+        ><button id="deletePlanBtn" class="btn danger">Diesen Zielplan löschen</button></details
+      ><div class="modalActions"><button id="savePlanData" class="btn primary">Änderungen speichern</button></div></div
+    ></div
+  ><div id="toast" role="status" aria-live="polite"></div
+  ><div id="tutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tutTitle"
+    ><div class="box tutBox"
+      ><div class="tutStep" id="tutStep"></div><h2 id="tutTitle"></h2><div class="tutBody" id="tutBody"></div
+      ><div class="tutFoot"
+        ><div class="tutDots" id="tutDots"></div
+        ><div
+          ><button id="tutSkip" class="btn">Überspringen</button><button id="tutPrev" class="btn">Zurück</button
+          ><button id="tutNext" class="btn primary">Weiter</button></div
+        ></div
+      ></div
+    ></div
+  ><div id="chartModal" class="modal"
+    ><div class="box" style="width: min(1240px, 96vw)"
+      ><div class="head"
+        ><div
+          ><h2 id="chartBigTitle">Ressourcenentwicklung</h2
+          ><span class="muted">Punkte und Ereignis-Markierungen zeigen beim Darüberfahren Details.</span></div
+        ><div style="display: flex; gap: 8px; align-items: center"
+          ><select id="chartBigSelect"></select
+          ><button id="closeChartBig" class="btn">Schließen</button></div
+        ></div
+      ><div id="chartBigStats" class="chartBigStats"></div><div id="chartBigBox" class="chartBigBox"></div
+      ><div id="chartBigNote" class="chartBigNote"></div></div></div
+  ><div id="packModal" class="modal"
+    ><div class="box"
+      ><div class="head"
+        ><div><h2>Stationspack pflegen</h2><span class="muted">Gilt für alle Zielpläne.</span></div
+        ><button id="closePack" class="btn">Schließen</button></div
+      ><p class="muted"
+        >Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem
+        OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte
+        aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst.
+        7★ Common zählt nicht für die Pack-Berechnung (per Latinum kaufbar).</p
+      ><table class="packTable"
+        ><thead
+          ><tr><th>Material</th><th>Menge pro Pack</th><th>ca.</th></tr></thead
+        ><tbody id="packRows"></tbody></table
+      ><div class="formGrid" style="margin-top: 10px"
+        ><input
+          id="packPrice"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Preis pro Pack in €"
+          title="Preis pro Pack in €"
+        /><input id="packValid" type="date" title="Inhalt gültig ab" /><span class="muted" style="align-self: center"
+          >Inhalt gültig ab</span
+        ></div
+      ><div class="modalActions"
+        ><button id="cancelPack" class="btn">Abbrechen</button
+        ><button id="savePack" class="btn primary">Speichern</button></div
+      ></div
+    ></div
+  ><div id="ocrModal" class="modal"
+    ><div class="box impBox"
+      ><div class="impHead"
+        ><div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap"
+          ><h2>Upgrade-Plan importieren</h2
+          ><span id="impTargetChip" class="statusBadge status-review" style="margin: 0"></span
+          ><span id="impQueue" class="impQueue" hidden></span></div
+        ><button id="closeOcr" class="btn">Schließen</button></div
+      ><div class="impBody"
+        ><div class="impRail"
+          ><div class="impSmall">3 SCHRITTE · REIHENFOLGE EGAL</div
+          ><button class="impStepBtn" data-step="1"
+            ><span><span class="impNum">1</span><b>Included upgrades</b></span
+            ><span id="impChip1" class="chip neutral"></span></button
+          ><button class="impStepBtn" data-step="2"
+            ><span><span class="impNum">2</span><b>Total resources</b></span
+            ><span id="impChip2" class="chip neutral"></span></button
+          ><button class="impStepBtn" data-step="3"
+            ><span><span class="impNum">3</span><b>Costs &amp; efficiencies</b></span
+            ><span id="impChip3" class="chip neutral"></span></button
+          ><div style="flex: 1"></div
+          ><div class="impSumBox"
+            ><b>Was passiert danach?</b><br /><span class="muted"
+              >Die Werte landen im Plan. Aktiv wird er erst, wenn alle Daten vorliegen und du sie unter „Plandaten
+              verwalten“ bestätigst.</span
+            ></div
+          ></div
+        ><div class="impMain"
+          ><div id="impPane1" class="impPane"
+            ><div class="impSmall">SCHRITT 1 VON 3</div
+            ><h3 style="margin: 2px 0 8px">Included upgrades (Pflichtgebäude)</h3
+            ><div class="importHelp"
+              ><b>So geht's</b
+              ><ol
+                ><li>Öffne in next.spocks.club deinen Upgrade-Plan.</li
+                ><li
+                  >Markiere den Bereich „Included upgrades“ und kopiere ihn (Strg+C). Einen Copy-Button gibt es dort
+                  nicht, deshalb mit der Maus markieren.</li
+                ><li>Füge den Text hier ein (Strg+V). Die Prüfung startet sofort.</li></ol
+              ></div
+            ><textarea
+              id="upText"
+              class="ocrText"
+              style="min-height: 90px"
+              placeholder="Included upgrades&#10;Building:Defense Platform D · Level 73 → 74&#10;…"
+            ></textarea
+            ><div id="upInfo" class="muted importInfo"></div><h3>Erkanntes Ziel</h3
+            ><div class="formGrid"
+              ><input id="ocrTargetName" placeholder="Zielgebäude" /><input
+                id="ocrStartLevel"
+                type="number"
+                placeholder="Startlevel" /><input id="ocrTargetLevel" type="number" placeholder="Ziellevel" /></div
+            ><h3>Pflichtgebäude in Bau-Reihenfolge</h3><table class="seqTable"><tbody id="impSeq"></tbody></table
+            ><details class="impEdit"
+              ><summary>Zeilen einzeln bearbeiten</summary><div id="ocrBuildings"></div
+              ><button id="addOcrBuilding" class="btn">+ Pflichtgebäude</button></details
+            ></div
+          ><div id="impPane2" class="impPane"
+            ><div class="impSmall">SCHRITT 2 VON 3</div
+            ><h3 style="margin: 2px 0 8px">Total resources (Ressourcenbedarf)</h3
+            ><div class="importHelp"
+              ><b>So geht's</b
+              ><ol
+                ><li
+                  >Öffne in next.spocks.club deinen Upgrade-Plan. <b>Nur ein Item</b> im Planer – sonst gilt „Total
+                  resources“ für alle Items zusammen.</li
+                ><li>Klicke bei „Total resources“ auf <b>Copy</b>.</li
+                ><li>Füge den Text hier ein (Strg+V). Die Prüfung startet sofort.</li></ol
+              ></div
+            ><textarea
+              id="resPasteText"
+              class="ocrText"
+              style="min-height: 90px"
+              placeholder="Resource, Base Cost, Cost, On Hand, Needed …"
+            ></textarea
+            ><div class="ocrToolbar"><button id="parseResPaste" class="btn">Ressourcen-Text auswerten</button></div
+            ><div id="resPasteInfo" class="muted importInfo"></div
+            ><div class="recognizedTable"
+              ><table
+                ><thead
+                  ><tr><th>Material</th><th>Benötigt</th><th>Sicherheit</th></tr></thead
+                ><tbody id="ocrResources"></tbody></table></div></div
+          ><div id="impPane3" class="impPane"
+            ><div class="impSmall">SCHRITT 3 VON 3</div
+            ><h3 style="margin: 2px 0 8px">Item costs &amp; efficiencies (Effizienzen)</h3
+            ><div class="importHelp"
+              ><b>So geht's</b
+              ><ol
+                ><li>Öffne in next.spocks.club deinen Upgrade-Plan.</li
+                ><li
+                  >Markiere die Tabelle „Item costs &amp; efficiencies“ und kopiere sie (Strg+C). Einen Copy-Button gibt
+                  es dort nicht, deshalb mit der Maus markieren.</li
+                ><li
+                  >Füge den Text hier ein (Strg+V). Zahlen im deutschen Format (Punkt = Tausender, Komma = Dezimal).</li
+                ></ol
+              ></div
+            ><textarea
+              id="effText"
+              class="ocrText"
+              style="min-height: 90px"
+              placeholder="Resource, Base Cost, Cost, Efficiency …"
+            ></textarea
+            ><div id="effInfo" class="muted importInfo"></div
+            ><div class="recognizedTable"
+              ><table
+                ><thead
+                  ><tr><th>Material</th><th>Effizienz</th></tr></thead
+                ><tbody id="effRows"></tbody></table></div></div></div
+        ><div class="impSum"
+          ><div class="impSmall">ZUSAMMENFASSUNG</div><div id="impSummary" class="impSumBox"></div
+          ><div id="impNote"></div></div></div
+      ><div class="impFoot"
+        ><span class="muted">Nichts wird gespeichert, bis du übernimmst.</span
+        ><div class="btns"
+          ><button id="impSkip" class="btn" hidden>Plan überspringen</button
+          ><button id="discardOcr" class="btn">Verwerfen</button><button id="impPrev" class="btn">Zurück</button
+          ><button id="impNext" class="btn">Weiter</button
+          ><button id="applyOcr" class="btn primary">Geprüfte Daten übernehmen</button></div
+        ></div
+      ></div
+    ></div
+  ><script>
+/* @@JS@@ */
+</script></body>
+</html>

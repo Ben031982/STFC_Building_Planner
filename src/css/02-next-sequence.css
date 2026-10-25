@@ -1,0 +1,93 @@
+.nextCard {
+  border: 1px solid #c18a3c;
+  background: #2b2418;
+  border-radius: 7px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.nextHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.nextSteps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.nextStep {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  background: #0a2031;
+  border: 1px solid #29495f;
+}
+.nextStep.done {
+  border-color: #2f8f61;
+}
+.nextStep.open {
+  border-color: #c18a3c;
+}
+.chip {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.chip.ok {
+  background: #174834;
+  color: #7aeab0;
+}
+.chip.todo {
+  background: #5b4122;
+  color: #ffd993;
+}
+.tabPane {
+  display: none;
+}
+.tabPane.on {
+  display: block;
+}
+.seqTable td,
+.seqTable th {
+  font-size: 12px;
+}
+.seqPhase td {
+  background: #0d2a3f;
+  color: #9fd0ff;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.seqOps td {
+  color: #ffd25d;
+  font-weight: 700;
+}
+.seqNote {
+  margin-top: 8px;
+  font-size: 11px;
+}
+.histTable td,
+.histTable th {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.histWrap {
+  overflow-x: auto;
+}
+tr.seqDone td {
+  color: #6f8a9c;
+  text-decoration: line-through;
+  text-decoration-color: #3e5a6d;
+}
+tr.seqDone td:first-child,
+tr.seqDone td:last-child {
+  text-decoration: none;
+  color: #7aeab0;
+}
