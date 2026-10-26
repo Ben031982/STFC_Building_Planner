@@ -125,7 +125,7 @@ function etaTxt(e) {
       ? "offen"
       : e.eta === 0
         ? "gedeckt"
-        : new Date(e.eta).toLocaleDateString("de-DE");
+        : fcDate(Date.now(), (e.eta - Date.now()) / 864e5);
 }
 function renderWeekly() {
   if (!s.plans.length) {
@@ -137,6 +137,8 @@ function renderWeekly() {
   }
   const p = mainPlan(),
     d = weekData(p, wkOffset),
+    dPrev = weekData(p, wkOffset - 1),
+    prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
     W = d.W,
     dl = (t) => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
   $("wkPlan").textContent = p ? p.name + " (Hauptplan · " + statusLabel(calcPlanStatus(p)) + ")" : "";
@@ -157,7 +159,8 @@ function renderWeekly() {
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
   let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
-  h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< 24 h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< 24 h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  if (d.current) h += wkOutlook(p);
   h += `<section class="panel" style="margin-top:12px"><h3>Ereignisse der Woche</h3>${
     d.ev.length
       ? `<table class="histTable" style="width:100%"><tbody id="wkEv">${d.ev
@@ -172,4 +175,44 @@ function renderWeekly() {
   h +=
     '<div class="chartNote" style="margin-top:10px">Wochen laufen Montag bis Sonntag. Die Fertigstellung im Wochenvergleich wird ab 1.8.4 täglich mitprotokolliert – ältere Wochen haben deshalb noch keinen Vergleichswert.</div>';
   $("wkBody").innerHTML = h;
+}
+
+// Ab 2.1 (F19): Vergleich mit dem Ø-Einkommen der Vorwoche
+function wkTrend(now, prev) {
+  if (now == null || prev == null) return '<td class="muted">–</td><td class="muted">kein Vergleich</td>';
+  const d = now - prev;
+  return (
+    `<td>${prev > 0 ? "+" : ""}${fmt(prev)}</td>` +
+    (Math.abs(d) < 0.05
+      ? '<td class="muted">= gleich</td>'
+      : `<td class="${d > 0 ? "green" : "red"}">${d > 0 ? "▲ +" : "▼ −"}${fmt(Math.abs(d))}</td>`)
+  );
+}
+// Ab 2.1 (F19): Ausblick auf die kommende Woche, nur in der laufenden Woche
+function wkOutlook(p) {
+  const fc = p && p.hasPlanData ? planForecast(p) : null,
+    wb = weekBounds(1),
+    head = `<section class="panel" id="wkOutlook" style="margin-top:12px"><h3>Ausblick auf KW ${isoWeek(wb.a)}</h3>`;
+  if (!fc || !(fc.overall.real > 0))
+    return (
+      head +
+      `<p class="muted">${fc && fc.overall.real === 0 ? "Alle Ressourcen für das Ziel sind schon gedeckt." : "Der Ausblick braucht eine Prognose (mindestens " + FC_MIN + " Abschnitte mit je 24 Stunden Abstand)."}</p></section>`
+    );
+  const until = (wb.b - fc.base) / 864e5,
+    soon = fc.res
+      .filter((x) => !x.common && x.miss > 0 && x.eta.real != null && x.eta.real < until)
+      .sort((a, b) => a.eta.real - b.eta.real),
+    bn = bottleneckRows(p),
+    li = soon.length
+      ? soon.map((x) => `<li>${escAttr(x.m)} voraussichtlich gedeckt am <b>${fcDate(fc.base, x.eta.real)}</b></li>`).join("")
+      : `<li>Bis Ende KW ${isoWeek(wb.a)} wird voraussichtlich kein weiteres Material gedeckt.</li>`;
+  return (
+    head +
+    `<ul class="wkList">${li}` +
+    (bn && bn.rows.length
+      ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
+      : "") +
+    `<li>Fertigstellung <b>${fmtEta(fc.overall.real, fc.base)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
+  );
 }

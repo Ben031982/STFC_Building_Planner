@@ -7,8 +7,25 @@ async function parseExport(raw, name) {
   }
   const h = await hash(raw);
   if (!j || !Array.isArray(j.resources) || !Array.isArray(j.buildings)) throw Error("Ungültiger Export");
-  let map = new Map(j.resources.map((x) => [String(x.id), +x.amount])),
+  // Ab 2.1: Jeder Wert, den der Planner nutzt, muss eine Zahl ≥ 0 sein. Sonst wird die ganze Datei
+  // abgelehnt (keine stille Übernahme von leeren, negativen oder Text-Werten).
+  const used = new Map(Object.entries(IDS).map(([n, id]) => [String(id), n]));
+  for (const [n, c] of Object.entries(SIGMA)) {
+    used.set(String(c.raw), n);
+    for (const [ids] of c.tokens) for (const id of ids) used.set(String(id), n);
+  }
+  let map = new Map(),
     values = {};
+  for (const x of j.resources) {
+    if (!x || x.id == null) continue;
+    const id = String(x.id);
+    if (!used.has(id)) continue;
+    const v = x.amount;
+    const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? +v : NaN;
+    if (!Number.isFinite(n) || n < 0)
+      throw Error("Ungültiger Wert bei " + used.get(id) + ": " + (v === undefined ? "fehlt" : JSON.stringify(v)));
+    map.set(id, n);
+  }
   for (let [n, id] of Object.entries(IDS)) {
     if (!map.has(String(id))) throw Error(n + " fehlt");
     values[n] = map.get(String(id));
@@ -36,6 +53,18 @@ let expDir = null,
   pendingBatch = null,
   batchSource = "",
   scanMsg = "";
+// Ab 2.1: Der gespeicherte Bestand folgt immer dem zeitlich neuesten Snapshot – egal in welcher
+// Reihenfolge importiert oder gelöscht wurde. Ohne Snapshot: Startwerte.
+function syncResources() {
+  const ls = latestSnapshot();
+  if (!ls) {
+    s.resources = seed.resources.map((r) => [...r]);
+    return;
+  }
+  s.resources = s.resources.map((r) => (ls.values[r[0]] !== undefined ? [r[0], ls.values[r[0]], r[2]] : r));
+  for (const [n, v] of Object.entries(ls.values))
+    if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
+}
 function sameValues(a, b) {
   if (!a || !b || !a.values || !b.values) return false;
   const ks = Object.keys(a.values);
@@ -165,12 +194,7 @@ function applyBatch() {
     s.exportScan.ignored = [...ig].slice(-300);
   }
   for (const sn of sel) s.snapshots.push(sn);
-  const ls = latestSnapshot();
-  if (ls) {
-    s.resources = s.resources.map((r) => (ls.values[r[0]] !== undefined ? [r[0], ls.values[r[0]], r[2]] : r));
-    for (const [n, v] of Object.entries(ls.values))
-      if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
-  }
+  syncResources();
   toast(sel.length === 1 ? "1 Export übernommen." : sel.length + " Exporte übernommen.");
   s.logs.push(
     sel.length === 1

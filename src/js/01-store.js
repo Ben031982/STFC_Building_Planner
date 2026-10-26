@@ -80,6 +80,8 @@ function migrateState(st) {
       planData: null,
       confirmation: null,
     };
+    // ab 2.1: Wunschdatum für „Zieltermin prüfen“
+    if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
     if (!old) {
       q.planData = p.planData || null;
       q.confirmation = p.confirmation || null;

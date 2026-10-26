@@ -133,6 +133,10 @@ async function hash(t) {
   let b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
+function isOlderThanLatest(sn) {
+  const ls = latestSnapshot();
+  return !!ls && new Date(snapTime(sn)) < new Date(snapTime(ls));
+}
 async function ingest(f) {
   try {
     pending = await parseExport(await f.text(), f.name);
@@ -149,6 +153,11 @@ async function ingest(f) {
         ? ""
         : '<p class="muted">Σ-Werte konnten aus diesem Export nicht berechnet werden.</p>') +
       (dup ? '<p class="red">Duplikat, Import blockiert.</p>' : "") +
+      (!dup && isOlderThanLatest(pending)
+        ? '<p class="muted" id="olderHint">Älter als dein neuester Snapshot (' +
+          fdt(snapTime(latestSnapshot())) +
+          ") – verfeinert nachträglich die Raten. Der aktuelle Bestand bleibt unverändert.</p>"
+        : "") +
       (pending.exportedAt
         ? '<p class="muted">Exportstand laut Dateiname: ' + fdt(pending.exportedAt) + "</p>"
         : '<p class="red">Keine Exportzeit im Dateinamen gefunden. Als Zeitpunkt wird die Importzeit verwendet – Raten können dadurch ungenau werden. Am besten die Datei nicht umbenennen.</p>');
@@ -196,11 +205,7 @@ async function ingest(f) {
 }
 $("confirm").onclick = () => {
   s.snapshots.push(pending);
-  s.resources = s.resources.map((r) =>
-    pending.values[r[0]] !== undefined ? [r[0], pending.values[r[0]], r[2]] : r,
-  );
-  for (const [n, v] of Object.entries(pending.values))
-    if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
+  syncResources();
   s.logs.push("Snapshot: " + pending.fileName);
   pending = null;
   $("modal").classList.remove("on");

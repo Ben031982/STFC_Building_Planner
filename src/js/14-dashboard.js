@@ -477,10 +477,7 @@ function renderSnaps() {
         (b.onclick = () => {
           if (confirm("Snapshot löschen?")) {
             s.snapshots = s.snapshots.filter((x) => x.id !== b.dataset.del);
-            let l = s.snapshots.at(-1);
-            s.resources = l
-              ? s.resources.map((r) => (l.values?.[r[0]] !== undefined ? [r[0], l.values[r[0]], r[2]] : r))
-              : seed.resources.map((r) => [...r]);
+            syncResources();
             save();
           }
         }),

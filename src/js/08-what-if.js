@@ -104,7 +104,7 @@ function wifCalc(p, inp) {
   return out;
 }
 function wifDate(start, d) {
-  return d == null ? "offen" : d === 0 ? "gedeckt" : new Date(start + d * 864e5).toLocaleDateString("de-DE");
+  return d == null ? "offen" : d === 0 ? "gedeckt" : fcTooFar(d) ? FC_FAR_TXT : fcDate(start, d);
 }
 function wifGain(a, b) {
   if (a == null || b == null) return "–";
@@ -114,6 +114,7 @@ function wifGain(a, b) {
     : `<span class="${g > 0 ? "wifGain" : "wifLoss"}">${g > 0 ? g + " Tage früher" : -g + " Tage später"}</span>`;
 }
 function renderWif() {
+  if (typeof renderTarget === "function") renderTarget();
   const p = activePlan(),
     inp = wifInput(),
     w = wifCalc(p, inp);

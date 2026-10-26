@@ -1,0 +1,125 @@
+/* Zieltermin prüfen (ab 2.1) – Seite Was-wäre-wenn */
+#tdPanel {
+  margin-top: 14px;
+}
+.tdLead {
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+/* Plan-Karten (ab 2.1): je Plan ein eigenes „Fertig bis“, Klick zeigt die Details */
+.tdCards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  margin: 8px 0 4px;
+}
+.tdCards .plan {
+  flex: 0 0 235px;
+  min-width: 235px;
+  cursor: pointer;
+}
+.tdCards .plan .pt {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.tdCards .plan img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.tdCards .plan h3 {
+  font-size: 13.5px;
+  margin: 0;
+}
+.tdRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #93a7b9;
+}
+.tdRow input {
+  background: #071b2a;
+  border: 1px solid #31556f;
+  border-radius: 5px;
+  color: #fff;
+  padding: 4px 6px;
+  font-size: 12px;
+  width: 128px;
+  color-scheme: dark;
+}
+.tdState {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #93a7b9;
+  min-height: 22px;
+}
+.tdCards .plan.off {
+  opacity: 0.55;
+  cursor: default;
+}
+.tdSel {
+  font-size: 12px;
+  color: #93a7b9;
+  margin: 2px 0 8px;
+}
+.tdSum {
+  grid-template-columns: 1.4fr 1fr 1.4fr;
+}
+.tdV {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tdSum .tdV {
+  font-size: 12px;
+}
+.tdV.t1 {
+  background: #10291f;
+  color: #5bd2a0;
+}
+.tdV.t2 {
+  background: #0f2433;
+  color: #46c2ee;
+}
+.tdV.t3 {
+  background: #2a2312;
+  color: #f4a53a;
+}
+.tdV.t4 {
+  background: #2c1419;
+  color: #ff98a6;
+}
+#tdRows td {
+  font-size: 12px;
+}
+.tdMsg {
+  margin: 4px 0 0;
+}
+@media (max-width: 900px) {
+  .tdSum {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Wochenbericht: Ausblick (ab 2.1) */
+.wkList {
+  margin: 6px 0 0 18px;
+  padding: 0;
+  line-height: 1.7;
+  font-size: 13px;
+}

@@ -154,6 +154,13 @@ class App:
         check(not errs, "Fehler auf der Seite: " + "; ".join(errs[:3]))
 
 
+def reopen(a, b, html, tmp):
+    """Seite schließen und mit dem gespeicherten Stand neu öffnen (wie die Datei erneut öffnen)."""
+    st = a.stored()
+    a.done()
+    return App(b, html, tmp, state=st)
+
+
 # ---------------------------------------------------------------- Tests
 
 
@@ -610,14 +617,14 @@ def einrichtung_zeigt_fortschritt_und_laesst_sich_ausblenden(b, html, tmp):
           "Auswahl einmalig/dauerhaft fehlt")
     a.click("#setupCard [data-setup='hide-once']")
     check(not a.is_visible("#setupCard"), "Karte lässt sich nicht einmalig ausblenden")
-    a.reload()
-    a.wait_for_timeout(400)
+    # „Nächstes Öffnen“ = neue Seite mit dem gespeicherten Stand. Kein reload(): Headless-Chromium verliert
+    # beim Neuladen einer file://-Seite gelegentlich den kompletten localStorage (Ursache des flaky Tests in 2.0).
+    a = reopen(a, b, html, tmp)
     check(a.is_visible("#setupCard"), "Nach einmaligem Ausblenden fehlt die Karte beim nächsten Öffnen")
     # dauerhaft: bleibt weg, lässt sich unter Daten & Import zurückholen
     a.click("#setupCard [data-setup='hide']")
     a.click("#setupCard [data-setup='hide-forever']")
-    a.reload()
-    a.wait_for_timeout(400)
+    a = reopen(a, b, html, tmp)
     check(not a.is_visible("#setupCard"), "Dauerhaft ausgeblendete Karte erscheint wieder")
     a.click("#ni")
     check(a.is_visible("#setupShowBtn"), "Knopf „Einrichtung wieder einblenden“ fehlt")
@@ -750,6 +757,404 @@ def kennzahlen_leuchten_bei_aenderung_und_bewegung_abschaltbar(b, html, tmp):
 
 
 # ---------------------------------------------------------------- Ablauf
+
+
+# ---------------------------------------------------------------- 2.1: Datenintegrität und Prognose-Grenzfälle
+
+
+def second_plan(a):
+    """Zweiten aktiven Plan anlegen. Die Uhr läuft im Test nicht; Plan-IDs enthalten die Uhrzeit."""
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=1)).isoformat())
+    a.create_active_plan("Zweitplan")
+
+
+def first_value(a):
+    return a.js("()=>s.resources.find(r=>r[0]===Object.keys(IDS)[0])[1]")
+
+
+def newest_value(a):
+    return a.js("()=>latestSnapshot().values[Object.keys(IDS)[0]]")
+
+
+def single_import(a, f):
+    a.set_input_files("#file", [str(f)])
+    a.wait_for_selector("#modal.on", timeout=5000)
+    a.click("#confirm")
+    a.wait_for_timeout(200)
+
+
+def edited_export(a, tmp, change, name="spocksclub-data-export_2026-10-25T08-30-00-000Z.json"):
+    """Gültigen Export erzeugen und mit change(data) verändern."""
+    src = pathlib.Path(a.make_exports((0,))[0])
+    data = json.loads(src.read_text(encoding="utf-8"))
+    src.unlink()
+    change(data)
+    f = tmp / name
+    f.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
+    return f
+
+
+@test
+def aelterer_einzelexport_ueberschreibt_den_bestand_nicht(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports()
+    a.import_exports(f[1:])
+    now = first_value(a)
+    a.set_input_files("#file", [f[0]])
+    a.wait_for_selector("#modal.on", timeout=5000)
+    check(a.is_visible("#olderHint"), "Hinweis „älter“ fehlt im Einzelimport")
+    a.click("#confirm")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.snapshots.length") == len(f), "Älterer Export wurde nicht übernommen")
+    check(first_value(a) == now == newest_value(a), f"Bestand überschrieben: {first_value(a)} statt {now}")
+    check(a.stored()["resources"] == a.js("()=>s.resources"), "Gespeicherter Bestand weicht ab")
+    a.done()
+
+
+@test
+def snapshot_loeschen_nimmt_den_zeitlich_neuesten(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports()
+    a.import_exports(f[1:])
+    single_import(a, f[0])  # der älteste steht jetzt am Ende der Liste
+    a.js("()=>snaps()")
+    a.wait_for_timeout(150)
+    mid = a.js("()=>s.snapshots[2].id")
+    a.click(f'[data-del="{mid}"]')
+    a.wait_for_timeout(200)
+    check(first_value(a) == newest_value(a), "Nach Löschen eines mittleren Snapshots falscher Bestand")
+    newest = a.js("()=>latestSnapshot().id")
+    a.click(f'[data-del="{newest}"]')
+    a.wait_for_timeout(200)
+    check(a.js("()=>latestSnapshot().id") != newest, "Neuester Snapshot nicht gelöscht")
+    check(first_value(a) == newest_value(a), "Nach Löschen des neuesten Snapshots falscher Bestand")
+    a.done()
+
+
+@test
+def ungueltige_werte_lehnen_die_datei_ab(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports((4, 2)))
+    msgs = []
+    a.p.on("dialog", lambda d: msgs.append(d.message))
+    before = a.js("()=>localStorage.getItem('bens-stfc')")
+
+    def setv(v, i=0):
+        def ch(d):
+            if v is KeyError:
+                del d["resources"][i]["amount"]
+            else:
+                d["resources"][i]["amount"] = v
+        return ch
+
+    sigma_idx = a.js("()=>Object.keys(IDS).length")  # erster Σ-Eintrag nach den Materialien
+    for k, (v, i) in enumerate((("abc", 0), (-5, 1), (KeyError, 2), (None, 3), ("", 4), (-1, sigma_idx))):
+        f = edited_export(a, tmp, setv(v, i), f"spocksclub-data-export_2026-10-25T08-0{k}-00-000Z.json")
+        a.set_input_files("#file", [str(f)])
+        a.wait_for_timeout(300)
+        check(not a.has_class("#modal", "on"), f"Datei mit Wert {v!r} nicht abgelehnt")
+        check(msgs and "Ungültiger Wert bei" in msgs[-1], f"Meldung fehlt oder falsch: {msgs[-1:]}")
+    check(a.js("()=>localStorage.getItem('bens-stfc')") == before, "Abgelehnte Dateien haben Daten verändert")
+    # In einer Auswahl: fehlerhafte Datei nicht übernehmbar, die gültige schon
+    bad = edited_export(a, tmp, setv("abc"), "spocksclub-data-export_2026-10-25T08-40-00-000Z.json")
+    good = edited_export(a, tmp, lambda d: d["resources"][0].update(amount=12345), "spocksclub-data-export_2026-10-25T08-50-00-000Z.json")
+    a.set_input_files("#file", [str(bad), str(good)])
+    a.wait_for_selector("#batchModal.on", timeout=5000)
+    st = a.js("()=>pendingBatch.map(i=>i.status)")
+    check(sorted(st) == ["err", "new"], f"Status in der Auswahl falsch: {st}")
+    a.click("#batchOk")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.snapshots.length") == 3, "Nicht genau die gültige Datei übernommen")
+    a.done()
+
+
+@test
+def kaputte_dateien_aendern_nichts(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports((4, 2)))
+    before = a.js("()=>localStorage.getItem('bens-stfc')")
+    for k, txt in enumerate(("{kein json", json.dumps({"resources": []}), json.dumps({"buildings": [], "resources": {}}))):
+        f = tmp / f"spocksclub-data-export_2026-10-25T07-0{k}-00-000Z.json"
+        f.write_text(txt, encoding="utf-8")
+        a.set_input_files("#file", [str(f)])
+        a.wait_for_timeout(300)
+        check(not a.has_class("#modal", "on"), f"Kaputte Datei {k} nicht abgelehnt")
+    check(a.js("()=>localStorage.getItem('bens-stfc')") == before, "Kaputte Dateien haben Daten verändert")
+    a.done()
+
+
+@test
+def duplikate_werden_nicht_uebernommen(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports()
+    a.import_exports(f[:3])
+    copy = tmp / "kopie.json"
+    copy.write_text(pathlib.Path(f[3]).read_text(encoding="utf-8"), encoding="utf-8")
+    a.set_input_files("#file", [f[2], f[3], str(copy)])
+    a.wait_for_selector("#batchModal.on", timeout=5000)
+    st = a.js("()=>pendingBatch.map(i=>[i.snap.fileName,i.status])")
+    stat = dict(st)
+    check(stat[pathlib.Path(f[2]).name] == "dup", f"Schon importierter Export nicht erkannt: {st}")
+    check(sorted([stat[pathlib.Path(f[3]).name], stat["kopie.json"]]) == ["dup", "new"],
+          f"Doppelter Export in derselben Auswahl nicht erkannt: {st}")
+    a.click("#batchOk")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.snapshots.length") == 4, "Duplikat übernommen")
+    a.done()
+
+
+@test
+def reihenfolge_des_imports_aendert_die_prognose_nicht(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports()
+    a.import_exports(f)
+    a.create_active_plan()
+    ref = a.js("()=>({fc:planForecast(s.plans[0]).overall, res:s.resources})")
+    a.done()
+    a = App(b, html, tmp)
+    for x in reversed(f):
+        single_import(a, x)
+    a.create_active_plan()
+    got = a.js("()=>({fc:planForecast(s.plans[0]).overall, res:s.resources})")
+    check(got["fc"]["real"] == ref["fc"]["real"] and got["fc"]["cons"] == ref["fc"]["cons"],
+          f"Prognose hängt von der Importreihenfolge ab: {got['fc']} / {ref['fc']}")
+    check(got["res"] == ref["res"], "Bestand hängt von der Importreihenfolge ab")
+    a.done()
+
+
+BAD_TEXT = ("Invalid", "NaN", "Infinity", "undefined")
+
+
+def page_texts(a):
+    out = []
+    for sel in ("#nd", "#navFc", "#navRes", "#nw", "#nwk", "#nd"):
+        a.close_modals()
+        a.click(sel)
+        a.wait_for_timeout(150)
+        out.append(a.js("()=>document.body.innerText"))
+    return "\n".join(out)
+
+
+def with_rare_ore(values):
+    st = load_v10_state()
+    for sn, v in zip(st["snapshots"], values):
+        sn["values"]["7★ Rare Ore"] = v
+    return st
+
+
+@test
+def prognose_grenzfaelle_ohne_ungueltige_termine(b, html, tmp):
+    cases = {
+        "ein Snapshot": dict(load_v10_state(), snapshots=load_v10_state()["snapshots"][-1:]),
+        "Stillstand": with_rare_ore([30000] * 6),
+        "negativ": with_rare_ore([40000 - 1000 * i for i in range(6)]),
+        "Jahrzehnte": with_rare_ore([30000 + 10 * i for i in range(6)]),  # ~49 Jahre
+        "über 100 Jahre": with_rare_ore([30000 + 1 * i for i in range(6)]),  # ~490 Jahre
+    }
+    for name, st in cases.items():
+        a = App(b, html, tmp, state=st)
+        txt = page_texts(a)
+        bad = [w for w in BAD_TEXT if w in txt]
+        check(not bad, f"{name}: ungültige Anzeige {bad}")
+        if name == "Jahrzehnte":
+            check(a.text("#etaValue").startswith("ca. ") and "20" in a.text("#etaValue"),
+                  f"Langer Termin nicht als Monat und Jahr: {a.text('#etaValue')!r}")
+            check("Jahren" in a.text("#etaDetail"), f"Dauer nicht in Jahren: {a.text('#etaDetail')!r}")
+            check("Jahre · ca. " in a.text("#bottleneckList"), f"Engpass-Karte ohne Jahre: {a.text('#bottleneckList')!r}")
+            a.done()
+            continue
+        check(a.text("#etaValue") == "Offen", f"{name}: Termin trotz fehlender Grundlage: {a.text('#etaValue')!r}")
+        if name == "über 100 Jahre":
+            check("Über 100 Jahre" in a.text("#etaDetail"), f"Hinweis über 100 Jahre fehlt: {a.text('#etaDetail')!r}")
+            a.click("#navFc")
+            check("nicht absehbar" in a.text("#pane-fc"), "Tabelle zeigt die Grenze nicht")
+        if name in ("Stillstand", "negativ"):
+            check("Keine positive Rate" in a.text("#etaDetail"), f"{name}: Hinweis fehlt: {a.text('#etaDetail')!r}")
+        a.done()
+    a = App(b, html, tmp)
+    check(a.js("()=>fmtEta(2e9, Date.now())") == "nicht absehbar", "fmtEta ohne Grenze")
+    check(a.js("()=>fmtEta(Infinity, Date.now())") == "nicht absehbar", "fmtEta(Infinity) ungültig")
+    check(a.js("()=>wifDate(Date.now(), 1e9)") == "nicht absehbar", "Was-wäre-wenn ohne Grenze")
+    check(a.js("()=>fmtEta(6, Date.parse('2026-10-25T09:00:00Z'))") == "31.10.2026 (6 Tage)", "Kurzer Termin falsch")
+    check(a.js("()=>fmtEta(84, Date.parse('2026-10-25T09:00:00Z'))") == "17.1.2027 (~12 Wochen)", "Termin in Wochen falsch")
+    check(a.js("()=>fmtEta(2040, Date.parse('2026-10-25T09:00:00Z'))") == "ca. Mai 2032 (~5,5 Jahre)",
+          f"Termin über 1 Jahr falsch: {a.js('()=>fmtEta(2040, Date.parse(\'2026-10-25T09:00:00Z\'))')!r}")
+    check(a.js("()=>wifDate(Date.parse('2026-10-25T09:00:00Z'), 2040)") == "ca. Mai 2032", "Was-wäre-wenn über 1 Jahr falsch")
+    a.done()
+
+
+@test
+def ausreisser_durch_pack_wird_markiert_und_nicht_gezaehlt(b, html, tmp):
+    st = with_rare_ore([30000 + 2000 * i + (60000 if i >= 3 else 0) for i in range(6)])
+    a = App(b, html, tmp, state=st)
+    r = a.js("()=>{const x=rateStats(s.plans[0],'7★ Rare Ore');return {flags:x.rows.map(r=>r.flag),inc:x.rows.map(r=>r.included),n:x.n,real:x.real}}")
+    check(r["flags"].count("pack") == 1, f"Pack-Sprung nicht markiert: {r['flags']}")
+    check(r["n"] == len(r["flags"]) - 1 and abs(r["real"] - 1000) < 1e-6, f"Sprung wird mitgezählt: {r}")
+    a.done()
+
+
+@test
+def zielwechsel_setzt_die_bestaetigung_zurueck(b, html, tmp):
+    a = App(b, html, tmp, state=load_v10_state())
+    check(a.js("()=>calcPlanStatus(s.plans[0])") == "active", "Ausgangsplan nicht aktiv")
+    a.click("#managePlanBtn")
+    a.fill("#editPlanTarget", "77")
+    a.click("#savePlanData")
+    a.wait_for_timeout(200)
+    p = a.js("()=>({c:s.plans[0].confirmation, st:calcPlanStatus(s.plans[0]), fc:planForecast(s.plans[0])})")
+    check(p["c"] is None, "Bestätigung bleibt trotz neuem Ziel")
+    check(p["st"] != "active" and p["fc"] is None, f"Plan rechnet trotz Zielwechsel weiter: {p['st']}")
+    check(a.js("()=>s.logs.at(-1)").startswith("Zielstruktur geändert"), "Kein Eintrag im Protokoll")
+    a.done()
+
+
+@test
+def erledigter_bau_macht_andere_plaene_veraltet(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    check(a.js("()=>s.plans.map(p=>calcPlanStatus(p))") == ["active", "active"], "Zwei aktive Pläne erwartet")
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    up = fixture("plan_upgrades.txt").replace("Refinery · Level 73 → 75", "Refinery · Level 74 → 75")
+    a.import_texts(up, fixture("plan_resources.txt"), fixture("plan_efficiencies.txt"))
+    a.close_modals()
+    st = a.js("()=>({b:calcPlanStatus(s.plans[1]), o:s.plans[1].planData.outdatedBy, upd:plansNeedingUpdate().map(p=>p.name)})")
+    check(st["b"] == "stale", f"Zweitplan nicht veraltet: {st['b']}")
+    check(st["o"] and st["o"]["items"][0]["name"].lower() == "refinery" and st["o"]["items"][0]["level"] == 74,
+          f"Falsche Angabe, was erledigt ist: {st['o']}")
+    check("Zweitplan" in st["upd"], "Update-Leiste nennt den Zweitplan nicht")
+    a.done()
+
+
+@test
+def plan_loeschen_schuetzt_den_hauptplan(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    snaps = a.js("()=>s.snapshots.length")
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    a.click("#managePlanBtn")
+    check(a.js("()=>$('deletePlanBtn').disabled"), "Hauptplan lässt sich löschen")
+    a.close_modals()
+    a.js("()=>{s.active=s.plans[1].id;render()}")
+    a.click("#managePlanBtn")
+    a.click("#planDataModal details.dangerZone summary")
+    a.click("#deletePlanBtn")
+    a.wait_for_timeout(200)
+    r = a.js("()=>({n:s.plans.length, name:s.plans[0].name, act:s.active===s.plans[0].id, st:calcPlanStatus(s.plans[0]), snaps:s.snapshots.length})")
+    check(r["n"] == 1 and r["name"] == "Operations 76", f"Falscher Plan gelöscht: {r}")
+    check(r["act"] and r["st"] == "active" and r["snaps"] == snaps, f"Hauptplan oder Daten verändert: {r}")
+    check(len(a.stored()["plans"]) == 1, "Löschen nicht gespeichert")
+    a.done()
+
+
+# ---------------------------------------------------------------- 2.1 Phase 2: Zieltermin, Wochenbericht
+
+
+def set_target(a, v, idx=0):
+    sel = f"#tdCards input[type=date] >> nth={idx}"
+    a.fill(sel, v)
+    a.dispatch_event(sel, "change")
+    a.wait_for_timeout(150)
+
+
+@test
+def zieltermin_bewertet_und_speichert_je_plan(b, html, tmp):
+    a = App(b, html, tmp, state=load_v10_state())
+    a.click("#nw")
+    check("Wunschdatum wählen" in a.text("#tdPanel"), "Hinweis ohne Datum fehlt")
+    set_target(a, "2026-10-01")
+    check("nicht in der Zukunft" in a.text("#tdResult"), "Vergangenes Datum nicht abgefangen")
+    set_target(a, "2026-11-01")
+    check("NICHT ERREICHBAR" in a.text("#tdResult").upper(), f"Zu frühes Datum: {a.text('#tdResult')[:120]!r}")
+    # Benötigt pro Tag = Fehlt ÷ verbleibende Tage
+    r = a.js("""()=>{const p=s.plans[0],c=targetCheck(p,'2026-11-01'),x=c.rows.find(r=>r.kind==='ok');
+      return {need:x.need, miss:x.miss, days:c.days, fc:c.fc.overall.real}}""")
+    check(abs(r["need"] - r["miss"] / r["days"]) < 1e-6, f"Formel falsch: {r}")
+    eta = a.js("()=>{const fc=planForecast(s.plans[0]);return new Date(fc.base+fc.overall.real*864e5+3*864e5).toISOString().slice(0,10)}")
+    set_target(a, eta)
+    check("ERREICHBAR" in a.text("#tdResult").upper() and "NICHT ERREICHBAR" not in a.text("#tdResult").upper(),
+          f"Datum nach der Prognose nicht erreichbar: {eta} / {a.text('#tdResult')[:120]!r}")
+    check(a.stored()["plans"][0].get("targetDate") == eta, "Datum nicht beim Plan gespeichert")
+    check(a.js("()=>calcPlanStatus(s.plans[0])") == "active", "Zieltermin verändert den Plan-Status")
+    a = reopen(a, b, html, tmp)
+    a.click("#nw")
+    check(a.input_value("#tdCards input[type=date]") == eta, "Datum nach erneutem Öffnen weg")
+    card = a.text("#tdCards .plan.active")
+    check("ERREICHBAR" in card.upper() and "noch" in card, f"Bewertung fehlt auf der Karte: {card!r}")
+    check(not [w for w in BAD_TEXT if w in a.text("#tdPanel")], "Ungültige Werte im Zieltermin")
+    a.done()
+
+
+@test
+def zieltermin_ohne_aktiven_plan_und_ohne_daten(b, html, tmp):
+    a = App(b, html, tmp)
+    a.click("#nw")
+    check("aktiven Plan" in a.text("#tdPanel"), "Hinweis ohne aktiven Plan fehlt")
+    a.done()
+    st = load_v10_state()
+    st["snapshots"] = st["snapshots"][-2:]
+    st["plans"][0]["targetDate"] = "2027-01-15"
+    a = App(b, html, tmp, state=st)
+    a.click("#nw")
+    txt = a.text("#tdResult")
+    check("NICHT BEWERTBAR" in txt.upper() and "zu wenig Daten" in txt, f"Zu wenig Daten nicht gekennzeichnet: {txt[:160]!r}")
+    a.done()
+
+
+@test
+def wochenbericht_vergleicht_mit_vorwoche_und_gibt_ausblick(b, html, tmp):
+    a = App(b, html, tmp, state=load_v10_state())
+    a.click("#nwk")
+    a.wait_for_timeout(200)
+    head = a.text("#wkView table thead")
+    check("Ø VORWOCHE" in head.upper() and "TREND" in head.upper(), "Spalten Vorwoche/Trend fehlen")
+    rows = a.js("()=>[...document.querySelectorAll('#wkRes tr')].map(r=>r.lastElementChild.textContent)")
+    check(rows and any(x != "kein Vergleich" for x in rows), f"Kein Vergleich trotz Vorwoche: {rows[:3]}")
+    check(a.is_visible("#wkOutlook"), "Ausblick fehlt")
+    out = a.text("#wkOutlook")
+    check("Engpass bleibt" in out and "Fertigstellung" in out, f"Ausblick unvollständig: {out!r}")
+    a.click("#wkPrev")
+    a.wait_for_timeout(150)
+    check(not a.is_visible("#wkOutlook"), "Ausblick erscheint in einer vergangenen Woche")
+    a.click("#wkPrev")
+    a.wait_for_timeout(150)
+    rows = a.js("()=>[...document.querySelectorAll('#wkRes tr')].map(r=>r.lastElementChild.textContent)")
+    check(all(x == "kein Vergleich" for x in rows), "Fehlender Vergleich nicht markiert")
+    check(not [w for w in BAD_TEXT if w in a.text("#wkBody")], "Ungültige Werte im Wochenbericht")
+    a.done()
+
+
+@test
+def zieltermin_plan_karten_je_plan_eigenes_datum(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=2)).isoformat())
+    a.create_plan("Entwurf")
+    check(len(set(a.js("()=>s.plans.map(p=>p.id)"))) == 3, "Plan-IDs nicht eindeutig")
+    a.click("#nw")
+    check(a.locator("#tdCards .plan").count() == 3, "Nicht alle Pläne als Karte")
+    check(a.locator("#tdCards .plan.off").count() == 1 and "nicht aktiv" in a.text("#tdCards .plan.off"),
+          "Entwurf nicht ausgegraut")
+    check(a.locator("#tdCards .plan.off input").count() == 0, "Entwurf hat ein Datumsfeld")
+    set_target(a, "2026-11-01", 0)
+    set_target(a, "2027-06-01", 1)
+    st = [p.get("targetDate") for p in a.stored()["plans"]]
+    check(st[:2] == ["2026-11-01", "2027-06-01"], f"Datum nicht je Plan gespeichert: {st}")
+    check("Zweitplan" in a.text("#tdSel"), "Details folgen nicht dem zuletzt geänderten Plan")
+    a.click("#tdCards .plan >> nth=0")
+    a.wait_for_timeout(150)
+    check("Operations 76" in a.text("#tdSel") and a.has_class("#tdCards .plan >> nth=0", "active"),
+          "Klick auf die Karte zeigt nicht deren Details")
+    check("NICHT ERREICHBAR" in a.text("#tdCards .plan >> nth=0").upper(), "Bewertung der ersten Karte falsch")
+    check("NICHT ERREICHBAR" not in a.text("#tdCards .plan >> nth=1").upper(), "Bewertung der zweiten Karte falsch")
+    a.done()
 
 
 def main():

@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.1.0] – in Arbeit
+
+### Neue Funktionen (Phase 2)
+
+**Zieltermin prüfen** (Seite Was-wäre-wenn)
+- Alle Zielpläne als Karten wie im Dashboard, jeder mit eigenem „Fertig bis“ und der Bewertung direkt auf der Karte; ein Klick zeigt die Details: je Material „fehlt“, „benötigt pro Tag“ (fehlt ÷ verbleibende Tage), „bisher pro Tag“ (realistisches Einkommen), Differenz und Bewertung.
+- Bewertung mit den drei Prognose-Szenarien: reicht sicher (auch konservativ), reicht (realistisch), knapp (nur optimistisch), reicht nicht.
+- Gesamtbewertung, verbleibende Tage und das kritische Material (kleinstes Verhältnis von bisherigem zu benötigtem Einkommen).
+- Das Datum wird je Plan gespeichert. Bauzeit und Stellschrauben fließen nicht ein; vergangene Daten und fehlende Daten werden gekennzeichnet.
+
+**Wochenbericht**
+- Spalten „Ø Vorwoche“ und „Trend“: Einkommen pro Tag im Vergleich zur Vorwoche, „kein Vergleich“ wenn Daten fehlen.
+- Ausblick auf die kommende Woche (nur in der laufenden Woche): welche Materialien voraussichtlich gedeckt werden, Engpass und nächster Engpass, Fertigstellung.
+
+
+### Fehlerbehebungen (Phase 1)
+- Ein älterer Export im Einzelimport überschrieb den gespeicherten Bestand. Der Bestand folgt jetzt immer dem zeitlich neuesten Snapshot; der Einzelimport zeigt bei älteren Exporten den Hinweis „Älter als dein neuester Snapshot“.
+- Nach dem Löschen eines Snapshots wurde der Bestand vom zuletzt eingefügten statt vom zeitlich neuesten Snapshot übernommen.
+- Exporte mit leeren, negativen oder Text-Werten wurden still übernommen. Solche Dateien werden jetzt abgelehnt („Ungültiger Wert bei …“), die vorhandenen Daten bleiben unverändert.
+- Bei extrem kleinem Zuwachs konnte die Prognose „Invalid Date“ zeigen. Termine über 1 Jahr erscheinen jetzt als „ca. Mai 2032 (~5,5 Jahre)“, über 100 Jahre als „nicht absehbar“ – in Prognose, Engpass-Karte, Stationspack, Was-wäre-wenn und Wochenbericht.
+
+### Technik
+- 14 neue Tests (Datenintegrität, Prognose-Grenzfälle, Zielplan-Konsistenz, Zieltermin, Wochenbericht), insgesamt 46.
+- Ursache des gelegentlich fehlschlagenden Tests aus 2.0 behoben: Headless-Chromium verliert beim Neuladen einer lokalen Datei manchmal den Browser-Speicher. Der Test öffnet die Seite jetzt neu statt sie neu zu laden. Kein Fehler im Planner.
+
 ## [2.0] – 2026-10-25
 
 ### Neue Funktionen

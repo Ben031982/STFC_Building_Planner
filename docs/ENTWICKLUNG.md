@@ -6,7 +6,7 @@ Der Planner wird als **eine einzige HTML-Datei** verteilt. Bearbeitet wird er ab
 
 ```
 src/
-  VERSION              Versionsnummer, z. B. 1.1
+  VERSION              Versionsnummer, z. B. 2.1.0
   index.html           Seitengerüst mit den Platzhaltern /* @@CSS@@ */ und /* @@JS@@ */
   css/NN-*.css         Stile, in Dateinamen-Reihenfolge zusammengefügt (Reihenfolge = Kaskade)
   js/NN-*.js           Skript, in Dateinamen-Reihenfolge zu einem Skript zusammengefügt
@@ -28,11 +28,11 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 | `04-forecast-packs` | Prognose (gewichtete Quantile, Qualität), Engpass, Packs, Engpass-Karte |
 | `05-plan-order-sequence` | Reihenfolge von Plänen und Bauschritten |
 | `06-import-page` | Seite „Daten & Import“ |
-| `07-weekly` | Wochenbericht |
+| `07-weekly` | Wochenbericht mit Vorwochen-Vergleich und Ausblick |
 | `08-what-if` | Was-wäre-wenn |
 | `09-outdated-events` | Veraltete Pläne, Ereignisse |
 | `10-care` | Datenpflege-Hinweise |
-| `11-export-scan` | Spock's-Exporte einlesen |
+| `11-export-scan` | Spock's-Exporte einlesen und prüfen, Bestand aus dem neuesten Snapshot |
 | `12-backup` | Backups, Wiederherstellen, Belegungsanzeige |
 | `13-build-sequence` | Bau-Reihenfolge berechnen |
 | `14-dashboard` | Übersicht und Tabs |
@@ -44,6 +44,7 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 | `20-tutorial` | Einführung beim ersten Öffnen |
 | `21-nav` | Navigation |
 | `22-setup-help` | Einrichtungs-Karte, Begriffserklärungen (ⓘ), Exportsuche beim Öffnen, Aufleuchten geänderter Kennzahlen |
+| `23-target-date` | Zieltermin prüfen (Seite Was-wäre-wenn), Datum je Plan in `targetDate` |
 
 ## Bauen
 
@@ -63,7 +64,9 @@ python tests/run_tests.py
 
 Ohne Argument wird zuerst gebaut. Mit `python tests/run_tests.py datei.html` lässt sich jede fertige Datei prüfen, mit `-k name` nur ein Teil der Tests.
 
-Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen und den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien).
+Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen, den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien) sowie ab 2.1 Datenintegrität (ältere, doppelte, ungültige und kaputte Exporte, Snapshot löschen, Importreihenfolge), Prognose-Grenzfälle (ein Snapshot, Stillstand, negativ, über 3 Jahre, Ausreißer) und Zielplan-Konsistenz (Zielwechsel, erledigte Bauten, Plan löschen), Zieltermin und Wochenbericht (Vorwoche, Ausblick).
+
+Hinweise für neue Tests: Die Uhr steht im Test fest (25.10.2026, 09:00 UTC) – Plan-IDs enthalten die Uhrzeit, für einen zweiten Plan die Uhr vorstellen (`second_plan`). Kein `reload()` nach dem Speichern: Headless-Chromium verliert dabei manchmal den localStorage einer lokalen Datei; stattdessen `reopen()`.
 
 ## Neue Version veröffentlichen
 

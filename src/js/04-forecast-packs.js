@@ -1,5 +1,32 @@
 const FC_WINDOW_DAYS = 42,
-  FC_MIN = 3;
+  FC_MIN = 3,
+  // Ab 2.1: Über 1 Jahr nur noch Monat und Jahr („ca. Mai 2032“), über 100 Jahre „nicht absehbar“
+  // (Schutz vor unsinnigen Werten wie „Invalid Date“).
+  FC_YEAR = 365.25,
+  FC_MAX_DAYS = 100 * FC_YEAR,
+  FC_FAR_TXT = "nicht absehbar";
+function fcTooFar(days) {
+  return days != null && !(Number.isFinite(days) && days <= FC_MAX_DAYS);
+}
+function fcYears(days) {
+  const y = Math.max(1, Math.round((days / FC_YEAR) * 2) / 2);
+  return y.toLocaleString("de-DE") + (y === 1 ? " Jahr" : " Jahre");
+}
+// Datum eines Termins: bis 1 Jahr Tagesdatum, darüber „ca. Mai 2032“
+function fcDate(base, days) {
+  const d = new Date(base + days * 864e5);
+  return days > FC_YEAR
+    ? "ca. " + d.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+    : d.toLocaleDateString("de-DE");
+}
+// Dauer: „9 Tage“, „~12 Wochen“, „~5,5 Jahre“
+function fcDur(days) {
+  return days < 14
+    ? Math.ceil(days) + (Math.ceil(days) === 1 ? " Tag" : " Tage")
+    : days <= FC_YEAR
+      ? "~" + Math.round(days / 7) + " Wochen"
+      : "~" + fcYears(days);
+}
 function quant(arr, q) {
   const a = [...arr].sort((x, y) => x - y);
   if (!a.length) return null;
@@ -131,14 +158,17 @@ function planForecast(p) {
     const m = r[0],
       miss = r[3],
       st = rateStats(p, m),
-      eta = (k) => (miss <= 0 ? 0 : st.n >= FC_MIN && st[k] > 0 ? miss / st[k] : null);
+      raw = (k) => (miss <= 0 ? 0 : st.n >= FC_MIN && st[k] > 0 ? miss / st[k] : null),
+      far = (k) => fcTooFar(raw(k)),
+      eta = (k) => (far(k) ? null : raw(k));
     return {
       m,
       miss,
       st,
       common: /^7★ Common/.test(m),
       eta: { cons: eta("cons"), real: eta("real"), opt: eta("opt") },
-      status: miss <= 0 ? "done" : st.n < FC_MIN ? "data" : st.real > 0 ? "ok" : "neg",
+      far: { cons: far("cons"), real: far("real"), opt: far("opt") },
+      status: miss <= 0 ? "done" : st.n < FC_MIN ? "data" : st.real > 0 ? (far("real") ? "far" : "ok") : "neg",
     };
   });
   const rel = res.filter((x) => !x.common && x.miss > 0),
@@ -151,6 +181,7 @@ function planForecast(p) {
     const bad = rel.filter((x) => x.eta[k] == null);
     if (bad.length) {
       overall[k] = null;
+      overall[k + "Far"] = bad.every((x) => x.far[k]);
       continue;
     }
     const mx = rel.reduce((a, b) => (b.eta[k] > a.eta[k] ? b : a));
@@ -159,20 +190,16 @@ function planForecast(p) {
   }
   overall.missingData = rel.filter((x) => x.status === "data").map((x) => x.m);
   overall.negative = rel.filter((x) => x.status === "neg").map((x) => x.m);
+  overall.far = rel.filter((x) => x.status === "far").map((x) => x.m);
   overall.minN = rel.length ? Math.min(...rel.map((x) => x.st.n)) : 0;
   overall.minSpan = rel.length ? Math.min(...rel.map((x) => x.st.span || 0)) : 0;
   return { res, overall, base };
 }
-function fmtEta(days, base) {
-  if (days == null) return "nicht absehbar";
+function fmtEta(days, base, far) {
+  if (days == null) return far ? FC_FAR_TXT : "nicht absehbar";
+  if (fcTooFar(days)) return FC_FAR_TXT;
   if (days <= 0) return "gedeckt";
-  const d = new Date(base + days * 864e5);
-  return (
-    d.toLocaleDateString("de-DE") +
-    " (" +
-    (days < 14 ? Math.ceil(days) + " Tage" : "~" + Math.round(days / 7) + " Wochen") +
-    ")"
-  );
+  return fcDate(base, days) + " (" + fcDur(days) + ")";
 }
 // Prognose-Qualität (ab 1.4): nach Zahl der zählenden Abschnitte und abgedecktem Zeitraum.
 // Maßgeblich ist das Material mit den wenigsten Daten.
@@ -238,15 +265,21 @@ function renderForecast(p) {
       ? "Noch zu wenig Daten (" + o.minN + "/" + FC_MIN + " Abschnitte)"
       : o.negative.length
         ? "Keine positive Rate: " + o.negative.join(", ")
-        : "Szenario nicht berechenbar";
+        : o.far.length
+          ? "Über 100 Jahre bei der jetzigen Rate: " + o.far.join(", ")
+          : "Szenario nicht berechenbar";
   } else {
-    val = new Date(fc.base + o.real * 864e5).toLocaleDateString("de-DE");
+    val = fcDate(fc.base, o.real);
     det =
-      (o.real < 14 ? "in " + Math.ceil(o.real) + " Tagen" : "in ca. " + Math.round(o.real / 7) + " Wochen") +
+      (o.real < 14
+        ? "in " + Math.ceil(o.real) + (Math.ceil(o.real) === 1 ? " Tag" : " Tagen")
+        : o.real <= FC_YEAR
+          ? "in ca. " + Math.round(o.real / 7) + " Wochen"
+          : "in ca. " + fcYears(o.real).replace(/Jahre$/, "Jahren")) +
       " · konservativ " +
-      (o.cons == null ? "offen" : new Date(fc.base + o.cons * 864e5).toLocaleDateString("de-DE")) +
+      (o.cons == null ? (o.consFar ? "über 100 Jahre" : "offen") : fcDate(fc.base, o.cons)) +
       " · optimistisch " +
-      (o.opt == null ? "offen" : new Date(fc.base + o.opt * 864e5).toLocaleDateString("de-DE"));
+      (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
   }
   $("etaValue").textContent = val;
   $("etaDetail").textContent = det;
@@ -255,7 +288,7 @@ function renderForecast(p) {
     (q
       ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></div>`
       : "") +
-    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
+    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
     (o.missingData.length
       ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ 24 Stunden nötig).</p>`
       : "") +
@@ -266,7 +299,7 @@ function renderForecast(p) {
         dq = st.rows.length
           ? `${st.n} von ${st.rows.length}${st.rows.length - st.n ? " (" + (st.rows.length - st.n) + " markiert)" : ""}`
           : "keine";
-      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.cons, fc.base)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base)}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.opt, fc.base)}</td><td>${dq}</td></tr>`;
+      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
     })
     .join("");
   const ivs = new Map();
@@ -348,7 +381,10 @@ function packCalc(p) {
       const eff = st.real + x.amt / 7;
       return eff > 0 ? x.miss / eff : Infinity;
     });
-    if (per.every((v) => v != null)) weekly = { days: Math.max(...per), base: fc.base };
+    if (per.every((v) => v != null)) {
+      const days = Math.max(...per);
+      weekly = { days, base: fc.base, far: fcTooFar(days) };
+    }
   }
   return {
     pack,
@@ -372,7 +408,7 @@ function renderPacks(p) {
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ca. am <b>${new Date(pc.weekly.base + pc.weekly.days * 864e5).toLocaleDateString("de-DE")}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
   $("packEditBtn").onclick = openPacks;
 }
 function openPacks() {
@@ -406,6 +442,7 @@ function packEffect(p) {
   return {
     save: Math.round((day(w.base.real.d) - day(w.scen.real.d)) / 864e5),
     date: new Date(w.start + w.scen.real.d * 864e5),
+    when: fcDate(w.start, w.scen.real.d),
     next: w.scen.real.driver,
   };
 }
@@ -423,11 +460,15 @@ function renderBottleneckCard(p) {
     return;
   }
   const max = bn.rows[0].eta.real,
-    day = (t) => new Date(bn.fc.base + t * 864e5).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+    day = (t) =>
+      t > FC_YEAR
+        ? fcDate(bn.fc.base, t)
+        : new Date(bn.fc.base + t * 864e5).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }),
+    inT = (t) => (t > FC_YEAR ? "~" + fcYears(t) : Math.ceil(t) + " T.");
   let h = bn.rows
     .map(
       (x, i) =>
-        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">gedeckt in ${Math.ceil(x.eta.real)} T. · ${day(x.eta.real)}</span></div>`,
+        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">gedeckt in ${inT(x.eta.real)} · ${day(x.eta.real)}</span></div>`,
     )
     .join("");
   const pe = packEffect(p),
@@ -438,7 +479,7 @@ function renderBottleneckCard(p) {
       'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
   else {
     const n = pe.save,
-      when = pe.date.toLocaleDateString("de-DE");
+      when = pe.when;
     if (n < 1) {
       const close = bn.rows.filter((x) => max - x.eta.real < 1).map((x) => x.m.replace("7★ ", ""));
       foot =
