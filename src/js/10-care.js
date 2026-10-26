@@ -101,7 +101,7 @@ function careHints() {
         iv = snapIntervals(m),
         anchor = iv.length ? iv[iv.length - 1].b.t.getTime() : pts[0];
       if (miss > 0 && anchor) {
-        const next = anchor + 864e5;
+        const next = anchor + FC_GAP_H * 36e5;
         out.push({
           warn: false,
           text:
@@ -115,7 +115,7 @@ function careHints() {
             FC_MIN +
             "). Der nächste zählende Export ist " +
             (next <= now ? "ab sofort" : "ab " + fdt(next)) +
-            " möglich (mindestens 24 Stunden Abstand).",
+            " möglich (mindestens " + FC_GAP_H + " Stunden Abstand).",
         });
       }
     }

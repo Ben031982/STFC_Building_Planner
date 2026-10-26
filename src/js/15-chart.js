@@ -48,8 +48,8 @@ function drawChart(boxId, W, H, big) {
       b =
         st.n >= FC_MIN
           ? sg(st.real)
-          : spanDays < 1
-            ? "Zeitraum < 24 h"
+          : spanDays < FC_GAP_DAYS
+            ? "Zeitraum < " + FC_GAP_H + " h"
             : "zu wenig Daten (" + st.n + "/" + FC_MIN + ")",
       c = st.n >= FC_MIN ? sg(st.real * 7) : "Noch nicht belastbar";
     if (big)
@@ -170,10 +170,10 @@ function drawChart(boxId, W, H, big) {
   );
   $(big ? "chartBigNote" : "chartNote").textContent =
     pts.length === 1
-      ? "Ein Startwert ist vorhanden. Raten und Prognose entstehen ab drei Abschnitten mit je mindestens 24 Stunden Abstand."
+      ? "Ein Startwert ist vorhanden. Raten und Prognose entstehen ab drei Abschnitten mit je mindestens " + FC_GAP_H + " Stunden Abstand."
       : st.n < FC_MIN
-        ? spanDays < 1
-          ? "Die Snapshots liegen weniger als 24 Stunden auseinander. Deshalb werden bewusst keine Raten gezeigt."
+        ? spanDays < FC_GAP_DAYS
+          ? "Die Snapshots liegen weniger als " + FC_GAP_H + " Stunden auseinander. Deshalb werden bewusst keine Raten gezeigt."
           : "Noch zu wenig Abschnitte für eine Rate (" + st.n + " von " + FC_MIN + ")."
         : "Ø-Werte = nach Länge gewichteter Median der Abschnitte der letzten 6 Wochen, Bauvorgänge herausgerechnet. Gestrichelt: Prognose bis zum Bedarf.";
 }
@@ -213,14 +213,14 @@ function attachChartHover(box, P, y0, y1) {
     dot.setAttribute("cy", q.py);
     g.style.display = "";
     const days = q.prev ? (q.t - q.prev.t) / 864e5 : 0,
-      rate = q.prev && days >= 1 ? (q.v - q.prev.v) / days : null;
+      rate = q.prev && days >= FC_GAP_DAYS ? (q.v - q.prev.v) / days : null;
     tip.innerHTML =
       new Date(q.t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
       `<br>Bestand <b>${fmt(q.v)}</b>` +
       (rate != null
         ? `<br>Veränderung seit vorigem Export <b class="${rate >= 0 ? "green" : "red"}">${rate > 0 ? "+" : ""}${fmt(rate)}/Tag</b>`
         : q.prev
-          ? '<br><span class="muted">weniger als 24 Stunden nach dem vorigen Export</span>'
+          ? '<br><span class="muted">weniger als ' + FC_GAP_H + ' Stunden nach dem vorigen Export</span>'
           : '<br><span class="muted">erster Messpunkt</span>');
     tip.classList.add("on");
     const br = box.getBoundingClientRect(),

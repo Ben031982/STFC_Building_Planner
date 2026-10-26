@@ -1157,6 +1157,24 @@ def zieltermin_plan_karten_je_plan_eigenes_datum(b, html, tmp):
     a.done()
 
 
+@test
+def abschnitte_ab_20_stunden_abstand(b, html, tmp):
+    st = load_v10_state()
+    # Abstände 23 h, 23 h, 19 h, 25 h: zählen sollen 23, 23 und (19+25 →) 44 h = 3 Abschnitte
+    times = ["2026-10-20T20:00:00.000Z", "2026-10-21T19:00:00.000Z", "2026-10-22T18:00:00.000Z",
+             "2026-10-23T13:00:00.000Z", "2026-10-24T14:00:00.000Z"]
+    st["snapshots"] = st["snapshots"][:5]
+    for sn, tm in zip(st["snapshots"], times):
+        sn["exportedAt"] = tm
+    a = App(b, html, tmp, state=st)
+    iv = a.js("()=>snapIntervals('7★ Rare Ore').map(x=>Math.round((x.b.t-x.a.t)/36e5))")
+    check(iv == [23, 23, 44], f"Abschnitte falsch: {iv}")
+    check("20 Stunden" in a.js("()=>TERMS.abschnitt"), "Erklärung „Abschnitt“ nennt nicht 20 Stunden")
+    txt = page_texts(a)
+    check("24 Stunden" not in txt and "< 24 h" not in txt, "Irgendwo steht noch 24 Stunden")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")

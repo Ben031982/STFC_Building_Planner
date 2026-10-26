@@ -13,7 +13,7 @@ const TUT_KEY = "bens-stfc-tutorial",
     [
       "Schritt 1 von 3",
       "Account-Snapshot einlesen",
-      "<ol><li>Spiel starten, damit Spock's Club synchronisiert.</li><li>In Spock's Club: <b>Syncing › Export Data</b>, mindestens <b>Buildings</b> und <b>Resources</b> wählen, Format <b>JSON</b>, <b>Download Export</b>.</li><li>Hier im Planner: <b>„Neue Exporte einlesen“</b> (beim ersten Mal den Download-Ordner wählen) oder die Datei ins Importfeld ziehen.</li></ol><div class=\"tip\">Exportiere mehrmals pro Woche. Ab drei Abschnitten mit je mindestens 24 Stunden Abstand erstellt der Planner eine Prognose.</div>",
+      "<ol><li>Spiel starten, damit Spock's Club synchronisiert.</li><li>In Spock's Club: <b>Syncing › Export Data</b>, mindestens <b>Buildings</b> und <b>Resources</b> wählen, Format <b>JSON</b>, <b>Download Export</b>.</li><li>Hier im Planner: <b>„Neue Exporte einlesen“</b> (beim ersten Mal den Download-Ordner wählen) oder die Datei ins Importfeld ziehen.</li></ol><div class=\"tip\">Exportiere mehrmals pro Woche. Ab drei Abschnitten mit je mindestens 20 Stunden Abstand erstellt der Planner eine Prognose.</div>",
     ],
     [
       "Schritt 2 von 3",

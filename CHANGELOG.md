@@ -15,6 +15,9 @@
 - Ausblick auf die kommende Woche (nur in der laufenden Woche): welche Materialien voraussichtlich gedeckt werden, Engpass und nächster Engpass, Fertigstellung.
 
 
+### Verbesserungen
+- Ein Abschnitt zählt schon ab 20 Stunden Abstand zwischen zwei Exporten (vorher 24). Wer täglich etwa zur gleichen Zeit exportiert, verliert so keine Tage mehr, wenn es einmal 23 Stunden sind. Alle Hinweise nennen jetzt 20 Stunden.
+
 ### Fehlerbehebungen (Phase 1)
 - Ein älterer Export im Einzelimport überschrieb den gespeicherten Bestand. Der Bestand folgt jetzt immer dem zeitlich neuesten Snapshot; der Einzelimport zeigt bei älteren Exporten den Hinweis „Älter als dein neuester Snapshot“.
 - Nach dem Löschen eines Snapshots wurde der Bestand vom zuletzt eingefügten statt vom zeitlich neuesten Snapshot übernommen.
@@ -22,7 +25,7 @@
 - Bei extrem kleinem Zuwachs konnte die Prognose „Invalid Date“ zeigen. Termine über 1 Jahr erscheinen jetzt als „ca. Mai 2032 (~5,5 Jahre)“, über 100 Jahre als „nicht absehbar“ – in Prognose, Engpass-Karte, Stationspack, Was-wäre-wenn und Wochenbericht.
 
 ### Technik
-- 14 neue Tests (Datenintegrität, Prognose-Grenzfälle, Zielplan-Konsistenz, Zieltermin, Wochenbericht), insgesamt 46.
+- 16 neue Tests (Datenintegrität, Prognose-Grenzfälle, Zielplan-Konsistenz, Zieltermin, Wochenbericht, 20-Stunden-Abschnitte), insgesamt 48.
 - Ursache des gelegentlich fehlschlagenden Tests aus 2.0 behoben: Headless-Chromium verliert beim Neuladen einer lokalen Datei manchmal den Browser-Speicher. Der Test öffnet die Seite jetzt neu statt sie neu zu laden. Kein Fehler im Planner.
 
 ## [2.0] – 2026-10-25

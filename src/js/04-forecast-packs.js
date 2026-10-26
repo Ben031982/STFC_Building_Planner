@@ -1,5 +1,8 @@
 const FC_WINDOW_DAYS = 42,
   FC_MIN = 3,
+  // Ab 2.1: Mindestabstand zweier Exporte für einen Abschnitt 20 statt 24 Stunden
+  FC_GAP_H = 20,
+  FC_GAP_DAYS = FC_GAP_H / 24,
   // Ab 2.1: Über 1 Jahr nur noch Monat und Jahr („ca. Mai 2032“), über 100 Jahre „nicht absehbar“
   // (Schutz vor unsinnigen Werten wie „Invalid Date“).
   FC_YEAR = 365.25,
@@ -77,7 +80,7 @@ function snapIntervals(m) {
     out = [];
   let i = 0;
   for (let j = 1; j < pts.length; j++) {
-    if ((pts[j].t - pts[i].t) / 864e5 >= 1) {
+    if ((pts[j].t - pts[i].t) / 864e5 >= FC_GAP_DAYS) {
       out.push({ a: pts[i], b: pts[j] });
       i = j;
     }
@@ -290,7 +293,7 @@ function renderForecast(p) {
       : "") +
     `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
     (o.missingData.length
-      ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ 24 Stunden nötig).</p>`
+      ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ ${FC_GAP_H} Stunden Abstand nötig).</p>`
       : "") +
     `<p class="muted" style="font-size:11px">Ausgangspunkt: Datenstand vom ${fdt(fc.base)}.</p>`;
   $("fcRows").innerHTML = fc.res
@@ -327,7 +330,7 @@ function renderForecast(p) {
           return `<tr><td>${new Date(v.from).toLocaleDateString("de-DE")} – ${new Date(v.to).toLocaleDateString("de-DE")}</td><td>${v.days.toFixed(1).replace(".", ",")}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>Automatisch</option><option value="include"${o === "include" ? " selected" : ""}>Immer mitrechnen</option><option value="exclude"${o === "exclude" ? " selected" : ""}>Nicht mitrechnen</option></select></td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit 24 Stunden Abstand.</td></tr>';
+    : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit ' + FC_GAP_H + ' Stunden Abstand.</td></tr>';
   $("fcIntervals")
     .querySelectorAll("[data-ov]")
     .forEach(

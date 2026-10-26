@@ -397,7 +397,7 @@ function render() {
         " (" +
         inc.days.toFixed(1).replace(".", ",") +
         " Tage)." +
-        (inc.days < 1 ? " Weniger als 24 Stunden – deshalb keine Tages- oder Wochenraten." : "") +
+        (inc.days < FC_GAP_DAYS ? " Weniger als " + FC_GAP_H + " Stunden – deshalb keine Tages- oder Wochenraten." : "") +
         " Zeitpunkt = Importzeit; bitte direkt nach dem Synchronisieren in Spock's Club importieren."
       : inc.points === 1
         ? "Ein Messpunkt mit Ressourcen ist vorhanden. Ab dem zweiten Import von „Total resources“ wird das Einkommen berechnet."

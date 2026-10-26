@@ -60,7 +60,7 @@ function setupSteps() {
       doneTxt: "Fertigstellungsdatum wird berechnet",
       txt: !active
         ? "Kommt, sobald ein Plan aktiv ist und genug Exporte vorliegen."
-        : "Noch " + missN + " Abschnitt" + (missN === 1 ? "" : "e") + ": an verschiedenen Tagen exportieren (je mindestens 24 Stunden Abstand).",
+        : "Noch " + missN + " Abschnitt" + (missN === 1 ? "" : "e") + ": an verschiedenen Tagen exportieren (je mindestens 20 Stunden Abstand).",
     },
   ];
 }
@@ -151,7 +151,7 @@ const TERMS = {
   qualitaet:
     "<b>Prognose-Qualität</b> sagt, wie belastbar das Datum ist. Gezählt werden die Abschnitte der letzten 6 Wochen. Vorläufig: unter 6 Abschnitten oder 14 Tagen. Brauchbar: ab 6 Abschnitten über 14 Tage. Stabil: ab 10 Abschnitten über 28 Tage.",
   abschnitt:
-    "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 24 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
+    "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 20 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
   snapshot:
     "<b>Snapshot</b> ist ein eingelesener Spock's-Export: dein Ressourcenstand und deine Gebäudestufen zu einem Zeitpunkt. Aus mehreren Snapshots berechnet der Planner dein Einkommen.",
   hauptplan:

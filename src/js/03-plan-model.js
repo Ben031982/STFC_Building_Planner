@@ -212,7 +212,7 @@ function planIncome(p) {
         built = ra.cost - rb.cost;
       if (built < 0) return { name: k, dStock, built, costUp: true };
       const inc = dStock + built;
-      return { name: k, dStock, built, inc, day: days >= 1 ? inc / days : null };
+      return { name: k, dStock, built, inc, day: days >= FC_GAP_DAYS ? inc / days : null };
     }),
   };
 }

@@ -145,7 +145,7 @@ function renderWif() {
     );
   if (B.d == null && B.missing)
     notes.push(
-      "Für eine Prognose fehlen noch Abschnitte (mindestens " + FC_MIN + " mit je 24 Stunden Abstand).",
+      "Für eine Prognose fehlen noch Abschnitte (mindestens " + FC_MIN + " mit je " + FC_GAP_H + " Stunden Abstand).",
     );
   if (w.rows.some((x) => x.miss > 0 && !x.amt && (inp.now || inp.week)))
     notes.push("Materialien ohne Packinhalt profitieren nicht von Packs.");
