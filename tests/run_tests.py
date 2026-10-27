@@ -1574,6 +1574,40 @@ def schiff_ohne_schiffswerft_hat_kein_fertigdatum(b, html, tmp):
     a.done()
 
 
+@test
+def gebaeude_hinweis_gehoert_nicht_zum_plan(b, html, tmp):
+    a = App(b, html, tmp)
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()
+    base = json.loads(pathlib.Path(files[-1]).read_text(encoding="utf-8"))
+
+    def later_export(hours, blds):
+        a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=hours, minutes=5)).isoformat())
+        d = dict(base, buildings=blds, resources=[dict(r, amount=r["amount"] + 500 * hours) for r in base["resources"]])
+        t = NOW + dt.timedelta(hours=hours)
+        f = tmp / ("spocksclub-data-export_" + t.strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json")
+        f.write_text(json.dumps(d), encoding="utf-8")
+        single_import(a, f)
+        a.click("#nd")
+
+    later_export(1, [{"id": 0, "level": 76}, {"id": 1, "level": 74}])
+    txt = a.text("#carePanel")
+    check("1 Gebäudestufe" in txt and "falls eines davon zu diesem Plan gehört" in txt, f"Gebäude-Hinweis fehlt oder alter Text: {txt[:300]!r}")
+    btn = a.locator('#carePanel [data-care^="bldack:"]')
+    check(btn.count() == 1 and btn.text_content() == "Gehört nicht zum Plan", "Knopf „Gehört nicht zum Plan“ fehlt")
+    btn.click()
+    a.wait_for_timeout(200)
+    check("Gebäudestufe" not in a.text("#carePanel"), "Hinweis nach „Gehört nicht zum Plan“ noch da")
+    a = reopen(a, b, html, tmp)
+    a.click("#nd")
+    check("Gebäudestufe" not in a.text("#carePanel"), "Bestätigung nach erneutem Öffnen verloren")
+    later_export(3, [{"id": 0, "level": 76}, {"id": 1, "level": 75}])
+    txt = a.text("#carePanel")
+    check("1 Gebäudestufe" in txt and "letzten Bestätigung" in txt, f"Neue Stufe nach Bestätigung nicht (nur neu) gemeldet: {txt[:300]!r}")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")

@@ -84,6 +84,9 @@ function migrateState(st) {
     if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
     // ab 3.0: „startet nach“
     if (typeof p.after === "string" && p.after) q.after = p.after;
+    // ab 3.0: Gebäudestand, den Ben mit „Gehört nicht zum Plan“ bestätigt hat
+    if (p.bldAck && typeof p.bldAck.t === "string" && p.bldAck.bld && typeof p.bldAck.bld === "object")
+      q.bldAck = { t: p.bldAck.t, bld: Object.assign({}, p.bldAck.bld) };
     // ab 3.0: Schiffspläne
     if (p.type === "ship" && p.ship && typeof p.ship === "object") {
       q.type = "ship";

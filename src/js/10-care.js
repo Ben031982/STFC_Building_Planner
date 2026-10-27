@@ -64,16 +64,26 @@ function careHints() {
       const it = new Date(p.planData.importedAt).getTime();
       let base = bs[0];
       for (const b of bs) if (Math.abs(b.t - it) < Math.abs(base.t - it)) base = b;
+      // ab 3.0: „Gehört nicht zum Plan“ – Vergleich ab dem bestätigten Stand (ein neuer Plan-Import geht vor)
+      let baseT = base.t,
+        baseBld = base.snap.bld;
+      const ack = p.bldAck && new Date(p.bldAck.t).getTime();
+      if (ack && ack > baseT) {
+        baseT = ack;
+        baseBld = p.bldAck.bld;
+      }
       const last = bs[bs.length - 1];
-      if (last.t > base.t) {
-        const d = bldDiff(base.snap.bld, last.snap.bld);
+      if (last.t > baseT) {
+        const d = bldDiff(baseBld, last.snap.bld);
         if (d.lv > 0)
           out.push({
             warn: true,
             text:
               "Seit dem letzten Plan-Import (" +
               fdt(p.planData.importedAt) +
-              ") sind laut JSON " +
+              ")" +
+              (ack && ack > base.t ? " und deiner letzten Bestätigung" : "") +
+              " sind laut JSON " +
               d.lv +
               " Gebäudestufe" +
               (d.lv === 1 ? "" : "n") +
@@ -81,9 +91,11 @@ function careHints() {
               d.n +
               " Gebäude). Fortschritt und Kosten von " +
               p.name +
-              " sind dadurch nicht mehr aktuell – „Included upgrades“ und „Total resources“ neu importieren.",
+              " sind nicht mehr aktuell, falls eines davon zu diesem Plan gehört – dann „Included upgrades“ und „Total resources“ neu importieren.",
             btn: "Upgrade-Plan importieren",
             act: "ocr",
+            btn2: "Gehört nicht zum Plan",
+            act2: "bldack:" + p.id,
           });
       }
     }
@@ -166,7 +178,7 @@ function renderCareInto(lid, cid) {
     ? hs
         .map(
           (h, i) =>
-            `<div class="careItem${h.warn ? "" : " info"}"><span>${escAttr(h.text)}</span>${h.btn ? `<button class="miniBtn" data-care="${h.act}">${escAttr(h.btn)}</button>` : ""}</div>`,
+            `<div class="careItem${h.warn ? "" : " info"}"><span>${escAttr(h.text)}</span>${h.btn2 ? `<span class="careBtns"><button class="miniBtn" data-care="${h.act2}">${escAttr(h.btn2)}</button>` : ""}${h.btn ? `<button class="miniBtn" data-care="${h.act}">${escAttr(h.btn)}</button>` : ""}${h.btn2 ? "</span>" : ""}</div>`,
         )
         .join("")
     : '<div class="careOk">✓ Alles aktuell. Nichts zu pflegen.</div>';
@@ -186,6 +198,17 @@ function renderCareInto(lid, cid) {
         else if (a === "ocr") {
           openManage();
           $("openOcrBtn").click();
+        } else if (a.startsWith("bldack:")) {
+          // Gebäudestand des neuesten Exports für diesen Plan als „gehört nicht dazu“ merken
+          const q = s.plans.find((x) => x.id === a.slice(7)),
+            last = bldSnaps().at(-1);
+          if (q && last) {
+            q.bldAck = { t: new Date(last.t).toISOString(), bld: Object.assign({}, last.snap.bld) };
+            s.logs.push("Gebäudestufen als „gehört nicht zum Plan“ bestätigt: " + q.name);
+            save();
+            render();
+            toast("Hinweis ausgeblendet – er kommt wieder, sobald eine weitere Gebäudestufe dazukommt.");
+          }
         } else if (a.startsWith("ocr:")) {
           s.active = a.slice(4);
           render();

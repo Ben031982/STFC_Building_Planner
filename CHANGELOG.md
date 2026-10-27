@@ -24,6 +24,7 @@
 - In der Übersicht zeigt eine Tabelle Bestand, Vorgemerktes, Verfügbares und was fehlt; die Plankarte trägt den Hinweis „⛓ nach …“. Pläne ohne Vorgänger rechnen wie bisher jeder für sich.
 
 ### Verbesserungen
+- Datenpflege: Der Hinweis „Gebäudestufen seit dem letzten Plan-Import dazugekommen“ hat einen Knopf „Gehört nicht zum Plan“. Er blendet den Hinweis aus, bis wieder eine Stufe dazukommt; gemeldet werden dann nur die neuen Stufen. Der Text sagt jetzt, dass neu importieren nur nötig ist, falls eines der Gebäude zum Plan gehört (der Export nennt Gebäude nur als Nummern).
 - Fehlen für ein Material noch Abschnitte, zeigen Prognose-Karten, Zieltermin und Wochenbericht „zu wenig Daten“ statt „nicht absehbar“ (das bleibt Terminen über 100 Jahre vorbehalten). In der Materialtabelle stehen konservativ und optimistisch dann auf „–“.
 
 ### Hinweise
@@ -32,7 +33,7 @@
 
 ### Technik
 - Neue Quelldateien `25-ships.js` (Schiffe), `26-chain.js` (Startet nach), `17-ships.css`; Schiffsteil-Nummern und die Gebäudenummer der Schiffswerft (15) mit Bens Daten bestätigt.
-- 11 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach, Schiffswerft fehlt), insgesamt 59.
+- 12 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach, Schiffswerft fehlt, Gebäude-Hinweis), insgesamt 60.
 
 ## [2.1.1] – 2026-10-27
 
