@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unveröffentlicht]
+
+### Technik
+- Test „Backup und Wiederherstellen“ stabil: Er prüft jetzt den Stand, den der Planner beim Wiederherstellen in den Speicher schreibt (mitgeschnitten beim Schreiben), statt ihn nach dem Neuladen auszulesen. Das Neuladen war die wahrscheinliche Ursache der seltenen Ausfälle (etwa jeder achte Lauf): Headless-Chromium verliert dabei bei file://-Seiten gelegentlich den localStorage, wie schon bei einem früheren Test belegt. Im echten Browser tritt das nicht auf. Zusätzlich prüft der Test, dass nach dem Wiederherstellen nichts den Speicher noch einmal überschreibt.
+
 ## [3.2.0] – 2026-10-27
 
 ### Neu

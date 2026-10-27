@@ -243,14 +243,31 @@ def backup_und_wiederherstellen(b, html, tmp):
     a.click("#ni")
     a.set_input_files("#restoreFile", str(f))
     a.wait_for_selector("#restoreModal.on", timeout=5000)
-    with a.p.expect_navigation(timeout=5000):  # die Seite lädt nach dem Wiederherstellen neu
+    # Der Planner schreibt das Backup in den Speicher, schließt den Dialog und lädt 0,7 s später neu.
+    # Geprüft wird der geschriebene Stand direkt vor dem Neuladen: Headless-Chromium verliert beim Neuladen
+    # einer file://-Seite gelegentlich den localStorage (Ursache des früher wackeligen Tests, im echten Browser nicht).
+    # Jeden Schreibvorgang auf den Planner-Speicher mitschneiden – unabhängig davon, wann neu geladen wird.
+    writes = []
+    a.p.expose_function("__captureStore", lambda v: writes.append(v))
+    a.js("""()=>{const o=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){
+      if(this===localStorage&&k==='bens-stfc')window.__captureStore(String(v));return o.call(this,k,v)}}""")
+    with a.p.expect_navigation(timeout=15000):  # die Seite lädt nach dem Wiederherstellen neu
         a.click("#restoreOk")
-    a.wait_for_load_state()
-    after = a.stored()
+    a.wait_for_timeout(300)
+    after = json.loads(writes[-1]) if writes else None
+    check(after is not None, "Wiederherstellen hat nichts in den Speicher geschrieben")
+    check(str(after["logs"][-1]).startswith("Backup wiederhergestellt"), "Nach dem Wiederherstellen wurde der Speicher noch einmal überschrieben")
     check(len(after["plans"]) == len(before["plans"]) == 1, "Plan nach Wiederherstellen nicht da")
     check(len(after["snapshots"]) == len(before["snapshots"]), "Snapshots nach Wiederherstellen unvollständig")
+    # Neu öffnen mit dem geschriebenen Stand (wie die Datei erneut öffnen)
+    a = _reopen_with(a, b, html, tmp, after)
     check(a.js("()=>calcPlanStatus(s.plans[0])") == "active", "Plan nach Wiederherstellen nicht aktiv")
     a.done()
+
+
+def _reopen_with(a, b, html, tmp, state):
+    a.done()
+    return App(b, html, tmp, state=state)
 
 
 @test
