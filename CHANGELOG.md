@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.1.0] – in Arbeit
+
+### Geändert
+- **Ketten nur noch für Schiffe:** Statt „Startet nach“ mit beliebigen Plänen hat ein Schiff jetzt das Feld „Schiffswerft-Plan“. Zur Wahl stehen nur Pläne, die die nötige Schiffswerft-Stufe erreichen, oder keiner. Reicht deine Schiffswerft schon, erscheint das Feld nicht. Gebäudepläne haben kein Vorgänger-Feld mehr – verkettete Gebäudepläne zählten gemeinsame Vorstufen doppelt. Bestehende Ketten, die nicht mehr erlaubt sind, löst der Planner beim Öffnen auf.
+
+### Neu
+- **Ziel erreicht:** Unter „Plandaten verwalten“ schließt „Ziel erreicht – Plan abschließen“ einen Plan nach einer Rückfrage ab. Er verschwindet aus den Zielplänen, unter „Ereignisse der Woche“ im Wochenbericht steht „Ziel erreicht“ mit „geplant seit“ und letzter Prognose. War es der Hauptplan, rückt der nächste nach. Snapshots und Einkommen bleiben erhalten.
+
+### Technik
+- Tests: Schiff → Schiffswerft-Plan, Auflösen alter Gebäudeketten, Ziel erreicht (insgesamt 62).
+
 ## [3.0.0] – 2026-10-27
 
 ### Neue Funktionen: Schiffe

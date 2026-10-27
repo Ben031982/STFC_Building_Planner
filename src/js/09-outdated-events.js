@@ -61,13 +61,14 @@ function sharedPlans(p, x) {
     .map((q) => q.name);
 }
 const CARE_DAYS = 3,
-  EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff" },
+  EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff", goal: "#5bd2a0" },
   EV_LAB = {
     plan: "Plan-Import",
     pack: "Sprung: Pack/Ausgleich",
     bau: "Sprung: Bau",
     bld: "Gebäude",
     manual: "Eigenes Ereignis",
+    goal: "Ziel erreicht",
   };
 function activePlan() {
   return s.plans.find((x) => x.id === s.active) || s.plans[0];
@@ -120,6 +121,19 @@ function manualEvents() {
     id: e.id,
   }));
 }
+// ab 3.1: abgeschlossene Ziele („Ziel erreicht“), unabhängig vom gewählten Plan
+function goalEvents() {
+  const d = (x) => new Date(x).toLocaleDateString("de-DE");
+  return (Array.isArray(s.goals) ? s.goals : []).map((g) => ({
+    t: new Date(g.at).getTime(),
+    type: "goal",
+    text:
+      g.name +
+      " abgeschlossen" +
+      (g.since ? " – geplant seit " + d(g.since) : "") +
+      (g.eta ? (g.since ? ", " : " – ") + "letzte Prognose " + d(g.eta) : ""),
+  }));
+}
 function jumpEvents(p, mats) {
   const by = {};
   if (!p || !p.hasPlanData) return [];
@@ -143,7 +157,7 @@ function allEvents(p) {
     (m) => !isLatinumMat(m),
   );
   return planImportEvents(p)
-    .concat(jumpEvents(p, mats), bldEvents(), manualEvents())
+    .concat(jumpEvents(p, mats), bldEvents(), manualEvents(), goalEvents())
     .filter((e) => Number.isFinite(e.t))
     .sort((a, b) => b.t - a.t);
 }

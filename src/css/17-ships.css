@@ -102,6 +102,10 @@
   color: #9fd3ea;
 }
 #draftBuildingBox[hidden],
+#draftAfterLab[hidden],
+#draftAfterHint[hidden],
+#editAfterLab[hidden],
+#editAfterHint[hidden],
 #draftShipBox[hidden],
 #draftYardLab[hidden],
 .impStepBtn[hidden] {
@@ -172,4 +176,18 @@
   background: rgba(244, 165, 58, 0.1);
   border: 1px solid rgba(244, 165, 58, 0.35);
   color: #ffd993;
+}
+
+/* Ziel erreicht (ab 3.1) */
+.completeCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.btn.completeBtn {
+  background: #10291f;
+  border-color: #2f7a57;
+  color: #5bd2a0;
+  white-space: nowrap;
 }

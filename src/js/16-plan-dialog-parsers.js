@@ -27,11 +27,9 @@ $("saveDraft").onclick = () => {
     return;
   }
   let id = "plan-" + Date.now();
-  const after = $("draftAfter").value;
   s.plans.push({
     id,
     name,
-    ...(after ? { after } : {}),
     kind: "auto",
     art: $("draftArt").value || "auto",
     start,
@@ -155,10 +153,11 @@ $("savePlanData").onclick = () => {
   }
   p.name = newName;
   p.kind = newKind;
-  // ab 3.0: „startet nach“ (keine neue Bestätigung nötig)
+  // ab 3.1: Schiffswerft-Plan nur bei Schiffen (keine neue Bestätigung nötig)
   {
-    const af = $("editAfter").value;
-    if ((af || "") !== (p.after || "")) s.logs.push("Startet nach: " + p.name + " → " + (af ? planById(af).name : "kein Vorgänger"));
+    const af = isShip(p) ? $("editAfter").value : "";
+    if ((af || "") !== (p.after || ""))
+      s.logs.push("Schiffswerft-Plan: " + p.name + " → " + (af ? planById(af).name : "keiner"));
     if (af) p.after = af;
     else delete p.after;
   }
@@ -213,6 +212,47 @@ $("deletePlanBtn").onclick = () => {
   s.logs.push("Zielplan gelöscht: " + p.name);
   $("planDataModal").classList.remove("on");
   save();
+};
+// ab 3.1: „Ziel erreicht“ – Plan abschließen (entfernen + Eintrag im Wochenbericht)
+function planSince(p) {
+  const h = ((p.planData || {}).history || [])[0],
+    m = /^plan-(\d{12,})$/.exec(p.id || "");
+  return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
+}
+$("completePlanBtn").onclick = () => {
+  const p = s.plans.find((x) => x.id === managingPlanId);
+  if (!p) return;
+  const fc = p.hasPlanData ? planForecast(p) : null,
+    o = fc && fc.overall,
+    eta = o && o.real != null && !shipYardBlock(p) ? new Date(fc.base + o.real * 864e5).toISOString() : null,
+    since = planSince(p),
+    d = (x) => new Date(x).toLocaleDateString("de-DE");
+  if (
+    !confirm(
+      "„" +
+        p.name +
+        "“ abschließen?\n\nDer Plan wird aus den Zielplänen entfernt. Im Wochenbericht steht danach:\nZiel erreicht: " +
+        p.name +
+        " – am " +
+        d(Date.now()) +
+        (since ? " · geplant seit " + d(since) : "") +
+        (eta ? " · letzte Prognose " + d(eta) : "") +
+        "\n\nSnapshots und Einkommen bleiben erhalten. Rückgängig machen geht nur über ein Backup.",
+    )
+  )
+    return;
+  s.goals = Array.isArray(s.goals) ? s.goals : [];
+  s.goals.push({ id: "goal-" + Date.now(), at: new Date().toISOString(), name: p.name, since, eta });
+  const wasMain = !!p.isMain;
+  s.plans = s.plans.filter((x) => x.id !== p.id);
+  for (const q of s.plans) if (q.after === p.id) delete q.after;
+  if (wasMain && s.plans.length) s.plans.forEach((q, i) => (q.isMain = i === 0));
+  if (s.fcLog) delete s.fcLog[p.id];
+  s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
+  s.logs.push("Ziel erreicht: " + p.name);
+  $("planDataModal").classList.remove("on");
+  save();
+  toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
 };
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();

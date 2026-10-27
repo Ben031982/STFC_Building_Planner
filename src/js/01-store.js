@@ -149,8 +149,12 @@ function migrateState(st) {
     }
     st.plans.forEach((p, i) => (p.isMain = i === 0));
   }
-  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen
-  for (const p of st.plans) if (p.after && !st.plans.some((q) => q.id === p.after && q !== p)) delete p.after;
+  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen; ab 3.1 nur noch Schiff → passender Schiffswerft-Plan
+  for (const p of st.plans) {
+    if (!p.after) continue;
+    const q = st.plans.find((x) => x.id === p.after && x !== p);
+    if (!q || p.type !== "ship" || !p.ship || !isShipyardPlan(q, +p.ship.yard)) delete p.after;
+  }
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;

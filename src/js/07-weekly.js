@@ -103,7 +103,7 @@ function weekData(p, off) {
   const L = (s.fcLog && p && s.fcLog[p.id]) || [],
     fcEnd = [...L].reverse().find((e) => e.d <= dayKey(end - 1) && e.d >= dayKey(W.a)) || null,
     fcPrev = [...L].reverse().find((e) => e.d < dayKey(W.a)) || null;
-  const ev = p ? allEvents(p).filter((e) => e.t >= W.a && e.t < W.b) : [];
+  const ev = (p ? allEvents(p) : goalEvents()).filter((e) => e.t >= W.a && e.t < W.b);
   return {
     W,
     end,

@@ -443,7 +443,7 @@
         ><div id="draftYardHint" class="dYardHint" hidden></div
       ></div
       ><label class="dLab" id="draftAfterLab"
-        >Startet nach<select id="draftAfter"></select></label
+        >Schiffswerft-Plan<select id="draftAfter"></select></label
       ><div id="draftAfterHint" class="dHint"></div
       ><div class="formGrid" id="draftBuildingBox"
         ><input id="draftName" placeholder="Planname, z. B. Operations 76" /><select
@@ -480,8 +480,8 @@
         ><label
           ><input type="checkbox" id="editMainPlan" /> Als Hauptplan markieren (Kachel rückt an die erste Stelle)</label
         ></div
-      ><label class="dLab" style="max-width: 420px"
-        >Startet nach<select id="editAfter"></select></label
+      ><label class="dLab" id="editAfterLab" style="max-width: 420px"
+        >Schiffswerft-Plan<select id="editAfter"></select></label
       ><div id="editAfterHint" class="dHint"></div
       ><h3>Datenstand<span class="termInfo" tabindex="0" data-term="status">i</span></h3><div id="validationGrid" class="validationGrid"></div
       ><div id="activationLock" class="planLock"></div><h3>Importquellen</h3
@@ -502,6 +502,12 @@
           ></label
         ></div
       ><p class="muted">Ändern sich Ziel oder Levelspanne, wird die Bestätigung automatisch zurückgesetzt.</p
+      ><h3>Ziel erreicht</h3
+      ><div class="checkCard completeCard"
+        ><span
+          ><b>Gebaut?</b> Dann schließe den Plan ab. Er verschwindet aus den Zielplänen, im Wochenbericht steht „Ziel
+          erreicht“. Ist es der Hauptplan, rückt der nächste Plan nach.</span
+        ><button id="completePlanBtn" class="btn completeBtn">Ziel erreicht – Plan abschließen</button></div
       ><details class="dangerZone"
         ><summary>Zielplan löschen</summary
         ><p>Der Hauptplan kann nicht gelöscht werden. Markiere bei Bedarf zuerst einen anderen Plan als Hauptplan.</p

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
-<title>Ben's G7 STFC Progress Planner v3.0.0</title>
+<title>Ben's G7 STFC Progress Planner v3.1.0</title>
 <style>
 @font-face {
   font-family: "Oxanium";
@@ -1662,7 +1662,7 @@ tr.sqAfter td {
   padding: 8px;
 }
 .footer:after {
-  content: " · Version 3.0.0";
+  content: " · Version 3.1.0";
   color: #68a6cc;
 }
 @media (max-width: 1200px) {
@@ -3317,6 +3317,10 @@ td:has(.prog) {
   color: #9fd3ea;
 }
 #draftBuildingBox[hidden],
+#draftAfterLab[hidden],
+#draftAfterHint[hidden],
+#editAfterLab[hidden],
+#editAfterHint[hidden],
 #draftShipBox[hidden],
 #draftYardLab[hidden],
 .impStepBtn[hidden] {
@@ -3387,6 +3391,20 @@ td:has(.prog) {
   background: rgba(244, 165, 58, 0.1);
   border: 1px solid rgba(244, 165, 58, 0.35);
   color: #ffd993;
+}
+
+/* Ziel erreicht (ab 3.1) */
+.completeCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.btn.completeBtn {
+  background: #10291f;
+  border-color: #2f7a57;
+  color: #5bd2a0;
+  white-space: nowrap;
 }
 
 </style>
@@ -3825,7 +3843,7 @@ td:has(.prog) {
         ><div id="draftYardHint" class="dYardHint" hidden></div
       ></div
       ><label class="dLab" id="draftAfterLab"
-        >Startet nach<select id="draftAfter"></select></label
+        >Schiffswerft-Plan<select id="draftAfter"></select></label
       ><div id="draftAfterHint" class="dHint"></div
       ><div class="formGrid" id="draftBuildingBox"
         ><input id="draftName" placeholder="Planname, z. B. Operations 76" /><select
@@ -3862,8 +3880,8 @@ td:has(.prog) {
         ><label
           ><input type="checkbox" id="editMainPlan" /> Als Hauptplan markieren (Kachel rückt an die erste Stelle)</label
         ></div
-      ><label class="dLab" style="max-width: 420px"
-        >Startet nach<select id="editAfter"></select></label
+      ><label class="dLab" id="editAfterLab" style="max-width: 420px"
+        >Schiffswerft-Plan<select id="editAfter"></select></label
       ><div id="editAfterHint" class="dHint"></div
       ><h3>Datenstand<span class="termInfo" tabindex="0" data-term="status">i</span></h3><div id="validationGrid" class="validationGrid"></div
       ><div id="activationLock" class="planLock"></div><h3>Importquellen</h3
@@ -3884,6 +3902,12 @@ td:has(.prog) {
           ></label
         ></div
       ><p class="muted">Ändern sich Ziel oder Levelspanne, wird die Bestätigung automatisch zurückgesetzt.</p
+      ><h3>Ziel erreicht</h3
+      ><div class="checkCard completeCard"
+        ><span
+          ><b>Gebaut?</b> Dann schließe den Plan ab. Er verschwindet aus den Zielplänen, im Wochenbericht steht „Ziel
+          erreicht“. Ist es der Hauptplan, rückt der nächste Plan nach.</span
+        ><button id="completePlanBtn" class="btn completeBtn">Ziel erreicht – Plan abschließen</button></div
       ><details class="dangerZone"
         ><summary>Zielplan löschen</summary
         ><p>Der Hauptplan kann nicht gelöscht werden. Markiere bei Bedarf zuerst einen anderen Plan als Hauptplan.</p
@@ -4388,8 +4412,12 @@ function migrateState(st) {
     }
     st.plans.forEach((p, i) => (p.isMain = i === 0));
   }
-  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen
-  for (const p of st.plans) if (p.after && !st.plans.some((q) => q.id === p.after && q !== p)) delete p.after;
+  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen; ab 3.1 nur noch Schiff → passender Schiffswerft-Plan
+  for (const p of st.plans) {
+    if (!p.after) continue;
+    const q = st.plans.find((x) => x.id === p.after && x !== p);
+    if (!q || p.type !== "ship" || !p.ship || !isShipyardPlan(q, +p.ship.yard)) delete p.after;
+  }
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;
@@ -5651,7 +5679,7 @@ function weekData(p, off) {
   const L = (s.fcLog && p && s.fcLog[p.id]) || [],
     fcEnd = [...L].reverse().find((e) => e.d <= dayKey(end - 1) && e.d >= dayKey(W.a)) || null,
     fcPrev = [...L].reverse().find((e) => e.d < dayKey(W.a)) || null;
-  const ev = p ? allEvents(p).filter((e) => e.t >= W.a && e.t < W.b) : [];
+  const ev = (p ? allEvents(p) : goalEvents()).filter((e) => e.t >= W.a && e.t < W.b);
   return {
     W,
     end,
@@ -6019,13 +6047,14 @@ function sharedPlans(p, x) {
     .map((q) => q.name);
 }
 const CARE_DAYS = 3,
-  EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff" },
+  EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff", goal: "#5bd2a0" },
   EV_LAB = {
     plan: "Plan-Import",
     pack: "Sprung: Pack/Ausgleich",
     bau: "Sprung: Bau",
     bld: "Gebäude",
     manual: "Eigenes Ereignis",
+    goal: "Ziel erreicht",
   };
 function activePlan() {
   return s.plans.find((x) => x.id === s.active) || s.plans[0];
@@ -6078,6 +6107,19 @@ function manualEvents() {
     id: e.id,
   }));
 }
+// ab 3.1: abgeschlossene Ziele („Ziel erreicht“), unabhängig vom gewählten Plan
+function goalEvents() {
+  const d = (x) => new Date(x).toLocaleDateString("de-DE");
+  return (Array.isArray(s.goals) ? s.goals : []).map((g) => ({
+    t: new Date(g.at).getTime(),
+    type: "goal",
+    text:
+      g.name +
+      " abgeschlossen" +
+      (g.since ? " – geplant seit " + d(g.since) : "") +
+      (g.eta ? (g.since ? ", " : " – ") + "letzte Prognose " + d(g.eta) : ""),
+  }));
+}
 function jumpEvents(p, mats) {
   const by = {};
   if (!p || !p.hasPlanData) return [];
@@ -6101,7 +6143,7 @@ function allEvents(p) {
     (m) => !isLatinumMat(m),
   );
   return planImportEvents(p)
-    .concat(jumpEvents(p, mats), bldEvents(), manualEvents())
+    .concat(jumpEvents(p, mats), bldEvents(), manualEvents(), goalEvents())
     .filter((e) => Number.isFinite(e.t))
     .sort((a, b) => b.t - a.t);
 }
@@ -6782,7 +6824,7 @@ function bkPayload(d) {
     {
       app: "Bens STFC Progress Planner",
       type: "backup",
-      version: "3.0.0",
+      version: "3.1.0",
       createdAt: d.toISOString(),
       state: JSON.parse(serializeState()),
     },
@@ -7938,11 +7980,9 @@ $("saveDraft").onclick = () => {
     return;
   }
   let id = "plan-" + Date.now();
-  const after = $("draftAfter").value;
   s.plans.push({
     id,
     name,
-    ...(after ? { after } : {}),
     kind: "auto",
     art: $("draftArt").value || "auto",
     start,
@@ -8066,10 +8106,11 @@ $("savePlanData").onclick = () => {
   }
   p.name = newName;
   p.kind = newKind;
-  // ab 3.0: „startet nach“ (keine neue Bestätigung nötig)
+  // ab 3.1: Schiffswerft-Plan nur bei Schiffen (keine neue Bestätigung nötig)
   {
-    const af = $("editAfter").value;
-    if ((af || "") !== (p.after || "")) s.logs.push("Startet nach: " + p.name + " → " + (af ? planById(af).name : "kein Vorgänger"));
+    const af = isShip(p) ? $("editAfter").value : "";
+    if ((af || "") !== (p.after || ""))
+      s.logs.push("Schiffswerft-Plan: " + p.name + " → " + (af ? planById(af).name : "keiner"));
     if (af) p.after = af;
     else delete p.after;
   }
@@ -8124,6 +8165,47 @@ $("deletePlanBtn").onclick = () => {
   s.logs.push("Zielplan gelöscht: " + p.name);
   $("planDataModal").classList.remove("on");
   save();
+};
+// ab 3.1: „Ziel erreicht“ – Plan abschließen (entfernen + Eintrag im Wochenbericht)
+function planSince(p) {
+  const h = ((p.planData || {}).history || [])[0],
+    m = /^plan-(\d{12,})$/.exec(p.id || "");
+  return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
+}
+$("completePlanBtn").onclick = () => {
+  const p = s.plans.find((x) => x.id === managingPlanId);
+  if (!p) return;
+  const fc = p.hasPlanData ? planForecast(p) : null,
+    o = fc && fc.overall,
+    eta = o && o.real != null && !shipYardBlock(p) ? new Date(fc.base + o.real * 864e5).toISOString() : null,
+    since = planSince(p),
+    d = (x) => new Date(x).toLocaleDateString("de-DE");
+  if (
+    !confirm(
+      "„" +
+        p.name +
+        "“ abschließen?\n\nDer Plan wird aus den Zielplänen entfernt. Im Wochenbericht steht danach:\nZiel erreicht: " +
+        p.name +
+        " – am " +
+        d(Date.now()) +
+        (since ? " · geplant seit " + d(since) : "") +
+        (eta ? " · letzte Prognose " + d(eta) : "") +
+        "\n\nSnapshots und Einkommen bleiben erhalten. Rückgängig machen geht nur über ein Backup.",
+    )
+  )
+    return;
+  s.goals = Array.isArray(s.goals) ? s.goals : [];
+  s.goals.push({ id: "goal-" + Date.now(), at: new Date().toISOString(), name: p.name, since, eta });
+  const wasMain = !!p.isMain;
+  s.plans = s.plans.filter((x) => x.id !== p.id);
+  for (const q of s.plans) if (q.after === p.id) delete q.after;
+  if (wasMain && s.plans.length) s.plans.forEach((q, i) => (q.isMain = i === 0));
+  if (s.fcLog) delete s.fcLog[p.id];
+  s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
+  s.logs.push("Ziel erreicht: " + p.name);
+  $("planDataModal").classList.remove("on");
+  save();
+  toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
 };
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();
@@ -10235,7 +10317,7 @@ function shipYardBlock(p) {
 function shipYardHint(b) {
   return b.pending
     ? "Ein Fertigdatum gibt es, sobald „" + b.pending.name + "“ bestätigt ist"
-    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Startet nach“ wählen";
+    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Schiffswerft-Plan“ wählen";
 }
 // „startet nach“ (ab 3.0): Ein Plan kann auf einen anderen folgen. Was die Vorgänger kosten, wird zuerst vom
 // Bestand abgezogen; „fehlt“ heißt dann: Kosten der Vorgänger + eigene Kosten − Bestand.
@@ -10245,19 +10327,17 @@ function shipYardHint(b) {
 function planById(id) {
   return s.plans.find((x) => x.id === id) || null;
 }
-// Vorgänger in Reihenfolge (direkter zuerst), ohne Kreise
-function chainAncestors(p) {
-  const out = [],
-    seen = new Set([p && p.id]);
-  let q = p && p.after ? planById(p.after) : null;
-  while (q && !seen.has(q.id)) {
-    out.push(q);
-    seen.add(q.id);
-    q = q.after ? planById(q.after) : null;
-  }
-  return out;
+// ab 3.1: Verkettung nur noch Schiff → Schiffswerft-Plan, der die nötige Stufe erreicht
+// (Gebäudeketten zählten gemeinsame Vorstufen doppelt).
+function validAfter(p) {
+  const q = p && p.after ? planById(p.after) : null;
+  return q && q !== p && isShip(p) && p.ship && isShipyardPlan(q, +p.ship.yard) ? q : null;
 }
-// Vorgemerkte Mengen je Material: Summe der Kosten aller aktiven Vorgänger
+function chainAncestors(p) {
+  const q = validAfter(p);
+  return q ? [q] : [];
+}
+// Vorgemerkte Mengen je Material: Kosten des aktiven Schiffswerft-Plans
 function chainReserved(p) {
   const anc = chainAncestors(p).filter((q) => calcPlanStatus(q) === "active");
   if (!anc.length) return null;
@@ -10266,14 +10346,14 @@ function chainReserved(p) {
     for (const [m, v] of Object.entries((q.planData || {}).resources || {})) if (isNum(v.cost)) r[m] = (r[m] || 0) + v.cost;
   return r;
 }
-// Mögliche Vorgänger für p: alle anderen Pläne, die nicht selbst (über Umwege) auf p folgen
-function afterCandidates(p) {
-  return s.plans.filter((q) => q !== p && !(p && chainAncestors(q).includes(p)));
+// Mögliche Schiffswerft-Pläne für ein Schiff, das Schiffswerft `yard` braucht
+function afterCandidates(p, yard) {
+  return Number.isFinite(yard) ? s.plans.filter((q) => q !== p && isShipyardPlan(q, yard)) : [];
 }
-function afterOptionsHtml(p, sel, suggest) {
+function afterOptionsHtml(p, sel, suggest, yard) {
   return (
-    '<option value="">– kein Vorgänger –</option>' +
-    afterCandidates(p)
+    '<option value="">– keiner –</option>' +
+    afterCandidates(p, yard)
       .map(
         (q) =>
           `<option value="${escAttr(q.id)}"${q.id === sel ? " selected" : ""}>${escAttr(q.name)}${q.id === suggest ? " (vorgeschlagen)" : ""}${calcPlanStatus(q) === "active" ? "" : " · noch nicht aktiv"}</option>`,
@@ -10289,12 +10369,19 @@ function suggestAfterForYard(yard) {
   const hit = s.plans.filter((q) => isShipyardPlan(q, yard)).sort((a, b) => a.target - b.target)[0];
   return hit ? hit.id : null;
 }
-function afterHint(p, afterId) {
-  const q = afterId ? planById(afterId) : null;
-  if (!q) return "Ohne Vorgänger rechnet der Plan wie bisher für sich allein.";
-  return calcPlanStatus(q) === "active"
-    ? "Was „" + q.name + "“ noch braucht, wird zuerst vom Bestand abgezogen; dieser Plan rechnet mit dem Rest."
-    : "„" + q.name + "“ ist noch nicht aktiv. Sobald er bestätigt ist, wird er zuerst vom Bestand abgezogen.";
+function afterHint(p, afterId, yard) {
+  const q = afterId ? planById(afterId) : null,
+    list = Number.isFinite(yard) ? "Zur Auswahl stehen nur Pläne, die Schiffswerft " + yard + " oder höher erreichen. " : "";
+  if (!q)
+    return Number.isFinite(yard) && !afterCandidates(p, yard).length
+      ? "Es gibt noch keinen Plan für Schiffswerft " + yard + " oder höher. Ohne Schiffswerft-Plan rechnet das Schiff für sich allein."
+      : list + "Ohne Schiffswerft-Plan rechnet das Schiff für sich allein.";
+  return (
+    list +
+    (calcPlanStatus(q) === "active"
+      ? "Was „" + q.name + "“ noch braucht, wird zuerst vom Bestand abgezogen; das Schiff rechnet mit dem Rest."
+      : "„" + q.name + "“ ist noch nicht aktiv. Sobald er bestätigt ist, wird er zuerst vom Bestand abgezogen.")
+  );
 }
 
 // ---------------------------------------------------------------- Dialoge
@@ -10303,32 +10390,43 @@ function chainDraftRender() {
   if (!sel) return;
   let suggest = null,
     yard = NaN;
-  const ship = typeof draftType !== "undefined" && draftType === "ship";
+  let ship = typeof draftType !== "undefined" && draftType === "ship";
   if (ship) {
     const sh = SHIPS.find((x) => x.key === $("draftShip").value);
     yard = $("draftShip").value === "other" ? +$("draftYard").value || NaN : sh ? sh.yard : NaN;
     suggest = suggestAfterForYard(yard);
   }
-  const cur = sel.dataset.touched ? sel.value : suggest || "";
-  sel.innerHTML = afterOptionsHtml(null, cur, suggest);
+  // Gebäude haben keinen Vorgänger mehr (ab 3.1); reicht die Schiffswerft schon, braucht das Schiff keinen
+  const yl = ship && Number.isFinite(yard) ? shipyardLevel() : null;
+  if (yl && yl.level >= yard) ship = false;
+  $("draftAfterLab").hidden = $("draftAfterHint").hidden = !ship;
+  let cur = sel.dataset.touched ? sel.value : suggest || "";
+  if (!ship || !afterCandidates(null, yard).some((q) => q.id === cur)) cur = ship && !sel.dataset.touched ? suggest || "" : "";
+  sel.innerHTML = afterOptionsHtml(null, cur, suggest, yard);
   sel.value = cur;
-  $("draftAfterHint").textContent =
-    (suggest && cur === suggest ? "Vorgeschlagen, weil das Schiff eine höhere Schiffswerft braucht. " : "") + afterHint(null, cur);
+  $("draftAfterHint").textContent = !ship
+    ? ""
+    : (suggest && cur === suggest ? "Vorgeschlagen, weil das Schiff eine höhere Schiffswerft braucht. " : "") + afterHint(null, cur, yard);
   // Schiffswerft zu niedrig und kein Schiffswerft-Plan gewählt: Hinweis, dass es kein Fertigdatum gibt
   const y = ship && Number.isFinite(yard) ? shipyardLevel() : null,
     yh = $("draftYardHint");
   yh.hidden = !(y && y.level < yard && !isShipyardPlan(planById(cur), yard));
   yh.innerHTML = yh.hidden
     ? ""
-    : `Ohne Schiffswerft ${yard} zeigt der Planner kein Fertigdatum. Für ein Datum lege einen Plan <b>Schiffswerft ${yard}</b> an und wähle ihn unter „Startet nach“.`;
+    : `Ohne Schiffswerft ${yard} zeigt der Planner kein Fertigdatum. Für ein Datum lege einen Plan <b>Schiffswerft ${yard}</b> an und wähle ihn unter „Schiffswerft-Plan“.`;
 }
 function chainManageFill(p) {
   const sel = $("editAfter");
   if (!sel) return;
-  sel.innerHTML = afterOptionsHtml(p, p.after || "", isShip(p) ? suggestAfterForYard(p.ship.yard) : null);
-  sel.value = p.after && planById(p.after) ? p.after : "";
-  $("editAfterHint").textContent = afterHint(p, sel.value);
-  sel.onchange = () => ($("editAfterHint").textContent = afterHint(p, sel.value));
+  const yard = isShip(p) && p.ship ? +p.ship.yard : NaN,
+    yl = Number.isFinite(yard) ? shipyardLevel() : null,
+    ship = isShip(p) && p.ship && (!(yl && yl.level >= yard) || !!validAfter(p));
+  $("editAfterLab").hidden = $("editAfterHint").hidden = !ship;
+  const cur = validAfter(p) ? p.after : "";
+  sel.innerHTML = afterOptionsHtml(p, cur, ship ? suggestAfterForYard(yard) : null, yard);
+  sel.value = cur;
+  $("editAfterHint").textContent = ship ? afterHint(p, sel.value, yard) : "";
+  sel.onchange = () => ($("editAfterHint").textContent = afterHint(p, sel.value, yard));
 }
 $("draftAfter").onchange = () => {
   $("draftAfter").dataset.touched = "1";
@@ -10352,14 +10450,14 @@ function renderChainPanel(p) {
     rows = getPlanResources(p);
   el.hidden = false;
   el.innerHTML =
-    `<h3>⛓ ${escAttr(p.name)} startet nach ${escAttr(names)}</h3>` +
+    `<h3>⛓ ${escAttr(p.name)} nach ${escAttr(names)}</h3>` +
     (act.length < anc.length
       ? `<p class="muted" style="font-size:12px;margin:2px 0 8px">Noch nicht aktiv und deshalb noch nicht abgezogen: ${anc
           .filter((q) => !act.includes(q))
           .map((q) => escAttr(q.name))
           .join(", ")}.</p>`
       : `<p class="muted" style="font-size:12px;margin:2px 0 8px">Was ${escAttr(act.map((q) => q.name).join(" und "))} kostet, ist vorgemerkt und steht diesem Plan erst danach zur Verfügung.</p>`) +
-    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand</th><th>Vorgemerkt</th><th>Verfügbar</th><th>Kosten</th><th>Fehlt (inkl. Vorgänger)</th><th>Gedeckt ca.</th></tr></thead><tbody id="chainRows">` +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand</th><th>Vorgemerkt</th><th>Verfügbar</th><th>Kosten</th><th>Fehlt (inkl. Schiffswerft)</th><th>Gedeckt ca.</th></tr></thead><tbody id="chainRows">` +
     rows
       .filter((r) => isNum(r[2]) && r[2] > 0)
       .map((r) => {
@@ -10378,7 +10476,7 @@ function renderChainPanel(p) {
         return `<tr><td>${escAttr(m)}</td><td>${isNum(cur) ? fmt(cur) : "–"}</td><td class="${v ? "res" : ""}">${v ? fmt(v) : "–"}</td><td>${isNum(cur) ? fmt(Math.max(0, cur - v)) : "–"}</td><td>${fmt(cost)}</td><td>${miss > 0 ? fmt(miss) : "gedeckt"}</td><td>${eta}</td></tr>`;
       })
       .join("") +
-    `</tbody></table></div><div class="chartNote" style="margin-top:8px">Fehlt = Kosten der Vorgänger + Kosten dieses Plans − Bestand. Prognose, Engpass und Zieltermin dieses Plans rechnen mit diesem Wert. Ändern unter „Plandaten verwalten“ › „Startet nach“.</div>`;
+    `</tbody></table></div><div class="chartNote" style="margin-top:8px">Fehlt = Kosten des Schiffswerft-Plans + Kosten des Schiffs − Bestand. Prognose, Engpass und Zieltermin des Schiffs rechnen mit diesem Wert. Ändern unter „Plandaten verwalten“ › „Schiffswerft-Plan“.</div>`;
 }
 
 </script></body></html>

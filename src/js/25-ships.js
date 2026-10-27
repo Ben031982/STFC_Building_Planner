@@ -176,5 +176,5 @@ function shipYardBlock(p) {
 function shipYardHint(b) {
   return b.pending
     ? "Ein Fertigdatum gibt es, sobald „" + b.pending.name + "“ bestätigt ist"
-    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Startet nach“ wählen";
+    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Schiffswerft-Plan“ wählen";
 }
