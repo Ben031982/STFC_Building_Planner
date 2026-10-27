@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
-<title>Ben's G7 STFC Progress Planner v3.3.0</title>
+<title>Ben's G7 STFC Progress Planner v3.4.0</title>
 <style>
 @font-face {
   font-family: "Oxanium";
@@ -1662,7 +1662,7 @@ tr.sqAfter td {
   padding: 8px;
 }
 .footer:after {
-  content: " · Version 3.3.0";
+  content: " · Version 3.4.0";
   color: #68a6cc;
 }
 @media (max-width: 1200px) {
@@ -3418,6 +3418,27 @@ td:has(.prog) {
   color: #9fd3ea;
 }
 
+/* Ziel laut Export erreicht (ab 3.4) */
+.goalBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #5bd2a0;
+  background: rgba(91, 210, 160, 0.08);
+  color: #c9f3e0;
+  font-size: 14px;
+}
+.goalBox b {
+  color: #5bd2a0;
+}
+.goalBox[hidden] {
+  display: none;
+}
+
 </style>
 </head>
 <body
@@ -3459,6 +3480,7 @@ td:has(.prog) {
           ><div class="grid"
             ><div
               ><section class="panel hero"
+                ><div id="goalBox" class="goalBox" hidden></div
                 ><div class="heroTop"
                   ><div class="heroId"
                     ><img id="pImg" alt="" /><div class="heroIdTxt"
@@ -4244,6 +4266,120 @@ const MATERIALS = [
     { key: "admonition", name: "Admonition", faction: "Romulaner", cls: "battleship", yard: 80, rarity: "Epic" },
   ],
   SHIPYARD_BUILDING_ID = 15, // Gebäudenummer der Schiffswerft im Export (von Ben über stfc.space bestätigt)
+  // ab 3.4: Gebäudenummern im Spock's-Export → Namen wie in „Included upgrades“ (Liste von Ben, 27.10.2026,
+  // gegen seinen Export und den Plan „Operations 76“ geprüft). Unbekannte Nummern bleiben unbekannt.
+  BUILDING_NAMES = {
+    0: "Operations",
+    1: "Parsteel Generator A",
+    2: "Parsteel Generator B",
+    3: "Parsteel Generator C",
+    4: "Parsteel Warehouse",
+    5: "Tritanium Generator A",
+    6: "Tritanium Generator B",
+    7: "Tritanium Generator C",
+    8: "Tritanium Warehouse",
+    9: "Dilithium Generator A",
+    10: "Dilithium Generator B",
+    11: "Dilithium Generator C",
+    12: "Dilithium Warehouse",
+    13: "Treasury",
+    14: "Engine Technology Lab",
+    15: "Shipyard",
+    16: "Ship Hangar",
+    17: "Drydock A",
+    18: "Drydock B",
+    19: "Drydock C",
+    20: "Drydock D",
+    21: "Drydock E",
+    22: "Drydock F",
+    23: "Armada Control Center",
+    24: "Academy",
+    25: "R&D Department",
+    26: "Astronautics Studio",
+    27: "Armory",
+    28: "Defense Technologies",
+    29: "Science Lab",
+    31: "Refinery",
+    33: "Shuttle Bay",
+    34: "Defense Platform A",
+    35: "Defense Platform B",
+    36: "Defense Platform C",
+    37: "Defense Platform D",
+    38: "Defense Platform E",
+    39: "Defense Platform F",
+    40: "Exocomp Factory",
+    41: "Scrapyard",
+    43: "Foundry",
+    44: "Drydock G",
+    45: "Drydock H",
+    50: "Parsteel Generator D",
+    51: "Parsteel Generator E",
+    52: "Parsteel Generator F",
+    53: "Parsteel Generator G",
+    54: "Parsteel Generator H",
+    55: "Parsteel Vault",
+    56: "Tritanium Generator D",
+    57: "Tritanium Generator E",
+    58: "Tritanium Generator F",
+    59: "Tritanium Generator G",
+    60: "Tritanium Generator H",
+    61: "Tritanium Vault",
+    62: "Dilithium Generator D",
+    63: "Dilithium Generator E",
+    64: "Dilithium Generator F",
+    65: "Dilithium Generator G",
+    66: "Dilithium Generator H",
+    67: "Dilithium Vault",
+    69: "Holodeck",
+    70: "Subspace Relay",
+    71: "Command Center",
+    72: "Mess Hall",
+    73: "Artifact Gallery",
+    75: "Court of Q",
+    77: "The Facade",
+    78: "The War Room",
+    79: "District 56",
+    80: "The Nova Squadron",
+    81: "INDEPENDENT ARCHIVES",
+    82: "DTI Headquarters",
+    83: "Transogen Forge",
+    84: "Recon Locus",
+    85: "Outpost Control Center",
+    86: "Signal Observatory",
+    87: "Starfleet Academy: Remote Campus",
+    88: "The Warp Dive Bar",
+    89: "Continuum Consulate",
+    95: "Iconian Hub",
+    1000: "Assembly Chambers",
+    1001: "Collisonal Plasma Harvester A",
+    1002: "Collisonal Plasma Harvester B",
+    1003: "Collisonal Plasma Harvester C",
+    1004: "Collisional Plasma Vault A",
+    1005: "Collisional Plasma Vault B",
+    1006: "Magnetic Plasma Harvester A",
+    1007: "Magnetic Plasma Harvester B",
+    1008: "Magnetic Plasma Harvester C",
+    1009: "Magnetic Plasma Vault A",
+    1010: "Magnetic Plasma Vault B",
+    1011: "Active Plasma Harvester A",
+    1012: "Active Plasma Harvester B",
+    1013: "Active Plasma Harvester C",
+    1014: "Active Plasma Vault A",
+    1015: "Active Plasma Vault B",
+    1016: "Plasma Processor",
+    1017: "Diplomatic Relations",
+    1018: "Tactical Deck",
+    1019: "Salvage Yard",
+    1020: "Command Control",
+    1021: "Shield Modulator",
+    1022: "EPS Distributor A",
+    1023: "EPS Distributor B",
+    1024: "EPS Distributor C",
+    1025: "Exographic Targeting Array A",
+    1026: "Exographic Targeting Array B",
+    1027: "Exographic Targeting Array C",
+    1028: "Tachyon Detector",
+  },
   SCHEMA = 137,
   LEGACY_KEYS = [
     "bens-stfc-v136",
@@ -4774,6 +4910,13 @@ function currentLevels(p) {
     cur[b.name.toLowerCase()] = n ? Math.max(b.start, Math.min(n.start, b.target)) : b.target;
   }
   for (const [k, n] of now) if (!(k in cur)) cur[k] = n.start;
+  // ab 3.4: bekannte Gebäude laufen mit dem neuesten Export mit (nie über das Ziel, nie zurück)
+  if (typeof exportLevel === "function")
+    for (const b of bl.buildings) {
+      const k = b.name.toLowerCase(),
+        el = exportLevel(b.name);
+      if (el != null) cur[k] = Math.max(cur[k], Math.min(el, b.target));
+    }
   return cur;
 }
 function planProgress(p) {
@@ -6146,17 +6289,59 @@ function bldDiff(a, b) {
   }
   return { lv, n };
 }
+// ab 3.4: Gebäudenummer ↔ Name (Liste in 00-assets)
+function bldName(id) {
+  return Object.prototype.hasOwnProperty.call(BUILDING_NAMES, id) ? BUILDING_NAMES[id] : null;
+}
+function bldIdOf(name) {
+  const n = String(name || "").toLowerCase();
+  return Object.keys(BUILDING_NAMES).find((k) => BUILDING_NAMES[k].toLowerCase() === n) || null;
+}
+// Stufe eines Gebäudes (nach Name) in einem Export-Gebäudestand, sonst null
+function bldLevelIn(bld, name) {
+  const id = bldIdOf(name),
+    v = id != null && bld ? bld[id] : undefined;
+  return v !== undefined && v !== null && Number.isFinite(+v) ? +v : null;
+}
+// Stufe im neuesten Export mit Gebäudedaten
+function exportLevel(name) {
+  const ls = bldSnaps().at(-1);
+  return ls ? bldLevelIn(ls.snap.bld, name) : null;
+}
+// gestiegene Gebäude zwischen zwei Ständen, bekannte mit Namen
+function bldChanges(a, b) {
+  const out = [];
+  for (const k of Object.keys(b || {})) {
+    const from = a && a[k] != null ? +a[k] : null,
+      to = +b[k];
+    if (from != null && to > from) out.push({ id: k, name: bldName(k), from, to });
+  }
+  return out;
+}
+function bldChangeText(ch) {
+  const known = ch.filter((c) => c.name),
+    unk = ch.filter((c) => !c.name);
+  return known
+    .map((c) => c.name + " " + c.from + " → " + c.to)
+    .concat(unk.length ? ["unbekanntes Gebäude Nr. " + unk.map((c) => c.id).join(", ")] : [])
+    .join(", ");
+}
+// ab 3.4: Gebäudeziel laut Export erreicht? (Schiffe: nicht erkennbar)
+function goalByExport(p) {
+  if (!p || isShip(p) || !p.hasPlanData) return null;
+  const t = (p.planData || {}).target,
+    name = t && t.building,
+    ls = bldSnaps().at(-1);
+  if (!name || !ls) return null;
+  const l = bldLevelIn(ls.snap.bld, name);
+  return l != null && l >= +p.target ? { name, level: l, at: ls.t } : null;
+}
 function bldEvents() {
   const bs = bldSnaps(),
     out = [];
   for (let i = 1; i < bs.length; i++) {
-    const d = bldDiff(bs[i - 1].snap.bld, bs[i].snap.bld);
-    if (d.lv > 0)
-      out.push({
-        t: bs[i].t,
-        type: "bld",
-        text: "+" + d.lv + " Gebäudestufe" + (d.lv === 1 ? "" : "n") + " (" + d.n + " Gebäude) laut JSON",
-      });
+    const ch = bldChanges(bs[i - 1].snap.bld, bs[i].snap.bld);
+    if (ch.length) out.push({ t: bs[i].t, type: "bld", text: bldChangeText(ch) + " (laut JSON)" });
   }
   return out;
 }
@@ -6332,12 +6517,38 @@ function careHints() {
     if (isOutdated(q))
       out.push({ warn: true, text: outdatedText(q), btn: "Upgrade-Plan importieren", act: "ocr:" + q.id });
   if (p && !isShip(p) && p.hasPlanData && p.planData && p.planData.importedAt) {
-    const bs = bldSnaps();
+    const bs = bldSnaps(),
+      last = bs[bs.length - 1];
+    // ab 3.4: bekannte Gebäude beim Namen – Hinweis nur, wenn ein Gebäude dieses Plans gestiegen ist
+    if (last) {
+      const ch = (p.planData.requiredBuildings || [])
+        .map((b) => {
+          const l = bldLevelIn(last.snap.bld, b.name);
+          return l != null && l > +b.start && +b.start < +b.target ? { name: b.name, from: +b.start, to: l } : null;
+        })
+        .filter(Boolean);
+      if (ch.length)
+        out.push({
+          warn: true,
+          text:
+            "Seit dem letzten Plan-Import (" +
+            fdt(p.planData.importedAt) +
+            ") ist laut JSON gestiegen: " +
+            ch.map((c) => c.name + " " + c.from + " → " + c.to).join(", ") +
+            ". " +
+            (ch.length === 1 ? "Das Gebäude gehört" : "Die Gebäude gehören") +
+            " zu " +
+            p.name +
+            " – die Kosten sind dadurch nicht mehr aktuell. „Included upgrades“ und „Total resources“ neu importieren.",
+          btn: "Upgrade-Plan importieren",
+          act: "ocr",
+        });
+    }
+    // Gebäude, deren Nummer der Planner nicht kennt: wie bisher zählen, mit „Gehört nicht zum Plan“
     if (bs.length >= 2) {
       const it = new Date(p.planData.importedAt).getTime();
       let base = bs[0];
       for (const b of bs) if (Math.abs(b.t - it) < Math.abs(base.t - it)) base = b;
-      // ab 3.0: „Gehört nicht zum Plan“ – Vergleich ab dem bestätigten Stand (ein neuer Plan-Import geht vor)
       let baseT = base.t,
         baseBld = base.snap.bld;
       const ack = p.bldAck && new Date(p.bldAck.t).getTime();
@@ -6345,10 +6556,16 @@ function careHints() {
         baseT = ack;
         baseBld = p.bldAck.bld;
       }
-      const last = bs[bs.length - 1];
       if (last.t > baseT) {
-        const d = bldDiff(baseBld, last.snap.bld);
-        if (d.lv > 0)
+        // Export für Export vergleichen, damit auch Nummern zählen, die erst nach dem Plan-Import auftauchen
+        let prev = Object.assign({}, baseBld);
+        const ids = new Set();
+        for (const x of bs.filter((y) => y.t > baseT)) {
+          for (const c of bldChanges(prev, x.snap.bld)) if (!c.name) ids.add(c.id);
+          prev = Object.assign(prev, x.snap.bld);
+        }
+        const unk = [...ids].map((id) => ({ id }));
+        if (unk.length)
           out.push({
             warn: true,
             text:
@@ -6356,15 +6573,11 @@ function careHints() {
               fdt(p.planData.importedAt) +
               ")" +
               (ack && ack > base.t ? " und deiner letzten Bestätigung" : "") +
-              " sind laut JSON " +
-              d.lv +
-              " Gebäudestufe" +
-              (d.lv === 1 ? "" : "n") +
-              " dazugekommen (" +
-              d.n +
-              " Gebäude). Fortschritt und Kosten von " +
+              " ist laut JSON ein Gebäude gestiegen, das der Planner nicht kennt (Nr. " +
+              unk.map((c) => c.id).join(", ") +
+              "). Gehört es zu " +
               p.name +
-              " sind nicht mehr aktuell, falls eines davon zu diesem Plan gehört – dann „Included upgrades“ und „Total resources“ neu importieren.",
+              ", sind die Kosten nicht mehr aktuell – dann „Included upgrades“ und „Total resources“ neu importieren.",
             btn: "Upgrade-Plan importieren",
             act: "ocr",
             btn2: "Gehört nicht zum Plan",
@@ -6919,7 +7132,7 @@ function bkPayload(d) {
     {
       app: "Bens STFC Progress Planner",
       type: "backup",
-      version: "3.3.0",
+      version: "3.4.0",
       createdAt: d.toISOString(),
       state: JSON.parse(serializeState()),
     },
@@ -7721,6 +7934,16 @@ function render() {
     : "Noch kein Snapshot importiert.";
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
+  // ab 3.4: grüner Kasten, wenn der Export das Gebäudeziel zeigt
+  {
+    const gb = goalByExport(p),
+      el = $("goalBox");
+    el.hidden = !gb;
+    el.innerHTML = gb
+      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString("de-DE")} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
+      : "";
+    if (gb) $("goalBoxBtn").onclick = () => completePlan(p);
+  }
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
   if (typeof renderChainPanel === "function") renderChainPanel(p);
@@ -8271,8 +8494,8 @@ function planSince(p) {
     m = /^plan-(\d{12,})$/.exec(p.id || "");
   return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
 }
-$("completePlanBtn").onclick = () => {
-  const p = s.plans.find((x) => x.id === managingPlanId);
+$("completePlanBtn").onclick = () => completePlan(s.plans.find((x) => x.id === managingPlanId));
+function completePlan(p) {
   if (!p) return;
   const fc = p.hasPlanData ? planForecast(p) : null,
     o = fc && fc.overall,
@@ -8305,7 +8528,7 @@ $("completePlanBtn").onclick = () => {
   $("planDataModal").classList.remove("on");
   save();
   toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
-};
+}
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();
 };

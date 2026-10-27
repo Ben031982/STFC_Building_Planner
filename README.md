@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-3.3.0-46C2EE?style=flat-square" alt="Version 3.3.0">
+  <img src="https://img.shields.io/badge/Version-3.4.0-46C2EE?style=flat-square" alt="Version 3.4.0">
   <img src="https://img.shields.io/badge/l%C3%A4uft-offline%20im%20Browser-5BD2A0?style=flat-square" alt="läuft offline im Browser">
   <img src="https://img.shields.io/badge/Browser-Chrome%20%7C%20Edge-F4A53A?style=flat-square" alt="Chrome oder Edge">
   <img src="https://img.shields.io/badge/Sprache-Deutsch-93A7B9?style=flat-square" alt="Deutsch">
@@ -16,6 +16,12 @@ Der Planner ist **eine einzige HTML-Datei**. Kein Server, keine Anmeldung, kein 
 <p align="center">
   <img src="docs/images/overview.jpg" alt="Übersicht des Planners" width="100%">
 </p>
+
+## Neu in Version 3.4
+
+- **Gebäude beim Namen:** Hinweise und Ereignisse nennen das Gebäude, der Datenpflege-Hinweis kommt nur noch für Gebäude deiner Pläne.
+- **Ziel erreicht laut Export:** grüner Kasten mit „Plan abschließen“, sobald der Export das Zielgebäude auf der Zielstufe zeigt.
+- **Fortschritt aus dem Export:** „N von M Stufen“ läuft mit jedem Export mit.
 
 ## Neu in Version 3.3
 
@@ -105,7 +111,7 @@ Deine Daten aus früheren Versionen übernimmt 3.0 automatisch. Alle Änderungen
 ## Schnellstart
 
 1. **Spock's Club einrichten** – Konto auf [next.spocks.club](https://next.spocks.club) anlegen und dein Spielkonto synchronisieren: am PC über den [STFC Community Mod](https://github.com/netniv/stfc-mod/releases) (Sync-Token unter *Syncing › Community Mod*) oder mit der Spock's-Club-App.
-2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v3.3.0.html`](Bens_G7_STFC_Progress_Planner_v3.3.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
+2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v3.4.0.html`](Bens_G7_STFC_Progress_Planner_v3.4.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
 3. **Account-Snapshot einlesen** – in Spock's Club unter *Syncing › Export Data* mindestens *Buildings* und *Resources* als **JSON** herunterladen und im Planner mit **„Neue Exporte einlesen“** übernehmen.
 4. **Zielplan anlegen** – im Spock's-Upgrade-Planer genau **ein** Ziel anlegen, die drei Texte *Included upgrades*, *Total resources* und *Item costs & efficiencies* kopieren und im Planner unter **„Plandaten verwalten › Upgrade-Plan importieren“** einfügen. Prüfen, bestätigen – fertig. Für ein Schiff wählst du beim Anlegen *Schiff* und brauchst nur *Total resources* und *Item costs & efficiencies*.
 

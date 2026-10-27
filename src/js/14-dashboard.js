@@ -436,6 +436,16 @@ function render() {
     : "Noch kein Snapshot importiert.";
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
+  // ab 3.4: grüner Kasten, wenn der Export das Gebäudeziel zeigt
+  {
+    const gb = goalByExport(p),
+      el = $("goalBox");
+    el.hidden = !gb;
+    el.innerHTML = gb
+      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString("de-DE")} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
+      : "";
+    if (gb) $("goalBoxBtn").onclick = () => completePlan(p);
+  }
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
   if (typeof renderChainPanel === "function") renderChainPanel(p);

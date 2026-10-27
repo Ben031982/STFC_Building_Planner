@@ -202,3 +202,24 @@
 .etaGoal a {
   color: #9fd3ea;
 }
+
+/* Ziel laut Export erreicht (ab 3.4) */
+.goalBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #5bd2a0;
+  background: rgba(91, 210, 160, 0.08);
+  color: #c9f3e0;
+  font-size: 14px;
+}
+.goalBox b {
+  color: #5bd2a0;
+}
+.goalBox[hidden] {
+  display: none;
+}

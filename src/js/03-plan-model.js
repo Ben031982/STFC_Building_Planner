@@ -107,6 +107,13 @@ function currentLevels(p) {
     cur[b.name.toLowerCase()] = n ? Math.max(b.start, Math.min(n.start, b.target)) : b.target;
   }
   for (const [k, n] of now) if (!(k in cur)) cur[k] = n.start;
+  // ab 3.4: bekannte Gebäude laufen mit dem neuesten Export mit (nie über das Ziel, nie zurück)
+  if (typeof exportLevel === "function")
+    for (const b of bl.buildings) {
+      const k = b.name.toLowerCase(),
+        el = exportLevel(b.name);
+      if (el != null) cur[k] = Math.max(cur[k], Math.min(el, b.target));
+    }
   return cur;
 }
 function planProgress(p) {

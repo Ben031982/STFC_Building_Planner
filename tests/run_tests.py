@@ -1697,20 +1697,52 @@ def gebaeude_hinweis_gehoert_nicht_zum_plan(b, html, tmp):
         single_import(a, f)
         a.click("#nd")
 
+    # ab 3.4: bekanntes Gebäude des Plans → Hinweis mit Namen, ohne „Gehört nicht zum Plan“
     later_export(1, [{"id": 0, "level": 76}, {"id": 1, "level": 74}])
     txt = a.text("#carePanel")
-    check("1 Gebäudestufe" in txt and "falls eines davon zu diesem Plan gehört" in txt, f"Gebäude-Hinweis fehlt oder alter Text: {txt[:300]!r}")
+    check("Operations 75 → 76" in txt and "gehört zu" in txt, f"Hinweis mit Gebäudenamen fehlt: {txt[:400]!r}")
+    check(a.locator('#carePanel [data-care^="bldack:"]').count() == 0, "„Gehört nicht zum Plan“ bei bekanntem Gebäude")
+    check("Operations 75 → 76" in a.js("()=>bldEvents().map(e=>e.text).join(' | ')"), "Ereignis nennt das Gebäude nicht")
+    # bekanntes Gebäude außerhalb des Plans → kein Hinweis; unbekannte Nummer → Hinweis mit Knopf
+    later_export(2, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 61}, {"id": 999, "level": 3}])
+    later_export(3, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 62}, {"id": 999, "level": 4}])
+    txt = a.text("#carePanel")
+    check("Exocomp Factory" not in txt, "Hinweis für ein Gebäude außerhalb des Plans")
+    check("Nr. 999" in txt, f"Unbekannte Nummer nicht gemeldet: {txt[:400]!r}")
     btn = a.locator('#carePanel [data-care^="bldack:"]')
     check(btn.count() == 1 and btn.text_content() == "Gehört nicht zum Plan", "Knopf „Gehört nicht zum Plan“ fehlt")
     btn.click()
     a.wait_for_timeout(200)
-    check("Gebäudestufe" not in a.text("#carePanel"), "Hinweis nach „Gehört nicht zum Plan“ noch da")
+    check("Nr. 999" not in a.text("#carePanel"), "Hinweis nach „Gehört nicht zum Plan“ noch da")
     a = reopen(a, b, html, tmp)
     a.click("#nd")
-    check("Gebäudestufe" not in a.text("#carePanel"), "Bestätigung nach erneutem Öffnen verloren")
-    later_export(3, [{"id": 0, "level": 76}, {"id": 1, "level": 75}])
-    txt = a.text("#carePanel")
-    check("1 Gebäudestufe" in txt and "letzten Bestätigung" in txt, f"Neue Stufe nach Bestätigung nicht (nur neu) gemeldet: {txt[:300]!r}")
+    check("Nr. 999" not in a.text("#carePanel"), "Bestätigung nach erneutem Öffnen verloren")
+    later_export(4, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 62}, {"id": 999, "level": 5}])
+    check("Nr. 999" in a.text("#carePanel") and "letzten Bestätigung" in a.text("#carePanel"), "Neue Stufe nach Bestätigung nicht gemeldet")
+    a.done()
+
+
+@test
+def ziel_laut_export_erreicht_und_fortschritt(b, html, tmp):
+    a = App(b, html, tmp)
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()  # Operations 75 → 76, Pflichtgebäude u. a. Parsteel Generator A 74 → 75
+    base = json.loads(pathlib.Path(files[-1]).read_text(encoding="utf-8"))
+    check(not a.is_visible("#goalBox"), "Kasten „Ziel erreicht“ ohne Grund")
+    pr0 = a.js("()=>planProgress(s.plans[0]).done")
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=2)).isoformat())
+    d = dict(base, buildings=[{"id": 0, "level": 76}, {"id": 1, "level": 75}],
+             resources=[dict(r, amount=r["amount"] + 500) for r in base["resources"]])
+    f = tmp / ("spocksclub-data-export_" + (NOW + dt.timedelta(hours=1)).strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json")
+    f.write_text(json.dumps(d), encoding="utf-8")
+    single_import(a, f)
+    a.click("#nd")
+    check(a.js("()=>planProgress(s.plans[0]).done") == pr0 + 2, "Fortschritt läuft nicht mit dem Export mit")
+    check(a.is_visible("#goalBox") and "Operations auf Stufe 76" in a.text("#goalBox"), f"Kasten „Ziel erreicht“ fehlt: {a.text('#goalBox')!r}")
+    a.click("#goalBoxBtn")
+    a.wait_for_timeout(300)
+    check(a.js("()=>s.plans.length") == 0 and a.js("()=>s.goals.length") == 1, "Abschließen aus dem Kasten funktioniert nicht")
     a.done()
 
 

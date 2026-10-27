@@ -219,8 +219,8 @@ function planSince(p) {
     m = /^plan-(\d{12,})$/.exec(p.id || "");
   return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
 }
-$("completePlanBtn").onclick = () => {
-  const p = s.plans.find((x) => x.id === managingPlanId);
+$("completePlanBtn").onclick = () => completePlan(s.plans.find((x) => x.id === managingPlanId));
+function completePlan(p) {
   if (!p) return;
   const fc = p.hasPlanData ? planForecast(p) : null,
     o = fc && fc.overall,
@@ -253,7 +253,7 @@ $("completePlanBtn").onclick = () => {
   $("planDataModal").classList.remove("on");
   save();
   toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
-};
+}
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();
 };

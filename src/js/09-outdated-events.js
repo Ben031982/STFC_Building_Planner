@@ -91,17 +91,59 @@ function bldDiff(a, b) {
   }
   return { lv, n };
 }
+// ab 3.4: Gebäudenummer ↔ Name (Liste in 00-assets)
+function bldName(id) {
+  return Object.prototype.hasOwnProperty.call(BUILDING_NAMES, id) ? BUILDING_NAMES[id] : null;
+}
+function bldIdOf(name) {
+  const n = String(name || "").toLowerCase();
+  return Object.keys(BUILDING_NAMES).find((k) => BUILDING_NAMES[k].toLowerCase() === n) || null;
+}
+// Stufe eines Gebäudes (nach Name) in einem Export-Gebäudestand, sonst null
+function bldLevelIn(bld, name) {
+  const id = bldIdOf(name),
+    v = id != null && bld ? bld[id] : undefined;
+  return v !== undefined && v !== null && Number.isFinite(+v) ? +v : null;
+}
+// Stufe im neuesten Export mit Gebäudedaten
+function exportLevel(name) {
+  const ls = bldSnaps().at(-1);
+  return ls ? bldLevelIn(ls.snap.bld, name) : null;
+}
+// gestiegene Gebäude zwischen zwei Ständen, bekannte mit Namen
+function bldChanges(a, b) {
+  const out = [];
+  for (const k of Object.keys(b || {})) {
+    const from = a && a[k] != null ? +a[k] : null,
+      to = +b[k];
+    if (from != null && to > from) out.push({ id: k, name: bldName(k), from, to });
+  }
+  return out;
+}
+function bldChangeText(ch) {
+  const known = ch.filter((c) => c.name),
+    unk = ch.filter((c) => !c.name);
+  return known
+    .map((c) => c.name + " " + c.from + " → " + c.to)
+    .concat(unk.length ? ["unbekanntes Gebäude Nr. " + unk.map((c) => c.id).join(", ")] : [])
+    .join(", ");
+}
+// ab 3.4: Gebäudeziel laut Export erreicht? (Schiffe: nicht erkennbar)
+function goalByExport(p) {
+  if (!p || isShip(p) || !p.hasPlanData) return null;
+  const t = (p.planData || {}).target,
+    name = t && t.building,
+    ls = bldSnaps().at(-1);
+  if (!name || !ls) return null;
+  const l = bldLevelIn(ls.snap.bld, name);
+  return l != null && l >= +p.target ? { name, level: l, at: ls.t } : null;
+}
 function bldEvents() {
   const bs = bldSnaps(),
     out = [];
   for (let i = 1; i < bs.length; i++) {
-    const d = bldDiff(bs[i - 1].snap.bld, bs[i].snap.bld);
-    if (d.lv > 0)
-      out.push({
-        t: bs[i].t,
-        type: "bld",
-        text: "+" + d.lv + " Gebäudestufe" + (d.lv === 1 ? "" : "n") + " (" + d.n + " Gebäude) laut JSON",
-      });
+    const ch = bldChanges(bs[i - 1].snap.bld, bs[i].snap.bld);
+    if (ch.length) out.push({ t: bs[i].t, type: "bld", text: bldChangeText(ch) + " (laut JSON)" });
   }
   return out;
 }

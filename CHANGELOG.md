@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.4.0] – in Arbeit
+
+### Neu
+- **Gebäude beim Namen:** Der Planner kennt die Gebäudenummern im Spock's-Export (Liste von Ben, gegen seine Daten geprüft). Der Datenpflege-Hinweis nennt das gestiegene Gebäude und kommt nur noch, wenn es in einem Plan steht („Shipyard 73 → 74 – gehört zu Operations 76“). „Gehört nicht zum Plan“ bleibt nur für unbekannte Nummern.
+- **Ereignisse mit Namen:** Statt „+2 Gebäudestufen“ steht dort etwa „Drydock G 65 → 66, Tritanium Generator E 56 → 57“.
+- **Ziel erreicht laut Export:** Zeigt der Export das Zielgebäude eines Gebäudeplans auf der Zielstufe, erscheint in der Übersicht ein grüner Kasten mit „Plan abschließen“ (bei Schiffen nicht möglich).
+- **Fortschritt aus dem Export:** „N von M Stufen“ und die Bau-Reihenfolge laufen mit jedem Export mit, nicht erst beim nächsten Plan-Import.
+
+### Technik
+- Tests: Gebäude-Hinweis mit Namen und unbekannten Nummern, Ziel laut Export erreicht samt Fortschritt (insgesamt 66).
+
 ## [3.3.0] – 2026-10-27
 
 ### Neu

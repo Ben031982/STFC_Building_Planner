@@ -59,12 +59,38 @@ function careHints() {
     if (isOutdated(q))
       out.push({ warn: true, text: outdatedText(q), btn: "Upgrade-Plan importieren", act: "ocr:" + q.id });
   if (p && !isShip(p) && p.hasPlanData && p.planData && p.planData.importedAt) {
-    const bs = bldSnaps();
+    const bs = bldSnaps(),
+      last = bs[bs.length - 1];
+    // ab 3.4: bekannte Gebäude beim Namen – Hinweis nur, wenn ein Gebäude dieses Plans gestiegen ist
+    if (last) {
+      const ch = (p.planData.requiredBuildings || [])
+        .map((b) => {
+          const l = bldLevelIn(last.snap.bld, b.name);
+          return l != null && l > +b.start && +b.start < +b.target ? { name: b.name, from: +b.start, to: l } : null;
+        })
+        .filter(Boolean);
+      if (ch.length)
+        out.push({
+          warn: true,
+          text:
+            "Seit dem letzten Plan-Import (" +
+            fdt(p.planData.importedAt) +
+            ") ist laut JSON gestiegen: " +
+            ch.map((c) => c.name + " " + c.from + " → " + c.to).join(", ") +
+            ". " +
+            (ch.length === 1 ? "Das Gebäude gehört" : "Die Gebäude gehören") +
+            " zu " +
+            p.name +
+            " – die Kosten sind dadurch nicht mehr aktuell. „Included upgrades“ und „Total resources“ neu importieren.",
+          btn: "Upgrade-Plan importieren",
+          act: "ocr",
+        });
+    }
+    // Gebäude, deren Nummer der Planner nicht kennt: wie bisher zählen, mit „Gehört nicht zum Plan“
     if (bs.length >= 2) {
       const it = new Date(p.planData.importedAt).getTime();
       let base = bs[0];
       for (const b of bs) if (Math.abs(b.t - it) < Math.abs(base.t - it)) base = b;
-      // ab 3.0: „Gehört nicht zum Plan“ – Vergleich ab dem bestätigten Stand (ein neuer Plan-Import geht vor)
       let baseT = base.t,
         baseBld = base.snap.bld;
       const ack = p.bldAck && new Date(p.bldAck.t).getTime();
@@ -72,10 +98,16 @@ function careHints() {
         baseT = ack;
         baseBld = p.bldAck.bld;
       }
-      const last = bs[bs.length - 1];
       if (last.t > baseT) {
-        const d = bldDiff(baseBld, last.snap.bld);
-        if (d.lv > 0)
+        // Export für Export vergleichen, damit auch Nummern zählen, die erst nach dem Plan-Import auftauchen
+        let prev = Object.assign({}, baseBld);
+        const ids = new Set();
+        for (const x of bs.filter((y) => y.t > baseT)) {
+          for (const c of bldChanges(prev, x.snap.bld)) if (!c.name) ids.add(c.id);
+          prev = Object.assign(prev, x.snap.bld);
+        }
+        const unk = [...ids].map((id) => ({ id }));
+        if (unk.length)
           out.push({
             warn: true,
             text:
@@ -83,15 +115,11 @@ function careHints() {
               fdt(p.planData.importedAt) +
               ")" +
               (ack && ack > base.t ? " und deiner letzten Bestätigung" : "") +
-              " sind laut JSON " +
-              d.lv +
-              " Gebäudestufe" +
-              (d.lv === 1 ? "" : "n") +
-              " dazugekommen (" +
-              d.n +
-              " Gebäude). Fortschritt und Kosten von " +
+              " ist laut JSON ein Gebäude gestiegen, das der Planner nicht kennt (Nr. " +
+              unk.map((c) => c.id).join(", ") +
+              "). Gehört es zu " +
               p.name +
-              " sind nicht mehr aktuell, falls eines davon zu diesem Plan gehört – dann „Included upgrades“ und „Total resources“ neu importieren.",
+              ", sind die Kosten nicht mehr aktuell – dann „Included upgrades“ und „Total resources“ neu importieren.",
             btn: "Upgrade-Plan importieren",
             act: "ocr",
             btn2: "Gehört nicht zum Plan",
