@@ -5,7 +5,7 @@ function getPlanResources(p) {
     imp = d.importedAt ? new Date(d.importedAt) : null,
     snap = latestSnapshot(),
     snapNewer = !!snap && (!imp || new Date(snapTime(snap)) > imp);
-  return MATERIALS.map((n) => {
+  return planMaterials(p).map((n) => {
     const r = res[n] || {};
     let cur = r.onHand,
       missing = r.needed,
@@ -143,7 +143,7 @@ function importOutcome(p, d) {
   const old = p.planData || {},
     bl = getBaseline(p),
     t = d.planData.target,
-    sameTarget = !!(
+    sameTarget = isShip(p) || !!(
       bl &&
       t &&
       bl.building &&
@@ -179,7 +179,7 @@ function makeHistPoint(p, kind, at, withRes, withCon) {
     };
   if (withRes && d.resources) {
     pt.resources = {};
-    for (const k of MATERIALS) {
+    for (const k of planMaterials(p)) {
       const r = d.resources[k];
       if (r && isNum(r.cost) && isNum(r.onHand))
         pt.resources[k] = { cost: r.cost, onHand: r.onHand, needed: r.needed };
@@ -206,7 +206,7 @@ function planIncome(p) {
     days,
     from: a.at,
     to: b.at,
-    rows: MATERIALS.map((k) => {
+    rows: planMaterials(p).map((k) => {
       const ra = a.resources[k],
         rb = b.resources[k];
       if (!ra || !rb) return { name: k, missing: true };

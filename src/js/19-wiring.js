@@ -106,7 +106,7 @@ $("compare").onclick = () => {
     " (" +
     Math.abs(days).toFixed(1).replace(".", ",") +
     ' Tage)</p><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Stand A</th><th>Stand B</th><th>Veränderung</th></tr></thead><tbody>' +
-    ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)]
+    trackedMats()
       .map((n) => {
         const ok = Number.isFinite(b.values[n]) && Number.isFinite(a.values[n]),
           d = ok ? b.values[n] - a.values[n] : null;

@@ -91,17 +91,20 @@ class App:
     def text(self, sel):
         return self.p.inner_text(sel)
 
-    def make_exports(self, days=(10, 8, 6, 4, 2, 0)):
-        """Erfundene Spock's-Exporte mit gleichmäßigem Einkommen erzeugen."""
-        r = self.js("()=>({ids:IDS, sigma:Object.fromEntries(Object.entries(SIGMA).map(([k,v])=>[k,v.raw]))})")
-        ids, sigma = r["ids"], r["sigma"]
+    def make_exports(self, days=(10, 8, 6, 4, 2, 0), yard=None):
+        """Erfundene Spock's-Exporte mit gleichmäßigem Einkommen erzeugen (ab 3.0 mit Schiffsteilen)."""
+        r = self.js("()=>({ids:IDS, sigma:Object.fromEntries(Object.entries(SIGMA).map(([k,v])=>[k,v.raw])),"
+                    " parts:typeof SHIP_PART_IDS!=='undefined'?SHIP_PART_IDS:{}})")
+        ids, sigma, parts = r["ids"], r["sigma"], r["parts"]
         files = []
         for i, d in enumerate(sorted(days, reverse=True)):
             t = NOW - dt.timedelta(days=d, hours=1)
             age = days[0] - d  # Tage seit dem ersten Export
             res = [{"id": v, "amount": 20000 + 1500 * age + 37 * j} for j, v in enumerate(ids.values())]
             res += [{"id": v, "amount": 400_000_000 + 60_000_000 * age} for v in sigma.values()]
-            data = {"buildings": [{"id": 0, "level": 75}, {"id": 1, "level": 74}], "resources": res}
+            res += [{"id": v, "amount": 300_000 + 4_000 * age + 11 * j} for j, v in enumerate(parts.values())]
+            blds = [{"id": 0, "level": 75}, {"id": 1, "level": 74}] + ([{"id": 15, "level": yard}] if yard else [])
+            data = {"buildings": blds, "resources": res}
             name = "spocksclub-data-export_" + t.strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json"
             f = self.tmp / name
             f.write_text(json.dumps(data), encoding="utf-8")
@@ -1264,6 +1267,178 @@ def keine_doppelten_element_ids(b, html, tmp):
     a.dispatch_event("#effText", "input")
     a.wait_for_timeout(200)
     check("%" in a.text("#ocrModal #effRows"), "Effizienzen erscheinen nicht im Import-Assistenten")
+    a.done()
+
+
+# ---------------------------------------------------------------- 3.0: Schiffe
+
+
+def new_ship_plan(a, ship="praefortis", tier_from="7", tier_to="9", name=None, build=False, cls=None, yard=None):
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", ship)
+    if cls:
+        a.click(f'#draftCls [data-cls="{cls}"]')
+    if name:
+        a.fill("#draftShipName", name)
+    if yard:
+        a.fill("#draftYard", str(yard))
+        a.dispatch_event("#draftYard", "input")
+    if build:
+        a.check("#draftBuild")
+    else:
+        a.fill("#draftTierFrom", tier_from)
+    a.fill("#draftTierTo", tier_to)
+    a.click("#saveDraft")
+    a.wait_for_timeout(200)
+
+
+@test
+def schiffsteile_kommen_aus_dem_export(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports((4, 2, 0)))
+    v = a.js("()=>latestSnapshot().values")
+    for m in ("7★ Common Explorer Parts", "7★ Rare Survey Parts", "7★ Uncommon Battleship Parts"):
+        check(isinstance(v.get(m), (int, float)), f"{m} fehlt im Snapshot")
+    # Export ohne Schiffsteile wird weiter angenommen
+    f = edited_export(a, tmp, lambda d: d.update(resources=[r for r in d["resources"] if r["id"] not in
+                      a.js("()=>Object.values(SHIP_PART_IDS)")]), "spocksclub-data-export_2026-10-25T08-45-00-000Z.json")
+    a.set_input_files("#file", [str(f)])
+    a.wait_for_selector("#modal.on", timeout=5000)
+    a.click("#confirm")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.snapshots.length") == 4, "Export ohne Schiffsteile abgelehnt")
+    a.done()
+
+
+@test
+def schiffsplan_anlegen_importieren_und_prognose(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    check(a.is_visible("#draftShipBox") and not a.is_visible("#draftBuildingBox"), "Schiffsfelder erscheinen nicht")
+    check("Voraussetzung erfüllt" in a.text("#draftReq"), f"Schiffswerft-Prüfung fehlt: {a.text('#draftReq')!r}")
+    check(a.locator("#draftShip option").count() == 11, "Schiffsliste unvollständig")
+    a.close_modals()
+    new_ship_plan(a)
+    p = a.js("()=>{const p=s.plans.at(-1);return {type:p.type,ship:p.ship,start:p.start,target:p.target,name:p.name}}")
+    check(p["type"] == "ship" and p["ship"]["cls"] == "explorer" and p["start"] == 7 and p["target"] == 9, f"Plan falsch: {p}")
+    check("Tier 7 → 9 · Forschungsschiff" in a.text("#plans"), "Plankarte ohne Tier/Klasse")
+    check("ship-explorer" in a.js("()=>ART.ship_explorer.slice(0,40)") or a.js("()=>$('pImg').src===ART.ship_explorer"),
+          "Schiffsgrafik fehlt")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    check(not a.is_visible('.impStepBtn[data-step="1"]'), "Schritt „Included upgrades“ bei Schiffen sichtbar")
+    check(a.has_class("#impPane2", "on"), "Assistent startet nicht bei den Ressourcen")
+    a.fill("#resPasteText", fixture("ship_resources.txt"))
+    a.dispatch_event("#resPasteText", "input")
+    a.click("#impNext")
+    a.fill("#effText", fixture("ship_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(150)
+    check("Unbekannte Zeile" not in a.text("#ocrModal"), "Tier-Up-Zeile als unbekannt gemeldet")
+    a.click("#applyOcr")
+    a.wait_for_timeout(300)
+    a.confirm_plan()
+    st = a.js("()=>calcPlanStatus(s.plans.at(-1))")
+    check(st == "active", f"Schiffsplan nicht aktiv: {st} {a.js('()=>JSON.stringify(planChecks(s.plans.at(-1)))')}")
+    fc = a.js("""()=>{const fc=planForecast(s.plans.at(-1));return {ms:fc.res.map(x=>[x.m,x.common,x.miss]),real:fc.overall.real}}""")
+    ms = {m: (c, miss) for m, c, miss in fc["ms"]}
+    check("7★ Rare Explorer Parts" in ms and ms["7★ Rare Explorer Parts"][1] == 10000, f"Teile fehlen in der Prognose: {list(ms)}")
+    check(ms["7★ Common Explorer Parts"][0] is False, "Common-Teile werden wie Latinum-Material behandelt")
+    check(ms["7★ Common Ore"][0] is True, "7★ Common Ore nicht mehr als Latinum-Material erkannt")
+    check(fc["real"] and fc["real"] > 0, "Keine Prognose für das Schiff")
+    a.click("#nd")
+    check("Tier 7 → 9 · Forschungsschiff" in a.text("#pLevel"), "Übersicht ohne Tier")
+    check("nicht berücksichtigt" in a.text("#buildTimeDetail"), "Bauzeit-Karte bei Schiffen falsch")
+    a.click("#navBld")
+    check("keine Bau-Reihenfolge" in a.text("#pane-bld"), "Hinweis in der Bau-Reihenfolge fehlt")
+    a.click("#navRes")
+    check("7★ Common Explorer Parts" in a.text("#effPanelRows"), "Teile fehlen im Effizienz-Panel")
+    a.click("#nw")
+    a.wait_for_timeout(150)
+    check("gelten nicht für Schiffe" in a.text("#wifNote"), "Hinweis bei Was-wäre-wenn fehlt")
+    check("nicht berechnet" in a.text("#packsDetail"), "Pack-Karte beim aktiven Schiff falsch")
+    a.click("#nwk")
+    check("7★ Rare Explorer Parts" in a.text("#wkBody"), "Schiffsteile fehlen im Wochenbericht")
+    txt = page_texts(a)
+    check(not [w for w in BAD_TEXT if w in txt], "Ungültige Werte auf den Seiten")
+    a = reopen(a, b, html, tmp)
+    check(a.js("()=>s.plans.at(-1).type") == "ship" and a.js("()=>s.plans.at(-1).ship.cls") == "explorer",
+          "Schiffsdaten nach erneutem Öffnen verloren")
+    a.done()
+
+
+@test
+def anderes_schiff_und_neubau(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", "other")
+    check(a.is_visible("#draftYardLab"), "Feld Schiffswerft fehlt bei „Anderes Schiff“")
+    a.fill("#draftYard", "76")
+    a.dispatch_event("#draftYard", "input")
+    check("noch nicht erfüllt" in a.text("#draftReq"), f"Voraussetzung nicht als offen erkannt: {a.text('#draftReq')!r}")
+    a.close_modals()
+    new_ship_plan(a, ship="other", name="Neues Schiff", build=True, tier_to="3", cls="interceptor", yard=76)
+    p = a.js("()=>{const p=s.plans.at(-1);return {ship:p.ship,start:p.start,target:p.target,name:p.name}}")
+    check(p["ship"]["key"] == "other" and p["ship"]["cls"] == "interceptor" and p["ship"]["build"] and p["start"] == 0
+          and p["target"] == 3 and p["ship"]["yard"] == 76, f"Plan falsch: {p}")
+    check("Bau → Tier 3 · Abfangjäger" in a.text("#plans"), "Neubau nicht beschriftet")
+    check("Schiffswerft 76 noch nicht erreicht" in a.text("#pDone"), "Hinweis zur Schiffswerft fehlt in der Übersicht")
+    a.done()
+
+
+@test
+def schiffe_ohne_packs_und_teile_nachtragen(b, html, tmp):
+    a = App(b, html, tmp)
+    # alte Snapshots (vor 3.0) ohne Schiffsteile; dieselben Dateien noch einmal einlesen -> Teile nachgetragen
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()
+    a.js("(c)=>{s.packs=s.packs||[];s.packs[0]=Object.assign(s.packs[0]||{name:'Stationspack',priceEUR:100},{contents:c});save()}", PACK)
+    a.js("()=>{for(const sn of s.snapshots) for(const k of Object.keys(SHIP_PART_IDS)) delete sn.values[k]; save();}")
+    check(a.js("()=>s.snapshots.filter(snapNeedsParts).length") >= 3, "Testaufbau: Teile nicht entfernt")
+    a.set_input_files("#file", files)
+    a.wait_for_timeout(600)
+    a.close_modals()
+    n = a.js("()=>s.snapshots.filter(x=>x.fileName&&x.fileName.startsWith('spocksclub')&&snapNeedsParts(x)).length")
+    check(n == 0, f"Schiffsteile nicht nachgetragen ({n} Snapshots ohne Teile)")
+    check(a.js("()=>s.snapshots.length") == len(files), "Nachtragen hat Snapshots doppelt angelegt")
+    check(a.js("()=>s.logs.at(-1)").startswith("Schiffsteile aus"), "Kein Protokolleintrag")
+    # Schiffsplan: keine Pack-Rechnung
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=3)).isoformat())
+    new_ship_plan(a)
+    a.js("()=>{s.active=s.plans.at(-1).id;render()}")
+    check(a.js("()=>packCalc(s.plans.at(-1))") is None, "Pack-Rechnung für Schiff")
+    check("nicht berechnet" in a.text("#packsDetail"), f"Pack-Karte beim Schiff falsch: {a.text('#packsDetail')!r}")
+    a.click("#navFc")
+    check("für Schiffe nicht berechnet" in a.text("#packCard"), "Pack-Bereich unter Prognose & Packs falsch")
+    # Gebäudeplan rechnet Packs weiter
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    check(a.js("()=>!!packCalc(s.plans[0])"), "Gebäudeplan rechnet keine Packs mehr")
+    a.done()
+
+
+@test
+def schiffsteile_aus_dem_exportordner_nachtragen(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports(days=(0,))[0]
+    name, data = pathlib.Path(f).name, pathlib.Path(f).read_text(encoding="utf-8")
+    single_import(a, f)
+    a.js("()=>{for(const sn of s.snapshots) for(const k of Object.keys(SHIP_PART_IDS)) delete sn.values[k]; save();}")
+    a.evaluate("""async ([name, data]) => {
+      window.showDirectoryPicker = window.showDirectoryPicker || (() => {});
+      s.exportScan = { folder: 'Downloads' };
+      expDir = { queryPermission: async () => 'granted',
+        entries: async function* () { yield [name, { kind: 'file', getFile: async () => ({ text: async () => data }) }]; } };
+      await autoScanOnOpen(); }""", [name, data])
+    a.wait_for_timeout(400)
+    check(not a.js("()=>snapNeedsParts(s.snapshots[0])"), "Schiffsteile aus dem Ordner nicht nachgetragen")
+    check("Schiffsteile aus 1 älterem Export" in a.text("#toast"), f"Meldung fehlt: {a.text('#toast')!r}")
+    check(a.js("()=>s.snapshots.length") == 1, "Snapshot doppelt angelegt")
     a.done()
 
 

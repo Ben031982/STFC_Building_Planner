@@ -54,6 +54,7 @@ function renderNextCard(p) {
     if (p.status !== "review") openImport();
   };
   $("nextSteps").innerHTML = parts
+    .filter(([k]) => !isShip(p) || !["requiredBuildings", "buildTime"].includes(k))
     .map(([k, l, sub]) => {
       const done =
         k === "confirm" ? false : k === "requiredBuildings" ? c.requiredBuildings && !c.targetMismatch : c[k];
@@ -141,7 +142,8 @@ function render() {
     s.plans
       .map(
         (x, xi) =>
-          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">Level ${x.start} → ${x.target}</span></div></div>${(() => {
+          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span></div></div>${(() => {
+            if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>Schiff</span><b></b></div>`;
             const pr = planProgress(x),
               d = pr ? pr.done : x.done,
               t = pr ? pr.total : x.total,
@@ -224,16 +226,18 @@ function render() {
   $("pStatusDot").textContent = "● " + statusLabel(p.status);
   $("pStatusDot").className = "sd-" + p.status;
   $("pImg").src = ART[artKey(p)];
-  $("pName").textContent = p.name.replace(/\s\d+$/, "");
-  $("pLevel").textContent = `Level ${p.start} → ${p.target}`;
+  $("pName").textContent = isShip(p) ? p.name : p.name.replace(/\s\d+$/, "");
+  $("pLevel").textContent = isShip(p) ? shipLabel(p) : `Level ${p.start} → ${p.target}`;
   const pr = planProgress(p);
   $("pProg").textContent = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + " %";
   $("pBar").style.width = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + "%";
   $("heroMain").style.display = p.isMain ? "" : "none";
-  $("pDone").textContent = pr
-    ? `${pr.done} von ${pr.total} Stufen` +
-      (pr.since ? " seit " + new Date(pr.since).toLocaleDateString("de-DE") : "")
-    : `${p.done} von ${p.total}`;
+  $("pDone").textContent = isShip(p)
+    ? (shipReqHtml(p.ship.yard).cls === "no" ? "Schiffswerft " + p.ship.yard + " noch nicht erreicht" : p.ship.name)
+    : pr
+      ? `${pr.done} von ${pr.total} Stufen` +
+        (pr.since ? " seit " + new Date(pr.since).toLocaleDateString("de-DE") : "")
+      : `${p.done} von ${p.total}`;
   $("bottleneckValue").textContent = bottleneck ? bottleneck.name : "Nicht berechenbar";
   $("bottleneckValue").className = bottleneck ? (bottleneck.none ? "green" : "amber") : "";
   $("bottleneckDetail").textContent = bottleneck
@@ -247,13 +251,15 @@ function render() {
     : "Keine Kostengrundlage für diesen Zielplan";
   renderBottleneckCard(p);
   const ct = p.hasPlanData ? (p.planData || {}).construction : null;
-  $("buildTimeValue").textContent = ct ? fmtDuration(ct.cost) : "Nicht berechenbar";
-  $("buildTimeDetail").textContent = ct
+  $("buildTimeValue").textContent = isShip(p) ? "–" : ct ? fmtDuration(ct.cost) : "Nicht berechenbar";
+  $("buildTimeDetail").textContent = isShip(p)
+    ? "Bei Schiffen nicht berücksichtigt"
+    : ct
     ? ct.needed > 0
       ? "Speedups fehlen: " + fmtDuration(ct.needed)
       : "Speedups ausreichend (laut Spock's Club)"
     : "Keine Bauzeitdaten vorhanden";
-  $("buildTimeDetail").className = ct ? (ct.needed > 0 ? "amber" : "green") : "muted";
+  $("buildTimeDetail").className = isShip(p) ? "muted" : ct ? (ct.needed > 0 ? "amber" : "green") : "muted";
   $("planDataNotice").textContent = p.hasPlanData
     ? ""
     : isOutdated(p)
@@ -286,7 +292,9 @@ function render() {
   $("seqReset").style.display = ((p.planData || {}).customOrder || []).length ? "" : "none";
   $("seqRows").innerHTML = seq.length
     ? seqRowsHtml(seq, 0, false, true, (x) => sharedPlans(p, x))
-    : '<tr><td colspan="4" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
+    : isShip(p)
+      ? '<tr><td colspan="4" class="muted">Schiffe haben keine Bau-Reihenfolge – hier zählt nur der Tier-Aufstieg bzw. der Bau des Schiffs.</td></tr>'
+      : '<tr><td colspan="4" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
   $("seqCount").textContent = seq.length
     ? seq.length -
       openN +
@@ -432,7 +440,10 @@ function render() {
   if (typeof renderEffPanel === "function") renderEffPanel(p);
   {
     const pc = packCalc(p);
-    if (!pc) {
+    if (isShip(p)) {
+      $("packsValue").textContent = "–";
+      $("packsDetail").textContent = "Für Schiffe nicht berechnet";
+    } else if (!pc) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent = p.hasPlanData
         ? packEmpty()
@@ -499,13 +510,14 @@ function renderSnaps() {
       '<p class="muted">Für einen Vergleich braucht es mindestens zwei Snapshots.</p>';
 }
 function renderChart() {
-  if (!$("resourceSelect").options.length) {
-    const o = ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)]
+  if ($("resourceSelect").options.length !== trackedMats().length) {
+    const keep = $("resourceSelect").value;
+    const o = trackedMats()
       .map((x) => `<option>${x}</option>`)
       .join("");
     $("resourceSelect").innerHTML = o;
     $("chartBigSelect").innerHTML = o;
-    $("resourceSelect").value = "7★ Rare Ore";
+    $("resourceSelect").value = keep && trackedMats().includes(keep) ? keep : "7★ Rare Ore";
   }
   drawChart("chartBox", 600, 224, false);
   if ($("chartModal").classList.contains("on")) {

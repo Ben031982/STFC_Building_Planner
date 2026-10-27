@@ -7,6 +7,7 @@ function openDraft() {
   $("draftName").value = "";
   $("draftStart").value = "";
   $("draftTarget").value = "";
+  if (typeof shipDraftReset === "function") shipDraftReset();
   $("newPlanModal").classList.add("on");
 }
 function closeDraft() {
@@ -15,6 +16,7 @@ function closeDraft() {
 $("newPlanBtn").onclick = openDraft;
 $("cancelDraft").onclick = closeDraft;
 $("saveDraft").onclick = () => {
+  if (typeof shipDraftSave === "function" && shipDraftSave()) return;
   let name = $("draftName").value.trim(),
     start = +$("draftStart").value,
     target = +$("draftTarget").value;
@@ -206,7 +208,11 @@ $("planDataModal").onclick = (e) => {
   if (e.target === $("planDataModal")) $("planDataModal").classList.remove("on");
 };
 let ocrState = { buildings: [], resources: {}, construction: null, efficiencies: {} };
-const OCR_MATERIALS = MATERIALS;
+// Materialien des gerade bearbeiteten Plans (ab 3.0: Schiffe mit ihren Teilen)
+function ocrMats() {
+  const p = typeof managingPlanId !== "undefined" ? s.plans.find((x) => x.id === managingPlanId) : null;
+  return planMaterials(p);
+}
 const escAttr = (s) =>
     String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -226,6 +232,10 @@ function mapResourceName(n) {
   if (k === "tritanium") return "Σ-Tritanium";
   if (k === "dilithium") return "Σ-Dilithium";
   if (k === "construction time") return "CONSTRUCTION";
+  // ab 3.0: Schiffe – Tier-Up- und Schiffsbauzeit werden bewusst nicht berücksichtigt
+  if (k === "tier up time" || k === "ship construction time") return "IGNORE";
+  const sp = k.match(/^7 (common|uncommon|rare) (battleship|interceptor|explorer|survey) parts$/);
+  if (sp) return "7★ " + sp[1][0].toUpperCase() + sp[1].slice(1) + " " + sp[2][0].toUpperCase() + sp[2].slice(1) + " Parts";
   const m = k.match(/^7 (common|uncommon|rare) refined (ore|gas|crystal)$/);
   return m
     ? "7★ " + m[1][0].toUpperCase() + m[1].slice(1) + " " + m[2][0].toUpperCase() + m[2].slice(1)
@@ -278,6 +288,7 @@ function parseResourceTable(text) {
       out.warnings.push("Unbekannte Zeile ignoriert: " + String(l).slice(0, 40));
       continue;
     }
+    if (key === "IGNORE") continue;
     const nums = {};
     let bad = false;
     for (const f of ["base", "cost", "onHand", "needed"]) {
@@ -309,7 +320,7 @@ function parseResourceTable(text) {
           ") ab. Wert aus Spock's Club wird übernommen.",
       );
   }
-  const absent = OCR_MATERIALS.filter((n) => !out.rows[n]);
+  const absent = ocrMats().filter((n) => !out.rows[n]);
   out.absent = Object.keys(out.rows).length ? absent : [];
   if (!Object.keys(out.rows).length && !out.errors.length) out.errors.push("Keine Materialzeilen erkannt.");
   return out;
@@ -431,7 +442,7 @@ function renderOcrTables() {
           renderImpSummary();
         }),
     );
-  $("ocrResources").innerHTML = OCR_MATERIALS.map((n) => {
+  $("ocrResources").innerHTML = ocrMats().map((n) => {
     let r = ocrState.resources[n] || { value: "", confidence: 0 };
     return `<tr><td>${n}${r.cost !== undefined ? `<br><span class="muted">Cost ${fx(r.cost)} − OnHand ${fx(r.onHand)}</span>` : ""}</td><td><input data-rn="${n}" value="${r.value}"></td><td><div class="confidence"><i style="width:${r.confidence}%"></i></div>${r.confidence || 0}%</td></tr>`;
   }).join("");
@@ -599,10 +610,18 @@ function parseEfficiencyTable(text) {
   for (const l of lines) {
     const c = split(l);
     const key0 = mapResourceName(dedupeDouble(c[0]));
+    if (key0 === "IGNORE") {
+      cur = "IGNORE"; // folgende Prozentzeile gehört zur Tier-Up-/Bauzeit und wird still übergangen
+      continue;
+    }
     if (key0) {
       cur = key0 === "CONSTRUCTION" ? "Σ-Construction Time" : key0;
       const pc = c.slice(1).find((x) => /%/.test(x));
       if (pc) set(cur, pc);
+      continue;
+    }
+    if (/^[\d.,\s]+%$/.test(l.trim()) && cur === "IGNORE") {
+      cur = null;
       continue;
     }
     if (/^[\d.,\s]+%$/.test(l.trim()) && cur) {
@@ -624,6 +643,11 @@ function parseEfficiencyTable(text) {
   return out;
 }
 const EFF_KEYS = EFF_ALL;
+// Effizienzen des gerade bearbeiteten Plans (ab 3.0: Schiffe ohne Bauzeit, mit Teilen)
+function ocrEffKeys() {
+  const p = s.plans.find((x) => x.id === managingPlanId);
+  return p ? planEffKeys(p) : EFF_KEYS;
+}
 function applyEffPaste() {
   const raw = $("effText").value;
   if (!raw.trim()) {
@@ -636,7 +660,7 @@ function applyEffPaste() {
     msg = [],
     n = Object.keys(r.rows).length;
   ocrState.efficiencies = r.errors.length ? {} : { ...r.rows };
-  const missing = EFF_KEYS.filter((k) => r.rows[k] === undefined);
+  const missing = ocrEffKeys().filter((k) => r.rows[k] === undefined);
   if (!r.errors.length && n) {
     msg.push("✔ " + n + " Effizienz" + (n === 1 ? "" : "en") + " erkannt.");
     if (missing.length) {
@@ -659,7 +683,7 @@ function applyEffPaste() {
   renderEffTable();
 }
 function renderEffTable() {
-  $("effRows").innerHTML = EFF_KEYS.map((k) => {
+  $("effRows").innerHTML = ocrEffKeys().map((k) => {
     const v = ocrState.efficiencies[k];
     return `<tr><td>${k}</td><td>${v === undefined ? '<span class="muted">–</span>' : fx(v) + " %"}</td></tr>`;
   }).join("");

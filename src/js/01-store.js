@@ -82,6 +82,17 @@ function migrateState(st) {
     };
     // ab 2.1: Wunschdatum für „Zieltermin prüfen“
     if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
+    // ab 3.0: Schiffspläne
+    if (p.type === "ship" && p.ship && typeof p.ship === "object") {
+      q.type = "ship";
+      q.ship = {
+        key: String(p.ship.key || "other"),
+        name: String(p.ship.name || q.name),
+        cls: ["battleship", "interceptor", "explorer", "survey"].includes(p.ship.cls) ? p.ship.cls : "explorer",
+        yard: Number.isFinite(+p.ship.yard) ? +p.ship.yard : null,
+        build: !!p.ship.build,
+      };
+    }
     if (!old) {
       q.planData = p.planData || null;
       q.confirmation = p.confirmation || null;

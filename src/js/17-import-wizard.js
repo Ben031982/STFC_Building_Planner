@@ -3,16 +3,22 @@ function openImport() {
   resetOcr();
   renderEffTable();
   $("ocrModal").classList.add("on");
-  setImpStep(1);
+  // ab 3.0: Schiffe brauchen keine „Included upgrades“ – direkt bei den Ressourcen beginnen
+  const ship = isShip(s.plans.find((x) => x.id === managingPlanId));
+  document.querySelector('.impStepBtn[data-step="1"]').hidden = ship;
+  setImpStep(ship ? 2 : 1);
   renderImpSummary();
 }
+function impMinStep() {
+  return isShip(s.plans.find((x) => x.id === managingPlanId)) ? 2 : 1;
+}
 function setImpStep(n) {
-  impStep = Math.max(1, Math.min(3, n));
+  impStep = Math.max(impMinStep(), Math.min(3, n));
   [1, 2, 3].forEach((k) => $("impPane" + k).classList.toggle("on", k === impStep));
   document
     .querySelectorAll(".impStepBtn")
     .forEach((b) => b.classList.toggle("on", +b.dataset.step === impStep));
-  $("impPrev").disabled = impStep === 1;
+  $("impPrev").disabled = impStep === impMinStep();
   $("impNext").disabled = impStep === 3;
 }
 function setChip(id, cls, txt) {
@@ -31,7 +37,10 @@ function renderImpSummary() {
   const up = $("upText").value.trim(),
     rs = $("resPasteText").value.trim(),
     ef = $("effText").value.trim();
-  if (d.blds.length) setChip("impChip1", "ok", d.blds.length + " Gebäude erkannt");
+  const ship = isShip(p),
+    mats = planMaterials(p);
+  if (ship) setChip("impChip1", "ok", "bei Schiffen nicht nötig");
+  else if (d.blds.length) setChip("impChip1", "ok", d.blds.length + " Gebäude erkannt");
   else if (up) setChip("impChip1", "err", "nicht erkannt");
   else if ((old.requiredBuildings || []).length) setChip("impChip1", "neutral", "aus letztem Import");
   else setChip("impChip1", "todo", "noch nicht eingefügt");
@@ -42,14 +51,14 @@ function renderImpSummary() {
   if (nRes)
     setChip(
       "impChip2",
-      nRes === 12 ? "ok" : "todo",
+      nRes >= mats.length ? "ok" : "todo",
       nRes - nAs + " Materialien" + (nAs ? " · " + nAs + " ohne Bedarf" : ""),
     );
   else if (rs) setChip("impChip2", "err", "nicht erkannt");
   else if (old.resources) setChip("impChip2", "neutral", "aus letztem Import");
   else setChip("impChip2", "todo", "noch nicht eingefügt");
   const nEff = Object.keys(ocrState.efficiencies).length,
-    needEff = EFF_ALL.filter((k) => {
+    needEff = planEffKeys(p).filter((k) => {
       const r = ocrState.resources[k];
       return k === "Σ-Construction Time"
         ? !(ocrState.construction && ocrState.construction.cost === 0)
@@ -69,25 +78,27 @@ function renderImpSummary() {
     st = d.empty ? calcPlanStatus(p) : calcPlanStatus(tmp),
     ck = planChecks(tmp),
     t = nd.target;
-  $("impTargetChip").textContent =
-    "Ziel: " + (t ? escAttr(t.building) + " " : "") + d.start + " → " + d.target;
-  const resN = MATERIALS.filter(
+  $("impTargetChip").textContent = ship
+    ? "Ziel: " + p.ship.name + " · " + shipLabel(p)
+    : "Ziel: " + (t ? escAttr(t.building) + " " : "") + d.start + " → " + d.target;
+  const resN = mats.filter(
       (k) => nd.resources && nd.resources[k] && Number.isFinite(nd.resources[k].cost),
     ).length,
-    effN = EFF_ALL.filter((k) => nd.efficiencies && Number.isFinite(nd.efficiencies[k])).length,
+    effN = planEffKeys(p).filter((k) => nd.efficiencies && Number.isFinite(nd.efficiencies[k])).length,
     mark = (ok, txt) => `<b style="color:${ok ? "#7aeab0" : "#ffd993"}">${txt}</b>`;
   $("impSummary").innerHTML =
-    `<span class="muted">Plan</span><br><b>${escAttr(d.name)}</b><br><span class="muted">Ziel</span><br><b>${t ? escAttr(t.building) + " " : ""}${d.start} → ${d.target}</b><br><span class="muted">Pflichtgebäude</span><br>${mark(ck.requiredBuildings, (nd.requiredBuildings || []).length + (d.blds.length ? " (neu)" : (nd.requiredBuildings || []).length ? " (bisher)" : ""))}<br><span class="muted">Ressourcen</span><br>${mark(
+    `<span class="muted">Plan</span><br><b>${escAttr(d.name)}</b><br><span class="muted">Ziel</span><br><b>${ship ? escAttr(p.ship.name + " · " + shipLabel(p)) : (t ? escAttr(t.building) + " " : "") + d.start + " → " + d.target}</b><br>${ship ? "" : `<span class="muted">Pflichtgebäude</span><br>${mark(ck.requiredBuildings, (nd.requiredBuildings || []).length + (d.blds.length ? " (neu)" : (nd.requiredBuildings || []).length ? " (bisher)" : ""))}<br>`}<span class="muted">Ressourcen</span><br>${mark(
       ck.resourceCosts,
       resN +
-        " von 12" +
+        " von " +
+        mats.length +
         (() => {
-          const a = MATERIALS.filter(
+          const a = mats.filter(
             (k) => nd.resources && nd.resources[k] && nd.resources[k].cost === 0,
           ).length;
           return a ? " (" + a + " ohne Bedarf)" : "";
         })(),
-    )}<br><span class="muted">Bauzeit</span><br>${mark(ck.buildTime, ck.buildTime ? "vorhanden" : "fehlt")}<br><span class="muted">Effizienzen</span><br>${mark(ck.efficiencies, effN + " von " + EFF_ALL.filter((k) => effNeeded(nd, k)).length + " nötigen")}<br><span class="muted">Status nach Übernahme</span><br><span class="statusBadge status-${d.empty ? st : importOutcome(p, d).keepConfirm ? "active" : st}" style="margin-top:3px">${statusLabel(d.empty ? st : importOutcome(p, d).keepConfirm ? "active" : st)}</span>`;
+    )}<br>${ship ? "" : `<span class="muted">Bauzeit</span><br>${mark(ck.buildTime, ck.buildTime ? "vorhanden" : "fehlt")}<br>`}<span class="muted">Effizienzen</span><br>${mark(ck.efficiencies, effN + " von " + planEffKeys(p).filter((k) => effNeeded(nd, k)).length + " nötigen")}<br><span class="muted">Status nach Übernahme</span><br><span class="statusBadge status-${d.empty ? st : importOutcome(p, d).keepConfirm ? "active" : st}" style="margin-top:3px">${statusLabel(d.empty ? st : importOutcome(p, d).keepConfirm ? "active" : st)}</span>`;
   const oc = d.empty ? null : importOutcome(p, d),
     prPrev = d.empty ? null : planProgress({ ...p, start: d.start, target: d.target, planData: nd });
   $("impNote").innerHTML =
@@ -143,6 +154,11 @@ async function ingest(f) {
     const h = pending.hash,
       values = pending.values;
     let dup = s.snapshots.some((x) => x.hash === h);
+    if (dup) {
+      // ab 3.0: Schiffsteile in den schon vorhandenen Snapshot nachtragen
+      const old = s.snapshots.find((x) => x.hash === h);
+      if (snapNeedsParts(old) && backfillParts(old, values)) partsBackfillDone(1);
+    }
     $("dup").innerHTML =
       (pending.sigmaWarn && pending.sigmaWarn.length
         ? '<p class="red">Achtung: ' +

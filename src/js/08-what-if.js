@@ -13,8 +13,8 @@ function wif() {
   renderWif();
 }
 function wifMats() {
-  return ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)].filter(
-    (m) => !/^7★ Common/.test(m),
+  return trackedMats().filter(
+    (m) => !isLatinumMat(m),
   );
 }
 function wifBonusInit(force) {
@@ -52,7 +52,7 @@ function wifInput() {
 function wifCalc(p, inp) {
   if (!p || !p.hasPlanData) return null;
   const fc = planForecast(p),
-    pack = (s.packs || [])[0],
+    pack = isShip(p) ? null : (s.packs || [])[0], // ab 3.0: keine Stationspacks für Schiffe
     f = 1 + inp.pct / 100;
   if (!fc) return null;
   const rows = [];
@@ -156,8 +156,9 @@ function renderWif() {
       fx(w.price) +
       " € pro Pack.",
   );
-  $("wifNote").textContent =
-    (packEmpty()
+  $("wifNote").textContent = isShip(p)
+    ? "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+    : (packEmpty()
       ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
       : "") + notes.join(" ");
 }

@@ -60,7 +60,7 @@ function renderImportPage() {
         st === "review"
           ? `<button class="miniBtn" data-impm="${escAttr(p.id)}">Prüfen & bestätigen</button>`
           : `<button class="miniBtn" data-impo="${escAttr(p.id)}">${st === "draft" ? "Importieren" : "Neu importieren"}</button>`;
-      return `<tr><td style="white-space:normal"><b>${escAttr(p.name)}</b>${p.isMain ? ' <span class="muted">· Hauptplan</span>' : ""}<div class="muted" style="font-size:11px">Level ${p.start} → ${p.target}</div>${why}</td><td><span class="statusBadge status-${st}">${statusLabel(st)}</span></td><td>${imp ? fdt(imp) : "–"}</td><td>${btn}</td></tr>`;
+      return `<tr><td style="white-space:normal"><b>${escAttr(p.name)}</b>${p.isMain ? ' <span class="muted">· Hauptplan</span>' : ""}<div class="muted" style="font-size:11px">${isShip(p) ? shipLabel(p) : "Level " + p.start + " → " + p.target}</div>${why}</td><td><span class="statusBadge status-${st}">${statusLabel(st)}</span></td><td>${imp ? fdt(imp) : "–"}</td><td>${btn}</td></tr>`;
     })
     .join("");
   el.querySelectorAll("[data-impo]").forEach(

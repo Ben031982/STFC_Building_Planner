@@ -140,7 +140,7 @@ function chartEvents(p, m) {
 }
 function allEvents(p) {
   const mats = ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)].filter(
-    (m) => !/^7★ Common/.test(m),
+    (m) => !isLatinumMat(m),
   );
   return planImportEvents(p)
     .concat(jumpEvents(p, mats), bldEvents(), manualEvents())

@@ -37,7 +37,7 @@ function careHints() {
     if (msg && !isOutdated(p))
       out.push({ warn: true, text: p.name + ": " + msg, btn: "Plandaten verwalten", act: "manage" });
   }
-  if (p && p.hasPlanData && packEmpty())
+  if (p && !isShip(p) && p.hasPlanData && packEmpty())
     out.push({
       warn: false,
       text: "Stationspack noch nicht gepflegt. Trag den Inhalt deines Stationspacks ein (im Spiel ablesen), dann zeigt der Planner, wie viele Packs bis zum Ziel nötig wären.",
@@ -58,7 +58,7 @@ function careHints() {
   for (const q of s.plans)
     if (isOutdated(q))
       out.push({ warn: true, text: outdatedText(q), btn: "Upgrade-Plan importieren", act: "ocr:" + q.id });
-  if (p && p.hasPlanData && p.planData && p.planData.importedAt) {
+  if (p && !isShip(p) && p.hasPlanData && p.planData && p.planData.importedAt) {
     const bs = bldSnaps();
     if (bs.length >= 2) {
       const it = new Date(p.planData.importedAt).getTime();

@@ -422,7 +422,25 @@
   ><div id="newPlanModal" class="modal"
     ><div class="box"
       ><h2>Neuen Zielplan als Entwurf anlegen</h2
-      ><div class="formGrid"
+      ><div class="seg" id="draftType"
+        ><button type="button" data-dt="building" class="on">Gebäude</button
+        ><button type="button" data-dt="ship">Schiff</button></div
+      ><div id="draftShipBox" hidden
+        ><label class="dLab"
+          >Schiff<select id="draftShip"></select></label
+        ><div class="dLab dInline">Klasse <span class="muted">(bestimmt die Schiffsteile)</span></div
+        ><div class="clsPick" id="draftCls"></div
+        ><div class="dRow"
+          ><label class="dLab">Planname<input id="draftShipName" placeholder="z. B. Praefortis T9" /></label
+          ><label class="dLab" id="draftYardLab" hidden
+            >Nötige Schiffswerft<input id="draftYard" type="number" min="1" placeholder="z. B. 76" /></label
+          ><label class="dChk"><input type="checkbox" id="draftBuild" /> Schiff neu bauen</label></div
+        ><div class="dRow"
+          ><label class="dLab">Tier von<input id="draftTierFrom" type="number" min="1" placeholder="z. B. 7" /></label
+          ><label class="dLab">Tier bis<input id="draftTierTo" type="number" min="1" placeholder="z. B. 9" /></label></div
+        ><div id="draftReq" class="dReq"></div
+      ></div
+      ><div class="formGrid" id="draftBuildingBox"
         ><input id="draftName" placeholder="Planname, z. B. Operations 76" /><select
           id="draftArt"
           title="Gebäudebild"
@@ -432,7 +450,7 @@
           type="number"
           min="1"
           placeholder="Ziellevel" /></div
-      ><p class="muted"
+      ><p class="muted" id="draftHint"
         >Der Plan bleibt gesperrt, bis Pflichtgebäude, Ressourcenbedarf, Bauzeit und Effizienzen vollständig vorliegen
         und bestätigt wurden.</p
       ><div class="modalActions"

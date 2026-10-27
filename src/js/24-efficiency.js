@@ -20,7 +20,7 @@ function effRows(p) {
   const d = p.planData || {},
     res = d.resources || {},
     eff = d.efficiencies || {};
-  return MATERIALS.filter(
+  return planMaterials(p).filter(
     (m) => res[m] && isNum(res[m].base) && res[m].base > 0 && isNum(res[m].cost) && res[m].cost > 0,
   ).map((m) => ({ m, base: res[m].base, cost: res[m].cost, eff: isNum(eff[m]) ? eff[m] : null }));
 }

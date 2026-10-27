@@ -1,0 +1,11 @@
+Item costs & efficiencies
+Resource	Base Cost	Cost	Efficiency
+Σ-Tritanium	11000000000	200000000	5.400 %
+Σ-Dilithium	100000000	2000000	4.900 %
+7★ Common Refined Ore	7000000	220000	3.000 %
+7★ Common Explorer Parts	40000000	1000000	3.900 %
+7★ Uncommon Refined Gas	5000000	160000	3.030 %
+7★ Uncommon Explorer Parts	11000000	290000	3.650 %
+7★ Rare Refined Gas	1300000	40000	3.030 %
+7★ Rare Explorer Parts	800000	21000	3.650 %
+Σ-Tier-Up Time	20300000	1879630	980 %

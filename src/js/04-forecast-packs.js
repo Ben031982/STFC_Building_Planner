@@ -168,7 +168,7 @@ function planForecast(p) {
       m,
       miss,
       st,
-      common: /^7★ Common/.test(m),
+      common: isLatinumMat(m),
       eta: { cons: eta("cons"), real: eta("real"), opt: eta("opt") },
       far: { cons: far("cons"), real: far("real"), opt: far("opt") },
       status: miss <= 0 ? "done" : st.n < FC_MIN ? "data" : st.real > 0 ? (far("real") ? "far" : "ok") : "neg",
@@ -358,6 +358,7 @@ function packEmpty() {
   return !pk || !Object.values(pk.contents || {}).some((c) => +c.amount > 0);
 }
 function packCalc(p) {
+  if (isShip(p)) return null; // ab 3.0: Stationspacks gelten nicht für Schiffe
   const pack = (s.packs || [])[0];
   if (!pack || !p.hasPlanData || packEmpty()) return null;
   const rows = getPlanResources(p),
@@ -365,7 +366,7 @@ function packCalc(p) {
     out = [];
   for (const r of rows) {
     const m = r[0];
-    if (/^7★ Common/.test(m)) continue;
+    if (isLatinumMat(m)) continue;
     const c = pack.contents[m] || {},
       amt = +c.amount || 0,
       miss = r[3];
@@ -402,6 +403,10 @@ function packCalc(p) {
 function renderPacks(p) {
   const pc = packCalc(p),
     card = $("packCard");
+  if (isShip(p)) {
+    card.innerHTML = '<span class="muted">Packs bis zum Ziel: für Schiffe nicht berechnet – der Stationspack gilt nur für Gebäude.</span>';
+    return;
+  }
   if (!pc) {
     if (p.hasPlanData && packEmpty()) {
       card.innerHTML =
@@ -437,7 +442,7 @@ function bottleneckRows(p) {
   return { fc, rows: rows.slice(0, 3) };
 }
 function packEffect(p) {
-  if (packEmpty()) return null;
+  if (isShip(p) || packEmpty()) return null;
   const w = wifCalc(p, { now: 1, week: 0, pct: 0, bonus: {} });
   if (!w || w.base.real.d == null || w.scen.real.d == null) return null;
   // in Kalendertagen, damit Zahl und Datum zusammenpassen
@@ -477,7 +482,8 @@ function renderBottleneckCard(p) {
   const pe = packEffect(p),
     driver = bn.rows[0].m;
   let foot;
-  if (!pe)
+  if (isShip(p)) foot = "Stationspacks gelten nicht für Schiffe – hier zählt nur dein Einkommen.";
+  else if (!pe)
     foot =
       'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
   else {
