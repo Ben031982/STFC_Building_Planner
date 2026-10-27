@@ -1189,13 +1189,13 @@ def effizienzen_wirkung_und_verlauf(b, html, tmp):
     check(a.is_visible("#effPanel"), "Panel Effizienzen fehlt")
     body = a.text("#effBody")
     check("Noch kein Vergleich" in body, f"Ohne zweiten Import kein Hinweis: {body[:120]!r}")
-    rows = a.locator("#effRows tr").count()
+    rows = a.locator("#effPanelRows tr").count()
     check(rows >= 3, f"Zu wenige Zeilen: {rows}")
     hist = a.js("()=>s.plans[0].planData.history.map(h=>!!h.efficiencies)")
     check(hist and all(hist), f"Effizienzen nicht in der Planhistorie: {hist}")
     # Kosten = Grundkosten ÷ (1 + Effizienz): Ersparnis-Spalte = Grundkosten − Kosten
     r = a.js("()=>{const r=s.plans[0].planData.resources['Σ-Parsteel'];return [r.base,r.cost]}")
-    check(f"−{a.js('(v)=>fmt(v)', r[0] - r[1])}" in a.text("#effRows"), "Ersparnis falsch")
+    check(f"−{a.js('(v)=>fmt(v)', r[0] - r[1])}" in a.text("#effPanelRows"), "Ersparnis falsch")
     # Zweiter Import mit höherer Parsteel-Effizienz
     a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=2)).isoformat())
     a.close_modals()
@@ -1210,7 +1210,7 @@ def effizienzen_wirkung_und_verlauf(b, html, tmp):
     a.click("#navRes")
     body = a.text("#effBody")
     check("1 Effizienz gestiegen" in body, f"Änderung nicht erkannt: {body[:200]!r}")
-    check("+500 %-P." in a.text("#effRows"), f"Änderung in der Tabelle fehlt: {a.text('#effRows')[:200]!r}")
+    check("+500 %-P." in a.text("#effPanelRows"), f"Änderung in der Tabelle fehlt: {a.text('#effPanelRows')[:200]!r}")
     check(any(w in body for w in ("früher", "später", "kein ganzer Tag", "nicht berechenbar")),
           "Einfluss auf den Termin fehlt")
     check(not [w for w in BAD_TEXT if w in body], "Ungültige Werte im Panel")
@@ -1242,6 +1242,28 @@ def wochenbericht_zeigt_effizienzaenderungen(b, html, tmp):
     a.click("#nwk")
     a.wait_for_timeout(150)
     check("noch kein Verlauf" in a.text(".wkEff"), "Hinweis ohne Verlauf fehlt")
+    a.done()
+
+
+@test
+def keine_doppelten_element_ids(b, html, tmp):
+    """Fund nach 2.1.0: Die Effizienz-Tabelle hatte dieselbe ID wie die Liste im Import-Assistenten."""
+    a = App(b, html, tmp, state=load_v10_state())
+    for sel in ("#navRes", "#navFc", "#nw", "#nwk", "#ni", "#nd"):
+        a.close_modals()
+        a.click(sel)
+        a.wait_for_timeout(150)
+        dup = a.js("()=>{const c={};document.querySelectorAll('[id]').forEach(e=>c[e.id]=(c[e.id]||0)+1);return Object.keys(c).filter(k=>c[k]>1)}")
+        check(not dup, f"Doppelte IDs nach {sel}: {dup}")
+    # Import-Assistent zeigt die erkannten Effizienzen in seiner eigenen Tabelle
+    a.click("#navRes")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    a.click('.impStepBtn[data-step="3"]')
+    a.fill("#effText", fixture("plan_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(200)
+    check("%" in a.text("#ocrModal #effRows"), "Effizienzen erscheinen nicht im Import-Assistenten")
     a.done()
 
 

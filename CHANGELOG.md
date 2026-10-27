@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1] – 2026-10-27
+
+### Fehlerbehebungen
+- Im Import-Assistenten blieb die Liste der erkannten Effizienzen (Schritt 3) leer, sobald die Seite „Ressourcen & Effizienzen“ einmal angezeigt worden war. Ursache: Die neue Effizienz-Tabelle hatte dieselbe interne Kennung wie diese Liste. Die Effizienzen wurden trotzdem richtig übernommen, nur nicht angezeigt.
+
+### Technik
+- Neuer Test: keine doppelten Element-Kennungen auf allen Seiten, Effizienzen im Import-Assistenten sichtbar (51 Tests).
+
 ## [2.1.0] – 2026-10-27
 
 ### Neuer Name

@@ -101,7 +101,7 @@ function renderEffPanel(p) {
     `<div class="wifSum effSum"><div><span class="muted">Ersparnis durch Effizienzen</span><b>${fmt(big.base - big.cost)} ${escAttr(big.m)}</b><span class="muted">Kosten ${fmt(big.cost)} statt ${fmt(big.base)}</span></div>` +
     `<div><span class="muted">Seit dem vorigen Import</span><b>${chTxt[0]}</b><span class="muted">${chTxt[1]}</span></div>` +
     `<div><span class="muted">Einfluss auf den Termin</span><b>${etaB}</b><span class="muted">${escAttr(etaS)}</span></div></div>` +
-    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Effizienz</th><th>Vorher${prev ? " (" + prevAt + ")" : ""}</th><th>Änderung</th><th>Grundkosten</th><th>Kosten</th><th>Ersparnis</th></tr></thead><tbody id="effRows">` +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Effizienz</th><th>Vorher${prev ? " (" + prevAt + ")" : ""}</th><th>Änderung</th><th>Grundkosten</th><th>Kosten</th><th>Ersparnis</th></tr></thead><tbody id="effPanelRows">` +
     rows
       .map((r) => {
         const o = prev && isNum(prev[r.m]) ? prev[r.m] : null,

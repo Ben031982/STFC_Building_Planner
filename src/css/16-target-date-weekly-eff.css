@@ -131,7 +131,7 @@
 .effSum {
   grid-template-columns: repeat(3, 1fr);
 }
-#effRows td {
+#effPanelRows td {
   font-size: 12px;
 }
 @media (max-width: 900px) {

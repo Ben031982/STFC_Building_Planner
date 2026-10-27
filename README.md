@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.1.0-46C2EE?style=flat-square" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/Version-2.1.1-46C2EE?style=flat-square" alt="Version 2.1.1">
   <img src="https://img.shields.io/badge/l%C3%A4uft-offline%20im%20Browser-5BD2A0?style=flat-square" alt="läuft offline im Browser">
   <img src="https://img.shields.io/badge/Browser-Chrome%20%7C%20Edge-F4A53A?style=flat-square" alt="Chrome oder Edge">
   <img src="https://img.shields.io/badge/Sprache-Deutsch-93A7B9?style=flat-square" alt="Deutsch">
@@ -75,7 +75,7 @@ Deine Daten aus 1.0 und 2.0 übernimmt 2.1 automatisch – einfach die neue Date
 ## Schnellstart
 
 1. **Spock's Club einrichten** – Konto auf [next.spocks.club](https://next.spocks.club) anlegen und dein Spielkonto synchronisieren: am PC über den [STFC Community Mod](https://github.com/netniv/stfc-mod/releases) (Sync-Token unter *Syncing › Community Mod*) oder mit der Spock's-Club-App.
-2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v2.1.0.html`](Bens_G7_STFC_Progress_Planner_v2.1.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
+2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v2.1.1.html`](Bens_G7_STFC_Progress_Planner_v2.1.1.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
 3. **Account-Snapshot einlesen** – in Spock's Club unter *Syncing › Export Data* mindestens *Buildings* und *Resources* als **JSON** herunterladen und im Planner mit **„Neue Exporte einlesen“** übernehmen.
 4. **Zielplan anlegen** – im Spock's-Upgrade-Planer genau **ein** Ziel anlegen, die drei Texte *Included upgrades*, *Total resources* und *Item costs & efficiencies* kopieren und im Planner unter **„Plandaten verwalten › Upgrade-Plan importieren“** einfügen. Prüfen, bestätigen – fertig.
 
