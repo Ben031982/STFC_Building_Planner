@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.1.0] – in Arbeit
+## [3.1.0] – 2026-10-27
 
 ### Geändert
 - **Ketten nur noch für Schiffe:** Statt „Startet nach“ mit beliebigen Plänen hat ein Schiff jetzt das Feld „Schiffswerft-Plan“. Zur Wahl stehen nur Pläne, die die nötige Schiffswerft-Stufe erreichen, oder keiner. Reicht deine Schiffswerft schon, erscheint das Feld nicht. Gebäudepläne haben kein Vorgänger-Feld mehr – verkettete Gebäudepläne zählten gemeinsame Vorstufen doppelt. Bestehende Ketten, die nicht mehr erlaubt sind, löst der Planner beim Öffnen auf.
