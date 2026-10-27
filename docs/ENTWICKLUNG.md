@@ -13,6 +13,8 @@ src/
   assets/fonts/        Schriften (woff2), eingebunden über url("../assets/fonts/…")
   assets/img/          Gebäudebilder (webp), eingebunden über asset("img/…")
 tools/build.py         Build: eine HTML-Datei nach dist/
+tools/release_notes.py Release-Text aus dem CHANGELOG
+.github/workflows/     GitHub-Action „Release erstellen“
 tests/run_tests.py     automatische Tests (Playwright)
 tests/fixtures/        erfundene Testdaten
 ```
@@ -44,7 +46,8 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 | `20-tutorial` | Einführung beim ersten Öffnen |
 | `21-nav` | Navigation |
 | `22-setup-help` | Einrichtungs-Karte, Begriffserklärungen (ⓘ), Exportsuche beim Öffnen, Aufleuchten geänderter Kennzahlen |
-| `23-target-date` | Zieltermin prüfen (Seite Was-wäre-wenn), Datum je Plan in `targetDate` |
+| `23-target-date` | Zieltermin prüfen mit Plan-Karten (Seite Was-wäre-wenn), Datum je Plan in `targetDate` |
+| `24-efficiency` | Effizienzen: Wirkung und Verlauf (Seite Ressourcen & Effizienzen) |
 
 ## Bauen
 
@@ -52,7 +55,7 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 python tools/build.py
 ```
 
-Ergebnis: `dist/Bens_STFC_Progress_Planner_v<VERSION>.html`. Nötig ist nur Python 3.8 oder neuer.
+Ergebnis: `dist/Bens_G7_STFC_Progress_Planner_v<VERSION>.html`. Nötig ist nur Python 3.8 oder neuer.
 
 ## Testen
 
@@ -70,6 +73,9 @@ Hinweise für neue Tests: Die Uhr steht im Test fest (25.10.2026, 09:00 UTC) –
 
 ## Neue Version veröffentlichen
 
-1. `src/VERSION` hochzählen.
-2. `python tests/run_tests.py`: alle Tests müssen bestehen.
-3. Die Datei aus `dist/` ins Hauptverzeichnis kopieren, die alte Version entfernen, README-Links anpassen.
+1. `src/VERSION` hochzählen (z. B. `2.1.0`).
+2. Im `CHANGELOG.md` den Abschnitt `## [2.1.0] – <Datum>` fertig schreiben (nicht „in Arbeit“).
+3. Userguide aktualisieren (`STFC_Planner_Userguide.pdf` im Hauptverzeichnis), die gebaute Datei aus `dist/` ins Hauptverzeichnis kopieren, die alte Version entfernen, README-Links anpassen. Alles auf `main` pushen.
+4. Auf GitHub: **Actions › Release erstellen › Run workflow**. Die Action baut, lässt alle Tests laufen, setzt den Tag `v<VERSION>` und legt das Release mit Planner-Datei und Userguide an. Der Text kommt aus dem CHANGELOG-Abschnitt.
+
+Die Action bricht ohne Release ab, wenn ein Test fehlschlägt, der Tag schon existiert oder der CHANGELOG-Abschnitt fehlt bzw. noch „in Arbeit“ ist.

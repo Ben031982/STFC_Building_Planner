@@ -2,7 +2,7 @@ const TUT_KEY = "bens-stfc-tutorial",
   TUT = [
     [
       "Willkommen",
-      "Willkommen im STFC Progress Planner",
+      "Willkommen im G7 STFC Progress Planner",
       '<p>Der Planner zeigt dir, <b>wann du ein Gebäudeziel erreichst</b> – zum Beispiel Operations 76 – und <b>welches Material dich am meisten bremst</b>.</p><p>Er rechnet mit deinen echten Daten aus Spock\'s Club: deinem Ressourcenstand aus regelmäßigen Exporten und den Kosten deines Upgrade-Plans.</p><div class="tip">Alles bleibt in diesem Browser auf deinem PC. Die Datei braucht kein Internet und sendet keine Daten.</div>',
     ],
     [

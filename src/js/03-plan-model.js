@@ -185,6 +185,8 @@ function makeHistPoint(p, kind, at, withRes, withCon) {
         pt.resources[k] = { cost: r.cost, onHand: r.onHand, needed: r.needed };
     }
   }
+  // ab 2.1: Effizienzen mitschreiben (Grundlage für „Effizienzen: Wirkung und Verlauf“)
+  if (d.efficiencies && Object.keys(d.efficiencies).length) pt.efficiencies = { ...d.efficiencies };
   if (withCon && d.construction)
     pt.construction = {
       cost: d.construction.cost,

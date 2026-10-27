@@ -123,3 +123,27 @@
   line-height: 1.7;
   font-size: 13px;
 }
+
+/* Effizienzen: Wirkung und Verlauf (ab 2.1) */
+#effPanel {
+  margin-top: 14px;
+}
+.effSum {
+  grid-template-columns: repeat(3, 1fr);
+}
+#effRows td {
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .effSum {
+    grid-template-columns: 1fr;
+  }
+}
+.effSum b span {
+  font-size: inherit;
+}
+.wkEff {
+  font-size: 12px;
+  margin: 10px 0 0;
+  line-height: 1.6;
+}

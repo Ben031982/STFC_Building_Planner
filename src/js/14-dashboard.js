@@ -429,6 +429,7 @@ function render() {
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
   renderPacks(p);
+  if (typeof renderEffPanel === "function") renderEffPanel(p);
   {
     const pc = packCalc(p);
     if (!pc) {

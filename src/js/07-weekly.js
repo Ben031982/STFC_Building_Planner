@@ -160,6 +160,8 @@ function renderWeekly() {
   const fcE = d.fcEnd;
   let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
   h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
+  h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
   if (d.current) h += wkOutlook(p);
   h += `<section class="panel" style="margin-top:12px"><h3>Ereignisse der Woche</h3>${
     d.ev.length
@@ -215,4 +217,25 @@ function wkOutlook(p) {
     `<li>Fertigstellung <b>${fmtEta(fc.overall.real, fc.base)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
     `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
   );
+}
+
+// Ab 2.1 (F19 Punkt 5): Effizienzänderungen der Woche aus der Planhistorie
+function wkEffLine(p, a, end) {
+  const h = (((p && p.planData) || {}).history || [])
+    .filter((x) => x.efficiencies && Object.keys(x.efficiencies).length)
+    .map((x) => ({ t: new Date(x.at).getTime(), e: x.efficiencies }))
+    .sort((x, y) => x.t - y.t);
+  const lead = '<p class="muted wkEff"><b>Effizienzen diese Woche:</b> ';
+  if (!h.length) return lead + "noch kein Verlauf – er beginnt mit dem nächsten Plan-Import.</p>";
+  const e1 = snapAt(h, end - 1),
+    inWeek = h.filter((x) => x.t > a && x.t < end),
+    e0 = snapAt(h, a) || (inWeek.length > 1 ? inWeek[0] : null);
+  if (!e1 || !e0 || e0 === e1) return lead + "kein Vergleich (kein Plan-Import mit Effizienzen in dieser Woche).</p>";
+  const ch = Object.keys(e1.e)
+    .filter((k) => isNum(e1.e[k]) && isNum(e0.e[k]) && e1.e[k] !== e0.e[k])
+    .map(
+      (k) =>
+        `${escAttr(k)} ${fx(e0.e[k])} % → ${fx(e1.e[k])} % <span class="${e1.e[k] > e0.e[k] ? "green" : "red"}">(${e1.e[k] > e0.e[k] ? "+" : "−"}${fx(Math.abs(e1.e[k] - e0.e[k]))})</span>`,
+    );
+  return lead + (ch.length ? ch.join(" · ") : "keine Änderung") + "</p>";
 }

@@ -1,6 +1,16 @@
 # Changelog
 
-## [2.1.0] – in Arbeit
+## [2.1.0] – 2026-10-27
+
+### Neuer Name
+- Der Planner heißt jetzt **Ben's G7 STFC Progress Planner** – er ist ganz auf die 7★-Materialien (G7) zugeschnitten. Die Datei heißt `Bens_G7_STFC_Progress_Planner_v2.1.0.html`. Deine Daten übernimmt er wie gewohnt.
+
+### Neue Funktionen (Phase 3)
+
+**Effizienzen: Wirkung und Verlauf** (Seite Ressourcen & Effizienzen)
+- Je Material Effizienz, Grundkosten, Kosten und Ersparnis (Kosten = Grundkosten ÷ (1 + Effizienz)).
+- Ab 2.1 merkt sich der Planner die Effizienzen bei jedem Plan-Import. Ab dem zweiten Import: welche Effizienzen gestiegen oder gesunken sind und wie viele Tage das am Termin ausmacht.
+- Wochenbericht: Zeile „Effizienzen diese Woche“.
 
 ### Neue Funktionen (Phase 2)
 
@@ -25,7 +35,8 @@
 - Bei extrem kleinem Zuwachs konnte die Prognose „Invalid Date“ zeigen. Termine über 1 Jahr erscheinen jetzt als „ca. Mai 2032 (~5,5 Jahre)“, über 100 Jahre als „nicht absehbar“ – in Prognose, Engpass-Karte, Stationspack, Was-wäre-wenn und Wochenbericht.
 
 ### Technik
-- 16 neue Tests (Datenintegrität, Prognose-Grenzfälle, Zielplan-Konsistenz, Zieltermin, Wochenbericht, 20-Stunden-Abschnitte), insgesamt 48.
+- 18 neue Tests (Datenintegrität, Prognose-Grenzfälle, Zielplan-Konsistenz, Zieltermin, Wochenbericht, 20-Stunden-Abschnitte, Effizienzen), insgesamt 50. Die Tests laufen mit fester Zeitzone und damit überall gleich.
+- GitHub-Action „Release erstellen“: baut den Planner, lässt alle Tests laufen und legt das Release mit Planner-Datei und Userguide an – auf Knopfdruck unter Actions.
 - Ursache des gelegentlich fehlschlagenden Tests aus 2.0 behoben: Headless-Chromium verliert beim Neuladen einer lokalen Datei manchmal den Browser-Speicher. Der Test öffnet die Seite jetzt neu statt sie neu zu laden. Kein Fehler im Planner.
 
 ## [2.0] – 2026-10-25

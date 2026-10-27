@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Automatische Tests für Bens STFC Progress Planner.
+"""Automatische Tests für Ben's G7 STFC Progress Planner.
 
     python tests/run_tests.py                  # baut zuerst (tools/build.py) und testet dist/…
     python tests/run_tests.py datei.html       # testet eine fertige Datei
@@ -56,7 +56,9 @@ class App:
     """Eine Browser-Seite mit dem Planner, festem Datum und Fehlersammlung."""
 
     def __init__(self, browser, html, tmp, state=None, tutorial_seen=True, extra=None):
-        self.ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
+        # Feste Zeitzone, damit die Tests überall gleich laufen (lokal wie in der GitHub-Action)
+        self.ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True,
+                                       timezone_id="Europe/Berlin")
         self.p = self.ctx.new_page()
         self.p.set_default_timeout(5000)
         self.html, self.tmp, self.errors = html, tmp, []
@@ -1172,6 +1174,74 @@ def abschnitte_ab_20_stunden_abstand(b, html, tmp):
     check("20 Stunden" in a.js("()=>TERMS.abschnitt"), "Erklärung „Abschnitt“ nennt nicht 20 Stunden")
     txt = page_texts(a)
     check("24 Stunden" not in txt and "< 24 h" not in txt, "Irgendwo steht noch 24 Stunden")
+    a.done()
+
+
+# ---------------------------------------------------------------- 2.1 Phase 3: Effizienzen
+
+
+@test
+def effizienzen_wirkung_und_verlauf(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navRes")
+    check(a.is_visible("#effPanel"), "Panel Effizienzen fehlt")
+    body = a.text("#effBody")
+    check("Noch kein Vergleich" in body, f"Ohne zweiten Import kein Hinweis: {body[:120]!r}")
+    rows = a.locator("#effRows tr").count()
+    check(rows >= 3, f"Zu wenige Zeilen: {rows}")
+    hist = a.js("()=>s.plans[0].planData.history.map(h=>!!h.efficiencies)")
+    check(hist and all(hist), f"Effizienzen nicht in der Planhistorie: {hist}")
+    # Kosten = Grundkosten ÷ (1 + Effizienz): Ersparnis-Spalte = Grundkosten − Kosten
+    r = a.js("()=>{const r=s.plans[0].planData.resources['Σ-Parsteel'];return [r.base,r.cost]}")
+    check(f"−{a.js('(v)=>fmt(v)', r[0] - r[1])}" in a.text("#effRows"), "Ersparnis falsch")
+    # Zweiter Import mit höherer Parsteel-Effizienz
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=2)).isoformat())
+    a.close_modals()
+    a.click("#nd")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    eff = fixture("plan_efficiencies.txt").replace("Σ-Parsteel\t60000000000\t2000000000\t3.000 %",
+                                                   "Σ-Parsteel\t60000000000\t2000000000\t3.500 %")
+    check(eff != fixture("plan_efficiencies.txt"), "Testdaten nicht geändert")
+    a.import_texts(fixture("plan_upgrades.txt"), fixture("plan_resources.txt"), eff)
+    a.close_modals()
+    a.click("#navRes")
+    body = a.text("#effBody")
+    check("1 Effizienz gestiegen" in body, f"Änderung nicht erkannt: {body[:200]!r}")
+    check("+500 %-P." in a.text("#effRows"), f"Änderung in der Tabelle fehlt: {a.text('#effRows')[:200]!r}")
+    check(any(w in body for w in ("früher", "später", "kein ganzer Tag", "nicht berechenbar")),
+          "Einfluss auf den Termin fehlt")
+    check(not [w for w in BAD_TEXT if w in body], "Ungültige Werte im Panel")
+    a.done()
+
+
+@test
+def wochenbericht_zeigt_effizienzaenderungen(b, html, tmp):
+    st = load_v10_state()
+    pd = st["plans"][0]["planData"]
+    old = dict(pd["efficiencies"])
+    new = dict(old)
+    k = next(iter(new))
+    new[k] = old[k] + 50
+    pd["history"] = (pd.get("history") or []) + [
+        {"at": "2026-10-17T10:00:00.000Z", "kind": "Import", "progress": None, "resources": None, "construction": None, "efficiencies": old},
+        {"at": "2026-10-22T10:00:00.000Z", "kind": "Import", "progress": None, "resources": None, "construction": None, "efficiencies": new},
+    ]
+    a = App(b, html, tmp, state=st)
+    a.click("#nwk")
+    a.wait_for_timeout(150)
+    line = a.text(".wkEff")
+    check(k in line and "(+" in line, f"Effizienzänderung fehlt: {line!r}")
+    a.click("#wkPrev")
+    a.wait_for_timeout(150)
+    check("kein Vergleich" in a.text(".wkEff"), f"Vorwoche ohne Vergleichsmarkierung: {a.text('.wkEff')!r}")
+    a.done()
+    a = App(b, html, tmp, state=load_v10_state())
+    a.click("#nwk")
+    a.wait_for_timeout(150)
+    check("noch kein Verlauf" in a.text(".wkEff"), "Hinweis ohne Verlauf fehlt")
     a.done()
 
 

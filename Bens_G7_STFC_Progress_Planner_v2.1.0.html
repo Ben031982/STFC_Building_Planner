@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
-<title>Bens STFC Progress Planner v2.0</title>
+<title>Ben's G7 STFC Progress Planner v2.1.0</title>
 <style>
 @font-face {
   font-family: "Oxanium";
@@ -1656,7 +1656,7 @@ tr.sqAfter td {
   padding: 8px;
 }
 .footer:after {
-  content: " · Version 2.0";
+  content: " · Version 2.1.0";
   color: #68a6cc;
 }
 @media (max-width: 1200px) {
@@ -3058,6 +3058,155 @@ td:has(.prog) {
     text-shadow: 0 0 14px rgba(70, 194, 238, 0.7);
   }
 }
+/* Zieltermin prüfen (ab 2.1) – Seite Was-wäre-wenn */
+#tdPanel {
+  margin-top: 14px;
+}
+.tdLead {
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+/* Plan-Karten (ab 2.1): je Plan ein eigenes „Fertig bis“, Klick zeigt die Details */
+.tdCards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  margin: 8px 0 4px;
+}
+.tdCards .plan {
+  flex: 0 0 235px;
+  min-width: 235px;
+  cursor: pointer;
+}
+.tdCards .plan .pt {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.tdCards .plan img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.tdCards .plan h3 {
+  font-size: 13.5px;
+  margin: 0;
+}
+.tdRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #93a7b9;
+}
+.tdRow input {
+  background: #071b2a;
+  border: 1px solid #31556f;
+  border-radius: 5px;
+  color: #fff;
+  padding: 4px 6px;
+  font-size: 12px;
+  width: 128px;
+  color-scheme: dark;
+}
+.tdState {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #93a7b9;
+  min-height: 22px;
+}
+.tdCards .plan.off {
+  opacity: 0.55;
+  cursor: default;
+}
+.tdSel {
+  font-size: 12px;
+  color: #93a7b9;
+  margin: 2px 0 8px;
+}
+.tdSum {
+  grid-template-columns: 1.4fr 1fr 1.4fr;
+}
+.tdV {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tdSum .tdV {
+  font-size: 12px;
+}
+.tdV.t1 {
+  background: #10291f;
+  color: #5bd2a0;
+}
+.tdV.t2 {
+  background: #0f2433;
+  color: #46c2ee;
+}
+.tdV.t3 {
+  background: #2a2312;
+  color: #f4a53a;
+}
+.tdV.t4 {
+  background: #2c1419;
+  color: #ff98a6;
+}
+#tdRows td {
+  font-size: 12px;
+}
+.tdMsg {
+  margin: 4px 0 0;
+}
+@media (max-width: 900px) {
+  .tdSum {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Wochenbericht: Ausblick (ab 2.1) */
+.wkList {
+  margin: 6px 0 0 18px;
+  padding: 0;
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+/* Effizienzen: Wirkung und Verlauf (ab 2.1) */
+#effPanel {
+  margin-top: 14px;
+}
+.effSum {
+  grid-template-columns: repeat(3, 1fr);
+}
+#effRows td {
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .effSum {
+    grid-template-columns: 1fr;
+  }
+}
+.effSum b span {
+  font-size: inherit;
+}
+.wkEff {
+  font-size: 12px;
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
 
 </style>
 </head>
@@ -3071,7 +3220,7 @@ td:has(.prog) {
           <rect x="18.75" y="19" width="4.5" height="12" rx="1" fill="#46C2EE" />
           <rect x="25.5" y="13" width="4.5" height="18" rx="1" fill="#F4A53A" /></svg
         ><div class="wm"
-          ><span class="wmA">BEN'S</span><span class="wmB">STFC PROGRESS</span><span class="wmC">PLANNER</span></div
+          ><span class="wmA">BEN'S G7</span><span class="wmB">STFC PROGRESS</span><span class="wmC">PLANNER</span></div
         ></div
       ><div class="nav"
         ><div class="navGrp">PLAN</div><button id="nd" class="on"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Übersicht</button
@@ -3218,7 +3367,8 @@ td:has(.prog) {
                   ><div class="muted" style="margin-top: 4px; font-size: 11px"
                     >ⓘ Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine
                     Effizienz nicht abgezogen wird oder der letzte Sync alt ist.</div
-                  ></section></div
+                  ></section
+                ><section id="effPanel" class="panel"><h3>Effizienzen: Wirkung und Verlauf</h3><div id="effBody"></div></section></div
               ><div id="pane-fc" class="tabPane"
                 ><section class="panel"
                   ><h3>Fertigstellungsprognose</h3><div id="fcSummary"></div><div id="packCard" class="packCard"></div
@@ -3232,7 +3382,7 @@ td:has(.prog) {
                       ><tbody id="fcRows"></tbody></table></div
                   ><div id="fcBuild" class="muted" style="margin-top: 8px; font-size: 12px"></div
                   ><div class="chartNote" style="margin-top: 8px"
-                    >Raten aus den JSON-Snapshots der letzten 6 Wochen, Abschnitte mit mindestens 24 Stunden Abstand.
+                    >Raten aus den JSON-Snapshots der letzten 6 Wochen, Abschnitte mit mindestens 20 Stunden Abstand.
                     Verbautes wird über die gesunkene Cost aus Plan-Importen herausgerechnet. Realistisch = Median,
                     konservativ = unteres Viertel, optimistisch = oberes Viertel, jeweils nach Länge der Abschnitte
                     gewichtet. Prognose ab 3 Abschnitten. 7★ Common
@@ -3284,7 +3434,7 @@ td:has(.prog) {
                   ><h3 style="margin-top: 14px">Einkommen zwischen erstem und letztem Messpunkt</h3
                   ><p class="muted" style="margin: 4px 0 8px"
                     >Einkommen = Bestandsänderung + Verbautes. Verbautes = Rückgang der verbleibenden Cost laut Spock's
-                    Club. Raten erst ab 24 Stunden Abstand.</p
+                    Club. Raten erst ab 20 Stunden Abstand.</p
                   ><div class="histWrap"
                     ><table class="histTable"
                       ><thead
@@ -3413,7 +3563,13 @@ td:has(.prog) {
                       ><th>Fertig im Szenario</th><th>Gewinn</th></tr
                     ></thead
                   ><tbody id="wifRows"></tbody></table></div
-              ><div id="wifNote" class="chartNote" style="margin-top: 8px"></div></section></div></section
+              ><div id="wifNote" class="chartNote" style="margin-top: 8px"></div></section></div
+          ><section id="tdPanel" class="panel"
+            ><h3>Zieltermin prüfen</h3
+            ><p class="muted tdLead">Reicht dein Einkommen, um bis zu einem Wunschdatum fertig zu sein?</p
+            ><div id="tdCards" class="tdCards"></div
+            ><div id="tdSel" class="tdSel"></div
+            ><div id="tdResult"></div></section></section
         ><section id="snapView" class="view"
           ><div class="head"><h1>Snapshot-Historie</h1><button id="back" class="btn">← Zurück zu Daten</button></div
           ><div class="snapGrid"
@@ -3885,6 +4041,8 @@ function migrateState(st) {
       planData: null,
       confirmation: null,
     };
+    // ab 2.1: Wunschdatum für „Zieltermin prüfen“
+    if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
     if (!old) {
       q.planData = p.planData || null;
       q.confirmation = p.confirmation || null;
@@ -4317,6 +4475,8 @@ function makeHistPoint(p, kind, at, withRes, withCon) {
         pt.resources[k] = { cost: r.cost, onHand: r.onHand, needed: r.needed };
     }
   }
+  // ab 2.1: Effizienzen mitschreiben (Grundlage für „Effizienzen: Wirkung und Verlauf“)
+  if (d.efficiencies && Object.keys(d.efficiencies).length) pt.efficiencies = { ...d.efficiencies };
   if (withCon && d.construction)
     pt.construction = {
       cost: d.construction.cost,
@@ -4344,12 +4504,42 @@ function planIncome(p) {
         built = ra.cost - rb.cost;
       if (built < 0) return { name: k, dStock, built, costUp: true };
       const inc = dStock + built;
-      return { name: k, dStock, built, inc, day: days >= 1 ? inc / days : null };
+      return { name: k, dStock, built, inc, day: days >= FC_GAP_DAYS ? inc / days : null };
     }),
   };
 }
 const FC_WINDOW_DAYS = 42,
-  FC_MIN = 3;
+  FC_MIN = 3,
+  // Ab 2.1: Mindestabstand zweier Exporte für einen Abschnitt 20 statt 24 Stunden
+  FC_GAP_H = 20,
+  FC_GAP_DAYS = FC_GAP_H / 24,
+  // Ab 2.1: Über 1 Jahr nur noch Monat und Jahr („ca. Mai 2032“), über 100 Jahre „nicht absehbar“
+  // (Schutz vor unsinnigen Werten wie „Invalid Date“).
+  FC_YEAR = 365.25,
+  FC_MAX_DAYS = 100 * FC_YEAR,
+  FC_FAR_TXT = "nicht absehbar";
+function fcTooFar(days) {
+  return days != null && !(Number.isFinite(days) && days <= FC_MAX_DAYS);
+}
+function fcYears(days) {
+  const y = Math.max(1, Math.round((days / FC_YEAR) * 2) / 2);
+  return y.toLocaleString("de-DE") + (y === 1 ? " Jahr" : " Jahre");
+}
+// Datum eines Termins: bis 1 Jahr Tagesdatum, darüber „ca. Mai 2032“
+function fcDate(base, days) {
+  const d = new Date(base + days * 864e5);
+  return days > FC_YEAR
+    ? "ca. " + d.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+    : d.toLocaleDateString("de-DE");
+}
+// Dauer: „9 Tage“, „~12 Wochen“, „~5,5 Jahre“
+function fcDur(days) {
+  return days < 14
+    ? Math.ceil(days) + (Math.ceil(days) === 1 ? " Tag" : " Tage")
+    : days <= FC_YEAR
+      ? "~" + Math.round(days / 7) + " Wochen"
+      : "~" + fcYears(days);
+}
 function quant(arr, q) {
   const a = [...arr].sort((x, y) => x - y);
   if (!a.length) return null;
@@ -4400,7 +4590,7 @@ function snapIntervals(m) {
     out = [];
   let i = 0;
   for (let j = 1; j < pts.length; j++) {
-    if ((pts[j].t - pts[i].t) / 864e5 >= 1) {
+    if ((pts[j].t - pts[i].t) / 864e5 >= FC_GAP_DAYS) {
       out.push({ a: pts[i], b: pts[j] });
       i = j;
     }
@@ -4481,14 +4671,17 @@ function planForecast(p) {
     const m = r[0],
       miss = r[3],
       st = rateStats(p, m),
-      eta = (k) => (miss <= 0 ? 0 : st.n >= FC_MIN && st[k] > 0 ? miss / st[k] : null);
+      raw = (k) => (miss <= 0 ? 0 : st.n >= FC_MIN && st[k] > 0 ? miss / st[k] : null),
+      far = (k) => fcTooFar(raw(k)),
+      eta = (k) => (far(k) ? null : raw(k));
     return {
       m,
       miss,
       st,
       common: /^7★ Common/.test(m),
       eta: { cons: eta("cons"), real: eta("real"), opt: eta("opt") },
-      status: miss <= 0 ? "done" : st.n < FC_MIN ? "data" : st.real > 0 ? "ok" : "neg",
+      far: { cons: far("cons"), real: far("real"), opt: far("opt") },
+      status: miss <= 0 ? "done" : st.n < FC_MIN ? "data" : st.real > 0 ? (far("real") ? "far" : "ok") : "neg",
     };
   });
   const rel = res.filter((x) => !x.common && x.miss > 0),
@@ -4501,6 +4694,7 @@ function planForecast(p) {
     const bad = rel.filter((x) => x.eta[k] == null);
     if (bad.length) {
       overall[k] = null;
+      overall[k + "Far"] = bad.every((x) => x.far[k]);
       continue;
     }
     const mx = rel.reduce((a, b) => (b.eta[k] > a.eta[k] ? b : a));
@@ -4509,20 +4703,16 @@ function planForecast(p) {
   }
   overall.missingData = rel.filter((x) => x.status === "data").map((x) => x.m);
   overall.negative = rel.filter((x) => x.status === "neg").map((x) => x.m);
+  overall.far = rel.filter((x) => x.status === "far").map((x) => x.m);
   overall.minN = rel.length ? Math.min(...rel.map((x) => x.st.n)) : 0;
   overall.minSpan = rel.length ? Math.min(...rel.map((x) => x.st.span || 0)) : 0;
   return { res, overall, base };
 }
-function fmtEta(days, base) {
-  if (days == null) return "nicht absehbar";
+function fmtEta(days, base, far) {
+  if (days == null) return far ? FC_FAR_TXT : "nicht absehbar";
+  if (fcTooFar(days)) return FC_FAR_TXT;
   if (days <= 0) return "gedeckt";
-  const d = new Date(base + days * 864e5);
-  return (
-    d.toLocaleDateString("de-DE") +
-    " (" +
-    (days < 14 ? Math.ceil(days) + " Tage" : "~" + Math.round(days / 7) + " Wochen") +
-    ")"
-  );
+  return fcDate(base, days) + " (" + fcDur(days) + ")";
 }
 // Prognose-Qualität (ab 1.4): nach Zahl der zählenden Abschnitte und abgedecktem Zeitraum.
 // Maßgeblich ist das Material mit den wenigsten Daten.
@@ -4588,15 +4778,21 @@ function renderForecast(p) {
       ? "Noch zu wenig Daten (" + o.minN + "/" + FC_MIN + " Abschnitte)"
       : o.negative.length
         ? "Keine positive Rate: " + o.negative.join(", ")
-        : "Szenario nicht berechenbar";
+        : o.far.length
+          ? "Über 100 Jahre bei der jetzigen Rate: " + o.far.join(", ")
+          : "Szenario nicht berechenbar";
   } else {
-    val = new Date(fc.base + o.real * 864e5).toLocaleDateString("de-DE");
+    val = fcDate(fc.base, o.real);
     det =
-      (o.real < 14 ? "in " + Math.ceil(o.real) + " Tagen" : "in ca. " + Math.round(o.real / 7) + " Wochen") +
+      (o.real < 14
+        ? "in " + Math.ceil(o.real) + (Math.ceil(o.real) === 1 ? " Tag" : " Tagen")
+        : o.real <= FC_YEAR
+          ? "in ca. " + Math.round(o.real / 7) + " Wochen"
+          : "in ca. " + fcYears(o.real).replace(/Jahre$/, "Jahren")) +
       " · konservativ " +
-      (o.cons == null ? "offen" : new Date(fc.base + o.cons * 864e5).toLocaleDateString("de-DE")) +
+      (o.cons == null ? (o.consFar ? "über 100 Jahre" : "offen") : fcDate(fc.base, o.cons)) +
       " · optimistisch " +
-      (o.opt == null ? "offen" : new Date(fc.base + o.opt * 864e5).toLocaleDateString("de-DE"));
+      (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
   }
   $("etaValue").textContent = val;
   $("etaDetail").textContent = det;
@@ -4605,9 +4801,9 @@ function renderForecast(p) {
     (q
       ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></div>`
       : "") +
-    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
+    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
     (o.missingData.length
-      ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ 24 Stunden nötig).</p>`
+      ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ ${FC_GAP_H} Stunden Abstand nötig).</p>`
       : "") +
     `<p class="muted" style="font-size:11px">Ausgangspunkt: Datenstand vom ${fdt(fc.base)}.</p>`;
   $("fcRows").innerHTML = fc.res
@@ -4616,7 +4812,7 @@ function renderForecast(p) {
         dq = st.rows.length
           ? `${st.n} von ${st.rows.length}${st.rows.length - st.n ? " (" + (st.rows.length - st.n) + " markiert)" : ""}`
           : "keine";
-      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.cons, fc.base)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base)}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.opt, fc.base)}</td><td>${dq}</td></tr>`;
+      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
     })
     .join("");
   const ivs = new Map();
@@ -4644,7 +4840,7 @@ function renderForecast(p) {
           return `<tr><td>${new Date(v.from).toLocaleDateString("de-DE")} – ${new Date(v.to).toLocaleDateString("de-DE")}</td><td>${v.days.toFixed(1).replace(".", ",")}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>Automatisch</option><option value="include"${o === "include" ? " selected" : ""}>Immer mitrechnen</option><option value="exclude"${o === "exclude" ? " selected" : ""}>Nicht mitrechnen</option></select></td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit 24 Stunden Abstand.</td></tr>';
+    : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit ' + FC_GAP_H + ' Stunden Abstand.</td></tr>';
   $("fcIntervals")
     .querySelectorAll("[data-ov]")
     .forEach(
@@ -4698,7 +4894,10 @@ function packCalc(p) {
       const eff = st.real + x.amt / 7;
       return eff > 0 ? x.miss / eff : Infinity;
     });
-    if (per.every((v) => v != null)) weekly = { days: Math.max(...per), base: fc.base };
+    if (per.every((v) => v != null)) {
+      const days = Math.max(...per);
+      weekly = { days, base: fc.base, far: fcTooFar(days) };
+    }
   }
   return {
     pack,
@@ -4722,7 +4921,7 @@ function renderPacks(p) {
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ca. am <b>${new Date(pc.weekly.base + pc.weekly.days * 864e5).toLocaleDateString("de-DE")}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
   $("packEditBtn").onclick = openPacks;
 }
 function openPacks() {
@@ -4756,6 +4955,7 @@ function packEffect(p) {
   return {
     save: Math.round((day(w.base.real.d) - day(w.scen.real.d)) / 864e5),
     date: new Date(w.start + w.scen.real.d * 864e5),
+    when: fcDate(w.start, w.scen.real.d),
     next: w.scen.real.driver,
   };
 }
@@ -4773,11 +4973,15 @@ function renderBottleneckCard(p) {
     return;
   }
   const max = bn.rows[0].eta.real,
-    day = (t) => new Date(bn.fc.base + t * 864e5).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+    day = (t) =>
+      t > FC_YEAR
+        ? fcDate(bn.fc.base, t)
+        : new Date(bn.fc.base + t * 864e5).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }),
+    inT = (t) => (t > FC_YEAR ? "~" + fcYears(t) : Math.ceil(t) + " T.");
   let h = bn.rows
     .map(
       (x, i) =>
-        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">gedeckt in ${Math.ceil(x.eta.real)} T. · ${day(x.eta.real)}</span></div>`,
+        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">gedeckt in ${inT(x.eta.real)} · ${day(x.eta.real)}</span></div>`,
     )
     .join("");
   const pe = packEffect(p),
@@ -4788,7 +4992,7 @@ function renderBottleneckCard(p) {
       'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
   else {
     const n = pe.save,
-      when = pe.date.toLocaleDateString("de-DE");
+      when = pe.when;
     if (n < 1) {
       const close = bn.rows.filter((x) => max - x.eta.real < 1).map((x) => x.m.replace("7★ ", ""));
       foot =
@@ -5070,7 +5274,7 @@ function weekData(p, off) {
         cb = p && p.planData ? planCostAt(p, m, new Date(s1.t)) : null,
         built = ca != null && cb != null ? ca - cb : 0,
         inc = b - a + built;
-      res.push({ m, a, b, delta: b - a, built, inc, perDay: days >= 1 ? inc / days : null });
+      res.push({ m, a, b, delta: b - a, built, inc, perDay: days >= FC_GAP_DAYS ? inc / days : null });
     }
   }
   const hist = ((p && p.planData && p.planData.history) || [])
@@ -5107,7 +5311,7 @@ function etaTxt(e) {
       ? "offen"
       : e.eta === 0
         ? "gedeckt"
-        : new Date(e.eta).toLocaleDateString("de-DE");
+        : fcDate(Date.now(), (e.eta - Date.now()) / 864e5);
 }
 function renderWeekly() {
   if (!s.plans.length) {
@@ -5119,6 +5323,8 @@ function renderWeekly() {
   }
   const p = mainPlan(),
     d = weekData(p, wkOffset),
+    dPrev = weekData(p, wkOffset - 1),
+    prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
     W = d.W,
     dl = (t) => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
   $("wkPlan").textContent = p ? p.name + " (Hauptplan · " + statusLabel(calcPlanStatus(p)) + ")" : "";
@@ -5139,7 +5345,10 @@ function renderWeekly() {
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
   let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
-  h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< 24 h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
+  h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
+  if (d.current) h += wkOutlook(p);
   h += `<section class="panel" style="margin-top:12px"><h3>Ereignisse der Woche</h3>${
     d.ev.length
       ? `<table class="histTable" style="width:100%"><tbody id="wkEv">${d.ev
@@ -5154,6 +5363,67 @@ function renderWeekly() {
   h +=
     '<div class="chartNote" style="margin-top:10px">Wochen laufen Montag bis Sonntag. Die Fertigstellung im Wochenvergleich wird ab 1.8.4 täglich mitprotokolliert – ältere Wochen haben deshalb noch keinen Vergleichswert.</div>';
   $("wkBody").innerHTML = h;
+}
+
+// Ab 2.1 (F19): Vergleich mit dem Ø-Einkommen der Vorwoche
+function wkTrend(now, prev) {
+  if (now == null || prev == null) return '<td class="muted">–</td><td class="muted">kein Vergleich</td>';
+  const d = now - prev;
+  return (
+    `<td>${prev > 0 ? "+" : ""}${fmt(prev)}</td>` +
+    (Math.abs(d) < 0.05
+      ? '<td class="muted">= gleich</td>'
+      : `<td class="${d > 0 ? "green" : "red"}">${d > 0 ? "▲ +" : "▼ −"}${fmt(Math.abs(d))}</td>`)
+  );
+}
+// Ab 2.1 (F19): Ausblick auf die kommende Woche, nur in der laufenden Woche
+function wkOutlook(p) {
+  const fc = p && p.hasPlanData ? planForecast(p) : null,
+    wb = weekBounds(1),
+    head = `<section class="panel" id="wkOutlook" style="margin-top:12px"><h3>Ausblick auf KW ${isoWeek(wb.a)}</h3>`;
+  if (!fc || !(fc.overall.real > 0))
+    return (
+      head +
+      `<p class="muted">${fc && fc.overall.real === 0 ? "Alle Ressourcen für das Ziel sind schon gedeckt." : "Der Ausblick braucht eine Prognose (mindestens " + FC_MIN + " Abschnitte mit je " + FC_GAP_H + " Stunden Abstand)."}</p></section>`
+    );
+  const until = (wb.b - fc.base) / 864e5,
+    soon = fc.res
+      .filter((x) => !x.common && x.miss > 0 && x.eta.real != null && x.eta.real < until)
+      .sort((a, b) => a.eta.real - b.eta.real),
+    bn = bottleneckRows(p),
+    li = soon.length
+      ? soon.map((x) => `<li>${escAttr(x.m)} voraussichtlich gedeckt am <b>${fcDate(fc.base, x.eta.real)}</b></li>`).join("")
+      : `<li>Bis Ende KW ${isoWeek(wb.a)} wird voraussichtlich kein weiteres Material gedeckt.</li>`;
+  return (
+    head +
+    `<ul class="wkList">${li}` +
+    (bn && bn.rows.length
+      ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
+      : "") +
+    `<li>Fertigstellung <b>${fmtEta(fc.overall.real, fc.base)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
+  );
+}
+
+// Ab 2.1 (F19 Punkt 5): Effizienzänderungen der Woche aus der Planhistorie
+function wkEffLine(p, a, end) {
+  const h = (((p && p.planData) || {}).history || [])
+    .filter((x) => x.efficiencies && Object.keys(x.efficiencies).length)
+    .map((x) => ({ t: new Date(x.at).getTime(), e: x.efficiencies }))
+    .sort((x, y) => x.t - y.t);
+  const lead = '<p class="muted wkEff"><b>Effizienzen diese Woche:</b> ';
+  if (!h.length) return lead + "noch kein Verlauf – er beginnt mit dem nächsten Plan-Import.</p>";
+  const e1 = snapAt(h, end - 1),
+    inWeek = h.filter((x) => x.t > a && x.t < end),
+    e0 = snapAt(h, a) || (inWeek.length > 1 ? inWeek[0] : null);
+  if (!e1 || !e0 || e0 === e1) return lead + "kein Vergleich (kein Plan-Import mit Effizienzen in dieser Woche).</p>";
+  const ch = Object.keys(e1.e)
+    .filter((k) => isNum(e1.e[k]) && isNum(e0.e[k]) && e1.e[k] !== e0.e[k])
+    .map(
+      (k) =>
+        `${escAttr(k)} ${fx(e0.e[k])} % → ${fx(e1.e[k])} % <span class="${e1.e[k] > e0.e[k] ? "green" : "red"}">(${e1.e[k] > e0.e[k] ? "+" : "−"}${fx(Math.abs(e1.e[k] - e0.e[k]))})</span>`,
+    );
+  return lead + (ch.length ? ch.join(" · ") : "keine Änderung") + "</p>";
 }
 function wif() {
   $("impView").classList.remove("on");
@@ -5261,7 +5531,7 @@ function wifCalc(p, inp) {
   return out;
 }
 function wifDate(start, d) {
-  return d == null ? "offen" : d === 0 ? "gedeckt" : new Date(start + d * 864e5).toLocaleDateString("de-DE");
+  return d == null ? "offen" : d === 0 ? "gedeckt" : fcTooFar(d) ? FC_FAR_TXT : fcDate(start, d);
 }
 function wifGain(a, b) {
   if (a == null || b == null) return "–";
@@ -5271,6 +5541,7 @@ function wifGain(a, b) {
     : `<span class="${g > 0 ? "wifGain" : "wifLoss"}">${g > 0 ? g + " Tage früher" : -g + " Tage später"}</span>`;
 }
 function renderWif() {
+  if (typeof renderTarget === "function") renderTarget();
   const p = activePlan(),
     inp = wifInput(),
     w = wifCalc(p, inp);
@@ -5301,7 +5572,7 @@ function renderWif() {
     );
   if (B.d == null && B.missing)
     notes.push(
-      "Für eine Prognose fehlen noch Abschnitte (mindestens " + FC_MIN + " mit je 24 Stunden Abstand).",
+      "Für eine Prognose fehlen noch Abschnitte (mindestens " + FC_MIN + " mit je " + FC_GAP_H + " Stunden Abstand).",
     );
   if (w.rows.some((x) => x.miss > 0 && !x.amt && (inp.now || inp.week)))
     notes.push("Materialien ohne Packinhalt profitieren nicht von Packs.");
@@ -5598,7 +5869,7 @@ function careHints() {
         iv = snapIntervals(m),
         anchor = iv.length ? iv[iv.length - 1].b.t.getTime() : pts[0];
       if (miss > 0 && anchor) {
-        const next = anchor + 864e5;
+        const next = anchor + FC_GAP_H * 36e5;
         out.push({
           warn: false,
           text:
@@ -5612,7 +5883,7 @@ function careHints() {
             FC_MIN +
             "). Der nächste zählende Export ist " +
             (next <= now ? "ab sofort" : "ab " + fdt(next)) +
-            " möglich (mindestens 24 Stunden Abstand).",
+            " möglich (mindestens " + FC_GAP_H + " Stunden Abstand).",
         });
       }
     }
@@ -5701,8 +5972,25 @@ async function parseExport(raw, name) {
   }
   const h = await hash(raw);
   if (!j || !Array.isArray(j.resources) || !Array.isArray(j.buildings)) throw Error("Ungültiger Export");
-  let map = new Map(j.resources.map((x) => [String(x.id), +x.amount])),
+  // Ab 2.1: Jeder Wert, den der Planner nutzt, muss eine Zahl ≥ 0 sein. Sonst wird die ganze Datei
+  // abgelehnt (keine stille Übernahme von leeren, negativen oder Text-Werten).
+  const used = new Map(Object.entries(IDS).map(([n, id]) => [String(id), n]));
+  for (const [n, c] of Object.entries(SIGMA)) {
+    used.set(String(c.raw), n);
+    for (const [ids] of c.tokens) for (const id of ids) used.set(String(id), n);
+  }
+  let map = new Map(),
     values = {};
+  for (const x of j.resources) {
+    if (!x || x.id == null) continue;
+    const id = String(x.id);
+    if (!used.has(id)) continue;
+    const v = x.amount;
+    const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? +v : NaN;
+    if (!Number.isFinite(n) || n < 0)
+      throw Error("Ungültiger Wert bei " + used.get(id) + ": " + (v === undefined ? "fehlt" : JSON.stringify(v)));
+    map.set(id, n);
+  }
   for (let [n, id] of Object.entries(IDS)) {
     if (!map.has(String(id))) throw Error(n + " fehlt");
     values[n] = map.get(String(id));
@@ -5730,6 +6018,18 @@ let expDir = null,
   pendingBatch = null,
   batchSource = "",
   scanMsg = "";
+// Ab 2.1: Der gespeicherte Bestand folgt immer dem zeitlich neuesten Snapshot – egal in welcher
+// Reihenfolge importiert oder gelöscht wurde. Ohne Snapshot: Startwerte.
+function syncResources() {
+  const ls = latestSnapshot();
+  if (!ls) {
+    s.resources = seed.resources.map((r) => [...r]);
+    return;
+  }
+  s.resources = s.resources.map((r) => (ls.values[r[0]] !== undefined ? [r[0], ls.values[r[0]], r[2]] : r));
+  for (const [n, v] of Object.entries(ls.values))
+    if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
+}
 function sameValues(a, b) {
   if (!a || !b || !a.values || !b.values) return false;
   const ks = Object.keys(a.values);
@@ -5859,12 +6159,7 @@ function applyBatch() {
     s.exportScan.ignored = [...ig].slice(-300);
   }
   for (const sn of sel) s.snapshots.push(sn);
-  const ls = latestSnapshot();
-  if (ls) {
-    s.resources = s.resources.map((r) => (ls.values[r[0]] !== undefined ? [r[0], ls.values[r[0]], r[2]] : r));
-    for (const [n, v] of Object.entries(ls.values))
-      if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
-  }
+  syncResources();
   toast(sel.length === 1 ? "1 Export übernommen." : sel.length + " Exporte übernommen.");
   s.logs.push(
     sel.length === 1
@@ -6054,7 +6349,7 @@ function bkPayload(d) {
     {
       app: "Bens STFC Progress Planner",
       type: "backup",
-      version: "2.0",
+      version: "2.1.0",
       createdAt: d.toISOString(),
       state: JSON.parse(serializeState()),
     },
@@ -6817,7 +7112,7 @@ function render() {
         " (" +
         inc.days.toFixed(1).replace(".", ",") +
         " Tage)." +
-        (inc.days < 1 ? " Weniger als 24 Stunden – deshalb keine Tages- oder Wochenraten." : "") +
+        (inc.days < FC_GAP_DAYS ? " Weniger als " + FC_GAP_H + " Stunden – deshalb keine Tages- oder Wochenraten." : "") +
         " Zeitpunkt = Importzeit; bitte direkt nach dem Synchronisieren in Spock's Club importieren."
       : inc.points === 1
         ? "Ein Messpunkt mit Ressourcen ist vorhanden. Ab dem zweiten Import von „Total resources“ wird das Einkommen berechnet."
@@ -6849,6 +7144,7 @@ function render() {
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
   renderPacks(p);
+  if (typeof renderEffPanel === "function") renderEffPanel(p);
   {
     const pc = packCalc(p);
     if (!pc) {
@@ -6897,10 +7193,7 @@ function renderSnaps() {
         (b.onclick = () => {
           if (confirm("Snapshot löschen?")) {
             s.snapshots = s.snapshots.filter((x) => x.id !== b.dataset.del);
-            let l = s.snapshots.at(-1);
-            s.resources = l
-              ? s.resources.map((r) => (l.values?.[r[0]] !== undefined ? [r[0], l.values[r[0]], r[2]] : r))
-              : seed.resources.map((r) => [...r]);
+            syncResources();
             save();
           }
         }),
@@ -6985,8 +7278,8 @@ function drawChart(boxId, W, H, big) {
       b =
         st.n >= FC_MIN
           ? sg(st.real)
-          : spanDays < 1
-            ? "Zeitraum < 24 h"
+          : spanDays < FC_GAP_DAYS
+            ? "Zeitraum < " + FC_GAP_H + " h"
             : "zu wenig Daten (" + st.n + "/" + FC_MIN + ")",
       c = st.n >= FC_MIN ? sg(st.real * 7) : "Noch nicht belastbar";
     if (big)
@@ -7107,10 +7400,10 @@ function drawChart(boxId, W, H, big) {
   );
   $(big ? "chartBigNote" : "chartNote").textContent =
     pts.length === 1
-      ? "Ein Startwert ist vorhanden. Raten und Prognose entstehen ab drei Abschnitten mit je mindestens 24 Stunden Abstand."
+      ? "Ein Startwert ist vorhanden. Raten und Prognose entstehen ab drei Abschnitten mit je mindestens " + FC_GAP_H + " Stunden Abstand."
       : st.n < FC_MIN
-        ? spanDays < 1
-          ? "Die Snapshots liegen weniger als 24 Stunden auseinander. Deshalb werden bewusst keine Raten gezeigt."
+        ? spanDays < FC_GAP_DAYS
+          ? "Die Snapshots liegen weniger als " + FC_GAP_H + " Stunden auseinander. Deshalb werden bewusst keine Raten gezeigt."
           : "Noch zu wenig Abschnitte für eine Rate (" + st.n + " von " + FC_MIN + ")."
         : "Ø-Werte = nach Länge gewichteter Median der Abschnitte der letzten 6 Wochen, Bauvorgänge herausgerechnet. Gestrichelt: Prognose bis zum Bedarf.";
 }
@@ -7150,14 +7443,14 @@ function attachChartHover(box, P, y0, y1) {
     dot.setAttribute("cy", q.py);
     g.style.display = "";
     const days = q.prev ? (q.t - q.prev.t) / 864e5 : 0,
-      rate = q.prev && days >= 1 ? (q.v - q.prev.v) / days : null;
+      rate = q.prev && days >= FC_GAP_DAYS ? (q.v - q.prev.v) / days : null;
     tip.innerHTML =
       new Date(q.t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
       `<br>Bestand <b>${fmt(q.v)}</b>` +
       (rate != null
         ? `<br>Veränderung seit vorigem Export <b class="${rate >= 0 ? "green" : "red"}">${rate > 0 ? "+" : ""}${fmt(rate)}/Tag</b>`
         : q.prev
-          ? '<br><span class="muted">weniger als 24 Stunden nach dem vorigen Export</span>'
+          ? '<br><span class="muted">weniger als ' + FC_GAP_H + ' Stunden nach dem vorigen Export</span>'
           : '<br><span class="muted">erster Messpunkt</span>');
     tip.classList.add("on");
     const br = box.getBoundingClientRect(),
@@ -8165,6 +8458,10 @@ async function hash(t) {
   let b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
+function isOlderThanLatest(sn) {
+  const ls = latestSnapshot();
+  return !!ls && new Date(snapTime(sn)) < new Date(snapTime(ls));
+}
 async function ingest(f) {
   try {
     pending = await parseExport(await f.text(), f.name);
@@ -8181,6 +8478,11 @@ async function ingest(f) {
         ? ""
         : '<p class="muted">Σ-Werte konnten aus diesem Export nicht berechnet werden.</p>') +
       (dup ? '<p class="red">Duplikat, Import blockiert.</p>' : "") +
+      (!dup && isOlderThanLatest(pending)
+        ? '<p class="muted" id="olderHint">Älter als dein neuester Snapshot (' +
+          fdt(snapTime(latestSnapshot())) +
+          ") – verfeinert nachträglich die Raten. Der aktuelle Bestand bleibt unverändert.</p>"
+        : "") +
       (pending.exportedAt
         ? '<p class="muted">Exportstand laut Dateiname: ' + fdt(pending.exportedAt) + "</p>"
         : '<p class="red">Keine Exportzeit im Dateinamen gefunden. Als Zeitpunkt wird die Importzeit verwendet – Raten können dadurch ungenau werden. Am besten die Datei nicht umbenennen.</p>');
@@ -8228,11 +8530,7 @@ async function ingest(f) {
 }
 $("confirm").onclick = () => {
   s.snapshots.push(pending);
-  s.resources = s.resources.map((r) =>
-    pending.values[r[0]] !== undefined ? [r[0], pending.values[r[0]], r[2]] : r,
-  );
-  for (const [n, v] of Object.entries(pending.values))
-    if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
+  syncResources();
   s.logs.push("Snapshot: " + pending.fileName);
   pending = null;
   $("modal").classList.remove("on");
@@ -8617,7 +8915,7 @@ const TUT_KEY = "bens-stfc-tutorial",
   TUT = [
     [
       "Willkommen",
-      "Willkommen im STFC Progress Planner",
+      "Willkommen im G7 STFC Progress Planner",
       '<p>Der Planner zeigt dir, <b>wann du ein Gebäudeziel erreichst</b> – zum Beispiel Operations 76 – und <b>welches Material dich am meisten bremst</b>.</p><p>Er rechnet mit deinen echten Daten aus Spock\'s Club: deinem Ressourcenstand aus regelmäßigen Exporten und den Kosten deines Upgrade-Plans.</p><div class="tip">Alles bleibt in diesem Browser auf deinem PC. Die Datei braucht kein Internet und sendet keine Daten.</div>',
     ],
     [
@@ -8628,7 +8926,7 @@ const TUT_KEY = "bens-stfc-tutorial",
     [
       "Schritt 1 von 3",
       "Account-Snapshot einlesen",
-      "<ol><li>Spiel starten, damit Spock's Club synchronisiert.</li><li>In Spock's Club: <b>Syncing › Export Data</b>, mindestens <b>Buildings</b> und <b>Resources</b> wählen, Format <b>JSON</b>, <b>Download Export</b>.</li><li>Hier im Planner: <b>„Neue Exporte einlesen“</b> (beim ersten Mal den Download-Ordner wählen) oder die Datei ins Importfeld ziehen.</li></ol><div class=\"tip\">Exportiere mehrmals pro Woche. Ab drei Abschnitten mit je mindestens 24 Stunden Abstand erstellt der Planner eine Prognose.</div>",
+      "<ol><li>Spiel starten, damit Spock's Club synchronisiert.</li><li>In Spock's Club: <b>Syncing › Export Data</b>, mindestens <b>Buildings</b> und <b>Resources</b> wählen, Format <b>JSON</b>, <b>Download Export</b>.</li><li>Hier im Planner: <b>„Neue Exporte einlesen“</b> (beim ersten Mal den Download-Ordner wählen) oder die Datei ins Importfeld ziehen.</li></ol><div class=\"tip\">Exportiere mehrmals pro Woche. Ab drei Abschnitten mit je mindestens 20 Stunden Abstand erstellt der Planner eine Prognose.</div>",
     ],
     [
       "Schritt 2 von 3",
@@ -8782,7 +9080,7 @@ function setupSteps() {
       doneTxt: "Fertigstellungsdatum wird berechnet",
       txt: !active
         ? "Kommt, sobald ein Plan aktiv ist und genug Exporte vorliegen."
-        : "Noch " + missN + " Abschnitt" + (missN === 1 ? "" : "e") + ": an verschiedenen Tagen exportieren (je mindestens 24 Stunden Abstand).",
+        : "Noch " + missN + " Abschnitt" + (missN === 1 ? "" : "e") + ": an verschiedenen Tagen exportieren (je mindestens 20 Stunden Abstand).",
     },
   ];
 }
@@ -8873,7 +9171,7 @@ const TERMS = {
   qualitaet:
     "<b>Prognose-Qualität</b> sagt, wie belastbar das Datum ist. Gezählt werden die Abschnitte der letzten 6 Wochen. Vorläufig: unter 6 Abschnitten oder 14 Tagen. Brauchbar: ab 6 Abschnitten über 14 Tage. Stabil: ab 10 Abschnitten über 28 Tage.",
   abschnitt:
-    "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 24 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
+    "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 20 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
   snapshot:
     "<b>Snapshot</b> ist ein eingelesener Spock's-Export: dein Ressourcenstand und deine Gebäudestufen zu einem Zeitpunkt. Aus mehreren Snapshots berechnet der Planner dein Einkommen.",
   hauptplan:
@@ -8961,5 +9259,292 @@ setTimeout(() => document.body.classList.remove("firstPaint"), 1500);
 
 renderSetup();
 autoScanOnOpen();
+// Zieltermin prüfen (ab 2.1, F09) – Seite Was-wäre-wenn.
+// Benötigter Tageszuwachs = fehlende Menge ÷ verbleibende Tage. Verglichen wird mit dem Einkommen der
+// Prognose (konservativ / realistisch / optimistisch). Packs aus den Stellschrauben fließen nicht ein,
+// die Bauzeit ist nicht berücksichtigt. Das Datum wird je Plan gespeichert (p.targetDate, "JJJJ-MM-TT").
+
+// "var": renderWif() kann vor dem Ausführen dieser Datei laufen
+var tdPlanId;
+const TD_LV = {
+  1: { t: "reicht sicher", cls: "t1" },
+  2: { t: "reicht", cls: "t2" },
+  3: { t: "knapp", cls: "t3" },
+  4: { t: "reicht nicht", cls: "t4" },
+};
+const TD_VERDICT = {
+  1: ["Erreichbar", "auch im konservativen Szenario"],
+  2: ["Erreichbar", "im realistischen Szenario"],
+  3: ["Knapp", "nur im optimistischen Szenario"],
+  4: ["Nicht erreichbar", "bei keinem Szenario"],
+};
+
+// Ende des gewählten Tages in Ortszeit
+function tdEnd(dateStr) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ""));
+  if (!m) return null;
+  const t = new Date(+m[1], +m[2] - 1, +m[3], 23, 59, 59).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function targetCheck(p, dateStr) {
+  const fc = p && p.hasPlanData ? planForecast(p) : null;
+  if (!fc) return { err: "Der Plan ist nicht aktiv – erst Plandaten importieren und bestätigen." };
+  const end = tdEnd(dateStr);
+  if (end == null) return { err: "Bitte ein Datum wählen." };
+  if (end <= Date.now()) return { err: "Das Datum liegt nicht in der Zukunft." };
+  const days = (end - fc.base) / 864e5;
+  let worst = 0,
+    crit = null;
+  const rows = fc.res.map((x) => {
+    if (x.common) return { m: x.m, miss: x.miss, kind: "common" };
+    if (x.miss <= 0) return { m: x.m, miss: 0, kind: "done" };
+    const need = x.miss / days;
+    if (x.st.n < FC_MIN) return { m: x.m, miss: x.miss, need, kind: "data" };
+    const h = x.st.real,
+      lv = x.st.cons >= need ? 1 : h >= need ? 2 : x.st.opt >= need ? 3 : 4,
+      r = { m: x.m, miss: x.miss, need, h, diff: h - need, lv, kind: "ok" };
+    worst = Math.max(worst, lv);
+    if (!crit || h / need < crit.h / crit.need) crit = r;
+    return r;
+  });
+  const noData = rows.filter((r) => r.kind === "data").map((r) => r.m);
+  return { fc, days, rows, lvl: noData.length ? null : worst || 1, crit, noData, allDone: !crit && !noData.length };
+}
+
+function tdPlans() {
+  return s.plans.filter((p) => calcPlanStatus(p) === "active");
+}
+
+function tdVerdict(r) {
+  return r.allDone
+    ? ["Erreichbar", "alles schon gedeckt", "t1"]
+    : r.lvl
+      ? TD_VERDICT[r.lvl].concat(TD_LV[r.lvl].cls)
+      : ["Nicht bewertbar", "zu wenig Daten", "t3"];
+}
+
+// Plan-Karten wie im Dashboard: je Plan ein eigenes „Fertig bis“, Bewertung direkt auf der Karte
+function renderTdCards(sel) {
+  $("tdCards").innerHTML = s.plans
+    .map((p) => {
+      const act = calcPlanStatus(p) === "active";
+      let state;
+      if (!act) state = "<span>nicht aktiv – erst Plandaten bestätigen</span>";
+      else if (!p.targetDate) state = "<span>Datum wählen</span>";
+      else {
+        const r = targetCheck(p, p.targetDate);
+        state = r.err
+          ? `<span>${escAttr(r.err)}</span>`
+          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>noch ${Math.max(0, Math.floor(r.days))} Tage</span>`;
+      }
+      return `<article class="plan${act && p.id === sel ? " active" : ""}${act ? "" : " off"}" data-td="${escAttr(p.id)}"><div class="pt"><img src="${ART[artKey(p)]}" alt=""><div><h3>${escAttr(p.name)}${p.isMain ? '<span class="mainStar"> ★</span>' : ""}</h3><span class="muted">Level ${p.start} → ${p.target}</span></div></div><div class="tdRow"><span>Fertig bis</span>${act ? `<input type="date" data-tdd="${escAttr(p.id)}" value="${escAttr(p.targetDate || "")}">` : "<span>–</span>"}</div><div class="tdState">${state}</div></article>`;
+    })
+    .join("");
+  $("tdCards")
+    .querySelectorAll("[data-td]")
+    .forEach((c) => {
+      if (c.classList.contains("off")) return;
+      c.onclick = () => {
+        if (tdPlanId === c.dataset.td) return;
+        tdPlanId = c.dataset.td;
+        renderTarget();
+      };
+    });
+  $("tdCards")
+    .querySelectorAll("[data-tdd]")
+    .forEach(
+      (i) =>
+        (i.onchange = () => {
+          const p = s.plans.find((x) => x.id === i.dataset.tdd);
+          if (!p) return;
+          if (i.value) p.targetDate = i.value;
+          else delete p.targetDate;
+          tdPlanId = p.id;
+          persist();
+          renderTarget();
+        }),
+    );
+}
+
+function renderTarget() {
+  const out = $("tdResult");
+  if (!out) return;
+  const plans = tdPlans();
+  if (!plans.some((p) => p.id === tdPlanId)) {
+    const ap = activePlan();
+    tdPlanId = plans.length ? (plans.find((p) => p.id === (ap && ap.id)) || plans[0]).id : null;
+  }
+  if (!s.plans.length) {
+    $("tdCards").innerHTML = "";
+    $("tdSel").textContent = "";
+    out.innerHTML = '<p class="muted tdMsg">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    return;
+  }
+  renderTdCards(tdPlanId);
+  if (!plans.length) {
+    $("tdSel").textContent = "";
+    out.innerHTML = '<p class="muted tdMsg">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    return;
+  }
+  const p = plans.find((x) => x.id === tdPlanId),
+    fc = planForecast(p);
+  $("tdSel").innerHTML =
+    `Details für <b>${escAttr(p.name)}</b>` +
+    (fc ? " · Prognose heute: " + fmtEta(fc.overall.real, fc.base, fc.overall.realFar) : "") +
+    (plans.length > 1 ? " · auf einen anderen Plan klicken, um seine Details zu sehen" : "");
+  if (!p.targetDate) {
+    out.innerHTML = '<p class="muted tdMsg">Wunschdatum wählen, dann siehst du, ob dein Einkommen reicht.</p>';
+    return;
+  }
+  const r = targetCheck(p, p.targetDate);
+  if (r.err) {
+    out.innerHTML = `<p class="muted tdMsg">${escAttr(r.err)}</p>`;
+    return;
+  }
+  const V = tdVerdict(r),
+    vcls = V[2],
+    c = r.crit,
+    sg = (v) => (v > 0 ? "+" : "") + fmt(v),
+    ct = (p.planData || {}).construction;
+  out.innerHTML =
+    `<div class="wifSum tdSum"><div><span class="muted">Rechnerische Bewertung</span><b><span class="tdV ${vcls}">${V[0]}</span></b><span class="muted">${V[1]}</span></div>` +
+    `<div><span class="muted">Verbleibende Tage</span><b>${Math.max(0, Math.floor(r.days))}</b><span class="muted">ab Datenstand ${new Date(r.fc.base).toLocaleDateString("de-DE")}</span></div>` +
+    `<div><span class="muted">Kritisch</span><b>${c ? escAttr(c.m) : "–"}</b><span class="muted">${c ? "braucht " + sg(c.need) + "/Tag, bisher " + sg(c.h) + "/Tag (" + sg(c.diff) + ")" : r.noData.length ? "zu wenig Daten für: " + r.noData.map(escAttr).join(", ") : "nichts offen"}</span></div></div>` +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Fehlt</th><th>Benötigt pro Tag</th><th>Bisher pro Tag</th><th>Differenz</th><th>Bewertung</th></tr></thead><tbody id="tdRows">` +
+    r.rows
+      .map((x) =>
+        x.kind === "common"
+          ? `<tr class="muted"><td>${escAttr(x.m)} (zählt nicht)</td><td>${fmt(x.miss)}</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>`
+          : x.kind === "done"
+            ? `<tr><td>${escAttr(x.m)}</td><td>0</td><td>–</td><td>–</td><td>–</td><td><span class="tdV t1">gedeckt</span></td></tr>`
+            : x.kind === "data"
+              ? `<tr><td>${escAttr(x.m)}</td><td>${fmt(x.miss)}</td><td>${sg(x.need)}</td><td>–</td><td>–</td><td class="muted">zu wenig Daten</td></tr>`
+              : `<tr><td>${escAttr(x.m)}</td><td>${fmt(x.miss)}</td><td>${sg(x.need)}</td><td>${sg(x.h)}</td><td class="${x.diff >= 0 ? "green" : "red"}">${sg(x.diff)}</td><td><span class="tdV ${TD_LV[x.lv].cls}">${TD_LV[x.lv].t}</span></td></tr>`,
+      )
+      .join("") +
+    `</tbody></table></div>` +
+    `<div class="chartNote" style="margin-top:8px">Benötigt pro Tag = Fehlt ÷ verbleibende Tage. Bisher = realistisches Einkommen der letzten 6 Wochen wie in der Prognose. „Reicht sicher“: auch das konservative Einkommen genügt, „knapp“: nur das optimistische. Die Bauzeit ist nicht berücksichtigt${ct && ct.cost ? " (laut Plan " + fmtDuration(ct.cost) + ")" : ""}, die Stellschrauben oben auch nicht. Rechnerische Bewertung, keine Garantie.</div>`;
+}
+// Effizienzen: Wirkung und Verlauf (ab 2.1, F22) – Seite Ressourcen & Effizienzen.
+// Kosten = Grundkosten ÷ (1 + Effizienz/100), so rechnet Spock's Club. Der Verlauf beginnt mit 2.1: Bei jedem
+// Plan-Import speichert die Planhistorie die Effizienzen mit (makeHistPoint). Frühere Termine und Raten werden
+// nicht mit neuen Effizienzen umgerechnet.
+// Achtung: render() ruft renderEffPanel() schon beim Laden auf – hier deshalb keine let/const auf oberster Ebene.
+
+function effCost(base, eff) {
+  return base / (1 + eff / 100);
+}
+
+// Messpunkte mit Effizienzen: letzter (jetzt) und vorletzter (voriger Import)
+function effHistory(p) {
+  const h = (((p && p.planData) || {}).history || [])
+    .filter((x) => x.efficiencies && Object.keys(x.efficiencies).length)
+    .sort((a, b) => new Date(a.at) - new Date(b.at));
+  return { all: h, prev: h.length >= 2 ? h[h.length - 2] : null, last: h.length ? h[h.length - 1] : null };
+}
+
+function effRows(p) {
+  const d = p.planData || {},
+    res = d.resources || {},
+    eff = d.efficiencies || {};
+  return MATERIALS.filter(
+    (m) => res[m] && isNum(res[m].base) && res[m].base > 0 && isNum(res[m].cost) && res[m].cost > 0,
+  ).map((m) => ({ m, base: res[m].base, cost: res[m].cost, eff: isNum(eff[m]) ? eff[m] : null }));
+}
+
+// Termin, wenn die heutigen Grundkosten mit früheren Effizienzen gerechnet würden (gleicher Bestand, gleiches Einkommen)
+function effEtaWith(p, oldEff) {
+  const fc = planForecast(p);
+  if (!fc || !(fc.overall.real > 0)) return null;
+  const res = (p.planData || {}).resources || {},
+    cur = Object.fromEntries(getPlanResources(p).map((r) => [r[0], r[1]]));
+  let worst = 0;
+  for (const x of fc.res) {
+    if (x.common) continue;
+    const r = res[x.m];
+    let miss = x.miss;
+    if (r && isNum(r.base) && r.base > 0 && isNum(oldEff[x.m]))
+      miss = Math.max(0, effCost(r.base, oldEff[x.m]) - (cur[x.m] || 0));
+    if (miss <= 0) continue;
+    if (!(x.st.n >= FC_MIN && x.st.real > 0)) return null;
+    worst = Math.max(worst, miss / x.st.real);
+  }
+  return fcTooFar(worst) ? null : { fc, days: worst };
+}
+
+function renderEffPanel(p) {
+  const box = $("effBody");
+  if (!box) return;
+  if (!p || !p.hasPlanData) {
+    box.innerHTML = '<p class="muted">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    return;
+  }
+  const rows = effRows(p);
+  if (!rows.length) {
+    box.innerHTML =
+      '<p class="muted">Für diesen Plan liegen keine Grundkosten vor. Bitte „Total resources“ mit Grundkosten (Base Cost) neu importieren.</p>';
+    return;
+  }
+  const H = effHistory(p),
+    prev = H.prev && H.prev.efficiencies,
+    prevAt = H.prev ? new Date(H.prev.at).toLocaleDateString("de-DE") : "";
+  // Karte 1: Ersparnis bei der größten Σ-Ressource, sonst beim ersten Material
+  const big = rows.filter((r) => /^Σ/.test(r.m)).sort((a, b) => b.base - a.base)[0] || rows[0];
+  // Karte 2: Änderungen seit dem vorigen Import
+  let up = 0,
+    down = 0;
+  if (prev)
+    for (const r of rows) {
+      if (r.eff == null || !isNum(prev[r.m])) continue;
+      if (r.eff > prev[r.m]) up++;
+      else if (r.eff < prev[r.m]) down++;
+    }
+  const chTxt = !prev
+    ? ["Noch kein Vergleich", "ab dem nächsten Plan-Import"]
+    : up || down
+      ? [
+          [up ? up + (up === 1 ? " Effizienz gestiegen" : " Effizienzen gestiegen") : "", down ? down + " gesunken" : ""]
+            .filter(Boolean)
+            .join(", "),
+          "Import " + prevAt + " → " + new Date(H.last.at).toLocaleDateString("de-DE"),
+        ]
+      : ["Unverändert", "seit dem Import vom " + prevAt];
+  // Karte 3: Einfluss auf den Termin (in Kalendertagen)
+  let etaB = "–",
+    etaS = prev ? "Termin noch nicht berechenbar" : "ab dem nächsten Plan-Import";
+  if (prev) {
+    const w = effEtaWith(p, prev);
+    if (w) {
+      const dd = (x) => new Date(w.fc.base + x * 864e5).setHours(0, 0, 0, 0),
+        g = Math.round((dd(w.days) - dd(w.fc.overall.real)) / 864e5);
+      etaB =
+        g === 0
+          ? "kein ganzer Tag"
+          : `<span class="${g > 0 ? "green" : "red"}">${Math.abs(g)} ${Math.abs(g) === 1 ? "Tag" : "Tage"} ${g > 0 ? "früher" : "später"}</span>`;
+      etaS = "mit den Effizienzen vom " + prevAt + ": " + fmtEta(w.days, w.fc.base);
+    }
+  }
+  box.innerHTML =
+    `<div class="wifSum effSum"><div><span class="muted">Ersparnis durch Effizienzen</span><b>${fmt(big.base - big.cost)} ${escAttr(big.m)}</b><span class="muted">Kosten ${fmt(big.cost)} statt ${fmt(big.base)}</span></div>` +
+    `<div><span class="muted">Seit dem vorigen Import</span><b>${chTxt[0]}</b><span class="muted">${chTxt[1]}</span></div>` +
+    `<div><span class="muted">Einfluss auf den Termin</span><b>${etaB}</b><span class="muted">${escAttr(etaS)}</span></div></div>` +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Effizienz</th><th>Vorher${prev ? " (" + prevAt + ")" : ""}</th><th>Änderung</th><th>Grundkosten</th><th>Kosten</th><th>Ersparnis</th></tr></thead><tbody id="effRows">` +
+    rows
+      .map((r) => {
+        const o = prev && isNum(prev[r.m]) ? prev[r.m] : null,
+          ch =
+            o == null || r.eff == null
+              ? '<td class="muted">–</td>'
+              : r.eff === o
+                ? '<td class="muted">±0</td>'
+                : `<td class="${r.eff > o ? "green" : "red"}">${r.eff > o ? "+" : "−"}${fx(Math.abs(r.eff - o))} %-P.</td>`,
+          save = r.base - r.cost;
+        return `<tr><td>${escAttr(r.m)}</td><td>${r.eff == null ? "–" : fx(r.eff) + " %"}</td><td>${o == null ? "–" : fx(o) + " %"}</td>${ch}<td>${fmt(r.base)}</td><td>${fmt(r.cost)}</td><td class="green">−${fmt(save)} (${Math.round((100 * save) / r.base)} %)</td></tr>`;
+      })
+      .join("") +
+    `</tbody></table></div>` +
+    `<div class="chartNote" style="margin-top:8px">Kosten = Grundkosten ÷ (1 + Effizienz). Der Verlauf beginnt mit Version 2.1: Ab jetzt merkt sich der Planner die Effizienzen bei jedem Plan-Import. „Einfluss auf den Termin“ rechnet die heutigen Grundkosten mit den früheren Effizienzen, bei gleichem Bestand und Einkommen. Frühere Termine und Raten werden nicht nachträglich umgerechnet.</div>`;
+}
 
 </script></body></html>

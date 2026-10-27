@@ -1,0 +1,63 @@
+# Release auf Knopfdruck: GitHub → Actions → „Release erstellen“ → „Run workflow“.
+# Version kommt aus src/VERSION, der Text aus dem passenden Abschnitt in CHANGELOG.md.
+# Ablauf: bauen → alle Tests → Tag v<Version> → Release mit Planner-HTML und Userguide.
+# Schlägt ein Schritt fehl (Test rot, Tag schon vorhanden, CHANGELOG „in Arbeit“), entsteht kein Release.
+name: Release erstellen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quellcode holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Version lesen
+        id: v
+        run: |
+          V="$(tr -d '[:space:]' < src/VERSION)"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "file=Bens_G7_STFC_Progress_Planner_v$V.html" >> "$GITHUB_OUTPUT"
+          echo "Version: $V"
+
+      - name: Prüfen, dass es v${{ steps.v.outputs.version }} noch nicht gibt
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/v${{ steps.v.outputs.version }}" > /dev/null; then
+            echo "::error::Den Tag v${{ steps.v.outputs.version }} gibt es schon. Bitte src/VERSION hochzählen."
+            exit 1
+          fi
+
+      - name: Release-Text aus dem CHANGELOG
+        run: python tools/release_notes.py "${{ steps.v.outputs.version }}" > release_notes.md
+
+      - name: Planner bauen
+        run: python tools/build.py
+
+      - name: Testumgebung einrichten
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Alle Tests
+        run: python tests/run_tests.py "dist/${{ steps.v.outputs.file }}"
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.v.outputs.version }}" \
+            "dist/${{ steps.v.outputs.file }}" \
+            STFC_Planner_Userguide.pdf \
+            --title "Version ${{ steps.v.outputs.version }}" \
+            --notes-file release_notes.md \
+            --target "$GITHUB_SHA"

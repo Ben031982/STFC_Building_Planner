@@ -77,12 +77,12 @@ def build(version: str) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", help="Versionsnummer (Standard: Inhalt von src/VERSION)")
-    ap.add_argument("--out", help="Zieldatei (Standard: dist/Bens_STFC_Progress_Planner_v<Version>.html)")
+    ap.add_argument("--out", help="Zieldatei (Standard: dist/Bens_G7_STFC_Progress_Planner_v<Version>.html)")
     a = ap.parse_args()
     version = a.version or (SRC / "VERSION").read_text(encoding="utf-8").strip()
     if not re.fullmatch(r"\d+(\.\d+)+", version):
         sys.exit(f"Build-Fehler: ungültige Version {version!r}")
-    out = pathlib.Path(a.out) if a.out else ROOT / "dist" / f"Bens_STFC_Progress_Planner_v{version}.html"
+    out = pathlib.Path(a.out) if a.out else ROOT / "dist" / f"Bens_G7_STFC_Progress_Planner_v{version}.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     html = build(version)
     out.write_text(html, encoding="utf-8", newline="\n")
