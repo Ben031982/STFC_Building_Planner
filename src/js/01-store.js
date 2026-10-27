@@ -82,6 +82,8 @@ function migrateState(st) {
     };
     // ab 2.1: Wunschdatum für „Zieltermin prüfen“
     if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
+    // ab 3.0: „startet nach“
+    if (typeof p.after === "string" && p.after) q.after = p.after;
     // ab 3.0: Schiffspläne
     if (p.type === "ship" && p.ship && typeof p.ship === "object") {
       q.type = "ship";
@@ -144,6 +146,8 @@ function migrateState(st) {
     }
     st.plans.forEach((p, i) => (p.isMain = i === 0));
   }
+  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen
+  for (const p of st.plans) if (p.after && !st.plans.some((q) => q.id === p.after && q !== p)) delete p.after;
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;

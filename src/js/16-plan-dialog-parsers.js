@@ -8,6 +8,8 @@ function openDraft() {
   $("draftStart").value = "";
   $("draftTarget").value = "";
   if (typeof shipDraftReset === "function") shipDraftReset();
+  delete $("draftAfter").dataset.touched;
+  if (typeof chainDraftRender === "function") chainDraftRender();
   $("newPlanModal").classList.add("on");
 }
 function closeDraft() {
@@ -25,9 +27,11 @@ $("saveDraft").onclick = () => {
     return;
   }
   let id = "plan-" + Date.now();
+  const after = $("draftAfter").value;
   s.plans.push({
     id,
     name,
+    ...(after ? { after } : {}),
     kind: "auto",
     art: $("draftArt").value || "auto",
     start,
@@ -62,6 +66,7 @@ function fillManage(p) {
   $("editPlanStart").value = p.start;
   $("editPlanTarget").value = p.target;
   $("editMainPlan").checked = !!p.isMain;
+  if (typeof chainManageFill === "function") chainManageFill(p);
   $("deletePlanBtn").disabled = !!p.isMain;
   $("deletePlanBtn").title = p.isMain ? "Hauptplan kann nicht gelöscht werden" : "";
   $("manageStatus").textContent = statusLabel(p.status);
@@ -150,6 +155,13 @@ $("savePlanData").onclick = () => {
   }
   p.name = newName;
   p.kind = newKind;
+  // ab 3.0: „startet nach“ (keine neue Bestätigung nötig)
+  {
+    const af = $("editAfter").value;
+    if ((af || "") !== (p.after || "")) s.logs.push("Startet nach: " + p.name + " → " + (af ? planById(af).name : "kein Vorgänger"));
+    if (af) p.after = af;
+    else delete p.after;
+  }
   p.art = $("editPlanArt").value || "auto";
   p.start = newStart;
   p.target = newTarget;
@@ -196,6 +208,7 @@ $("deletePlanBtn").onclick = () => {
   )
     return;
   s.plans = s.plans.filter((x) => x.id !== p.id);
+  for (const q of s.plans) if (q.after === p.id) delete q.after; // ab 3.0: Verkettung lösen
   s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
   s.logs.push("Zielplan gelöscht: " + p.name);
   $("planDataModal").classList.remove("on");

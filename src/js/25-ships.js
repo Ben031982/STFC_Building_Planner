@@ -92,6 +92,7 @@ function shipDraftRender() {
     r = ship ? shipReqHtml(yard) : null;
   $("draftReq").className = "dReq " + (r ? r.cls : "");
   $("draftReq").textContent = r ? r.txt : "";
+  if (typeof chainDraftRender === "function") chainDraftRender();
   $("draftHint").textContent = ship
     ? "Danach wie gewohnt importieren: im Spock's-Upgrade-Planer das Schiffsziel anlegen und „Total resources“ sowie „Cost efficiencies“ kopieren."
     : "Der Plan bleibt gesperrt, bis Pflichtgebäude, Ressourcenbedarf, Bauzeit und Effizienzen vollständig vorliegen und bestätigt wurden.";
@@ -133,6 +134,7 @@ function shipDraftSave() {
     sources: [],
     planData: null,
     confirmation: null,
+    ...($("draftAfter").value ? { after: $("draftAfter").value } : {}),
   });
   s.active = id;
   s.logs.push("Schiffsplan als Entwurf angelegt: " + name);

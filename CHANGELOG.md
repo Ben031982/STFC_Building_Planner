@@ -1,5 +1,38 @@
 # Changelog
 
+## [3.0.0] – in Arbeit
+
+### Neue Funktionen: Schiffe
+
+**Schiffsplan anlegen**
+- „Neuer Plan“ unterscheidet Gebäude und Schiff. Zur Auswahl stehen die zehn G7-Schiffe (gruppiert nach Schiffswerft) und „Anderes Schiff“ mit Name, Schiffswerft-Stufe und Klasse.
+- Klasse mit eigenen Grafiken: Kampfschiff, Abfangjäger, Forschungsschiff, Miner. Sie bestimmt, welche Schiffsteile zählen.
+- Ziel: Tier-Aufstieg (Tier von → bis) oder Neubau eines Schiffs (Bau → Tier).
+- Voraussetzung Schiffswerft: Der Planner liest deine Stufe aus dem Export und zeigt „erfüllt“ oder „noch nicht erfüllt“ – im Dialog und in der Übersicht.
+
+**Schiffsteile**
+- Die zwölf Schiffsteile (Common, Uncommon, Rare je Klasse) kommen aus dem Spock's-Export und fließen in Prognose, Engpass, Zieltermin, Effizienzen und Wochenbericht ein. Common-Teile zählen voll; nur 7★ Common Ore, Gas und Crystal bleiben wie bisher außen vor (per Latinum kaufbar).
+- Ältere Snapshots erhalten die Schiffsteile beim nächsten „Neue Exporte einlesen“ automatisch aus den Original-Exportdateien – so hat ein neuer Schiffsplan sofort eine Prognose.
+
+**Import für Schiffe**
+- Der Import-Assistent startet bei Schiffen direkt mit „Total resources“; „Included upgrades“ entfällt. Tier-Up-Zeit und Schiffsbauzeit werden bewusst nicht berücksichtigt, die Spalte „Hypothetical“ beim Neubau stört nicht.
+
+**Startet nach**
+- Ein Plan kann auf einen anderen folgen („Plandaten verwalten“ › „Startet nach“, auch beim Anlegen). Was die Vorgänger kosten, wird zuerst vom Bestand abgezogen; „fehlt“ heißt dann Kosten der Vorgänger + eigene Kosten − Bestand.
+- Braucht ein Schiff eine höhere Schiffswerft, schlägt der Planner den passenden Schiffswerft-Plan als Vorgänger vor.
+- In der Übersicht zeigt eine Tabelle Bestand, Vorgemerktes, Verfügbares und was fehlt; die Plankarte trägt den Hinweis „⛓ nach …“. Pläne ohne Vorgänger rechnen wie bisher jeder für sich.
+
+### Verbesserungen
+- Fehlen für ein Material noch Abschnitte, zeigen Prognose-Karten, Zieltermin und Wochenbericht „zu wenig Daten“ statt „nicht absehbar“ (das bleibt Terminen über 100 Jahre vorbehalten). In der Materialtabelle stehen konservativ und optimistisch dann auf „–“.
+
+### Hinweise
+- Packs werden für Schiffe nicht berechnet – der Stationspack gilt nur für Gebäude. Schiffsspezifische Packs folgen später.
+- Kompatibilität: Daten aus 2.x übernimmt 3.0 automatisch. Öffnest du nach Schiffsplänen wieder eine 2.x-Datei, kennt diese die Schiffsangaben nicht – vorher ein Backup speichern.
+
+### Technik
+- Neue Quelldateien `25-ships.js` (Schiffe), `26-chain.js` (Startet nach), `17-ships.css`; Schiffsteil-Nummern und die Gebäudenummer der Schiffswerft (15) mit Bens Daten bestätigt.
+- 10 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach), insgesamt 58.
+
 ## [2.1.1] – 2026-10-27
 
 ### Fehlerbehebungen

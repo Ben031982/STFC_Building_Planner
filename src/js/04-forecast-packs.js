@@ -142,7 +142,7 @@ function planBottleneck(p, rows) {
     return {
       name: o.realDriver,
       missing: r ? r[3] : 0,
-      share: r && r[2] > 0 ? r[3] / r[2] : 0,
+      share: r && (r[5] || r[2]) > 0 ? r[3] / (r[5] || r[2]) : 0,
       days: o.real,
       fc: true,
     };
@@ -197,6 +197,11 @@ function planForecast(p) {
   overall.minN = rel.length ? Math.min(...rel.map((x) => x.st.n)) : 0;
   overall.minSpan = rel.length ? Math.min(...rel.map((x) => x.st.span || 0)) : 0;
   return { res, overall, base };
+}
+// Gesamtprognose (realistisch) als Text – „zu wenig Daten“ statt „nicht absehbar“, solange Daten fehlen
+function fcRealTxt(fc) {
+  const o = fc.overall;
+  return o.real == null && !o.realFar && o.missingData.length ? "zu wenig Daten" : fmtEta(o.real, fc.base, o.realFar);
 }
 function fmtEta(days, base, far) {
   if (days == null) return far ? FC_FAR_TXT : "nicht absehbar";
@@ -285,13 +290,17 @@ function renderForecast(p) {
       (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
   }
   $("etaValue").textContent = val;
+  if (typeof chainAncestors === "function" && chainAncestors(p).some((q) => calcPlanStatus(q) === "active"))
+    det += " · nach " + chainAncestors(p).map((q) => q.name).join(" → ");
   $("etaDetail").textContent = det;
-  const q = renderQuality(fc);
+  const q = renderQuality(fc),
+    // fehlen Daten, ist das Szenario offen – nicht „nicht absehbar“ (das heißt: über 100 Jahre)
+    card = (d, far) => (d == null && !far && o.missingData.length ? "zu wenig Daten" : fmtEta(d, fc.base, far));
   $("fcSummary").innerHTML =
     (q
       ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></div>`
       : "") +
-    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${fmtEta(o.cons, fc.base, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${fmtEta(o.real, fc.base, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${fmtEta(o.opt, fc.base, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
+    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${card(o.cons, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${card(o.real, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${card(o.opt, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
     (o.missingData.length
       ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ ${FC_GAP_H} Stunden Abstand nötig).</p>`
       : "") +
@@ -302,7 +311,7 @@ function renderForecast(p) {
         dq = st.rows.length
           ? `${st.n} von ${st.rows.length}${st.rows.length - st.n ? " (" + (st.rows.length - st.n) + " markiert)" : ""}`
           : "keine";
-      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? "gedeckt" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
+      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "–" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "–" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
     })
     .join("");
   const ivs = new Map();

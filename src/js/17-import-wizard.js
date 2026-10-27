@@ -6,6 +6,14 @@ function openImport() {
   // ab 3.0: Schiffe brauchen keine „Included upgrades“ – direkt bei den Ressourcen beginnen
   const ship = isShip(s.plans.find((x) => x.id === managingPlanId));
   document.querySelector('.impStepBtn[data-step="1"]').hidden = ship;
+  // Schritte für Schiffe neu nummerieren: 2 Schritte statt 3
+  const n = ship ? 2 : 3,
+    no = (k) => (ship ? k - 1 : k);
+  document.querySelector("#ocrModal .impRail .impSmall").textContent = n + " SCHRITTE · REIHENFOLGE EGAL";
+  [2, 3].forEach((k) => {
+    document.querySelector(`.impStepBtn[data-step="${k}"] .impNum`).textContent = no(k);
+    $("impPane" + k).querySelector(".impSmall").textContent = `SCHRITT ${no(k)} VON ${n}`;
+  });
   setImpStep(ship ? 2 : 1);
   renderImpSummary();
 }

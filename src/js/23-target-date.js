@@ -130,7 +130,7 @@ function renderTarget() {
     fc = planForecast(p);
   $("tdSel").innerHTML =
     `Details für <b>${escAttr(p.name)}</b>` +
-    (fc ? " · Prognose heute: " + fmtEta(fc.overall.real, fc.base, fc.overall.realFar) : "") +
+    (fc ? " · Prognose heute: " + fcRealTxt(fc) : "") +
     (plans.length > 1 ? " · auf einen anderen Plan klicken, um seine Details zu sehen" : "");
   if (!p.targetDate) {
     out.innerHTML = '<p class="muted tdMsg">Wunschdatum wählen, dann siehst du, ob dein Einkommen reicht.</p>';

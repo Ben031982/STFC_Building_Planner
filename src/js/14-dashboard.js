@@ -101,7 +101,7 @@ function resTableHtml(p, rows, bn, eff) {
     h += `<tr class="resGrp"><td colspan="6">${g}</td></tr>`;
     for (const r of rs) {
       const m = r[3],
-        pc = r[2] > 0 ? Math.min(100, Math.round((100 * r[1]) / r[2])) : 100,
+        pc = (r[5] || r[2]) > 0 ? Math.min(100, Math.round((100 * r[1]) / (r[5] || r[2]))) : 100,
         com = /Common/.test(r[0]),
         isB = !!(bn && !bn.none && bn.name === r[0]),
         e = eff ? ((p.planData || {}).efficiencies || {})[r[0]] : null;
@@ -142,7 +142,7 @@ function render() {
     s.plans
       .map(
         (x, xi) =>
-          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span></div></div>${(() => {
+          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span>${x.after && planById(x.after) ? `<br><span class="chain">⛓ nach ${escAttr(planById(x.after).name)}</span>` : ""}</div></div>${(() => {
             if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>Schiff</span><b></b></div>`;
             const pr = planProgress(x),
               d = pr ? pr.done : x.done,
@@ -438,6 +438,7 @@ function render() {
   renderForecast(p);
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
+  if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);
     if (isShip(p)) {

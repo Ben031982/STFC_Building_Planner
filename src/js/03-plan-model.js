@@ -4,7 +4,9 @@ function getPlanResources(p) {
     res = d.resources || {},
     imp = d.importedAt ? new Date(d.importedAt) : null,
     snap = latestSnapshot(),
-    snapNewer = !!snap && (!imp || new Date(snapTime(snap)) > imp);
+    snapNewer = !!snap && (!imp || new Date(snapTime(snap)) > imp),
+    // ab 3.0: „startet nach“ – Kosten der Vorgänger werden zuerst vom Bestand abgezogen
+    resv = typeof chainReserved === "function" ? chainReserved(p) : null;
   return planMaterials(p).map((n) => {
     const r = res[n] || {};
     let cur = r.onHand,
@@ -15,7 +17,13 @@ function getPlanResources(p) {
       missing = Math.max(0, r.cost - cur);
       src = "snapshot";
     }
-    return [n, cur, r.cost, missing, src];
+    let need = r.cost;
+    if (resv && resv[n] > 0 && isNum(r.cost) && isNum(cur)) {
+      need = r.cost + resv[n];
+      missing = Math.max(0, need - cur);
+    }
+    // [Material, Bestand, Kosten, fehlt, Quelle, Bedarf inkl. Vorgänger]
+    return [n, cur, r.cost, missing, src, need];
   });
 }
 function resourceSourceNote(p, rows) {
@@ -52,7 +60,7 @@ function resourceSourceNote(p, rows) {
 }
 function getBottleneck(rows) {
   if (!rows.length) return null;
-  const share = (r) => (r[2] > 0 ? r[3] / r[2] : 0),
+  const share = (r) => ((r[5] || r[2]) > 0 ? r[3] / (r[5] || r[2]) : 0),
     seven = rows
       .filter((r) => /^7★ (Rare|Uncommon) /.test(r[0]) && r[3] > 0)
       .sort((a, b) => share(b) - share(a) || (/Rare/.test(b[0]) ? 1 : 0) - (/Rare/.test(a[0]) ? 1 : 0));

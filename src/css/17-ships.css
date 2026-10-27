@@ -110,3 +110,39 @@
 .dLab.dInline {
   display: block;
 }
+/* „startet nach“ (ab 3.0) */
+.dHint {
+  margin: 6px 0 0;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: #0f2433;
+  color: #9fd3ea;
+  font-size: 12px;
+}
+.dHint:empty {
+  display: none;
+}
+.chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: #46c2ee;
+  border: 1px solid #2b4f68;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+#chainPanel[hidden] {
+  display: none;
+}
+#chainPanel {
+  margin-bottom: 12px;
+}
+#chainPanel .res {
+  color: #f4a53a;
+}
+#chainRows td {
+  font-size: 12px;
+}

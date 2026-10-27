@@ -92,6 +92,7 @@
                   ><button id="nextBtn" class="btn primary" style="white-space: nowrap"></button></div
                 ><div id="nextSteps" class="nextSteps"></div></div
               ><div id="pane-ov" class="tabPane on"
+                ><section class="panel" id="chainPanel" hidden></section
                 ><section class="panel" id="carePanel" style="margin-bottom: 12px; padding: 10px 14px"
                   ><div class="careStrip"
                     ><span id="careState" class="careState"></span><span id="careMeta" class="careMeta"></span
@@ -440,6 +441,9 @@
           ><label class="dLab">Tier bis<input id="draftTierTo" type="number" min="1" placeholder="z. B. 9" /></label></div
         ><div id="draftReq" class="dReq"></div
       ></div
+      ><label class="dLab" id="draftAfterLab"
+        >Startet nach<select id="draftAfter"></select></label
+      ><div id="draftAfterHint" class="dHint"></div
       ><div class="formGrid" id="draftBuildingBox"
         ><input id="draftName" placeholder="Planname, z. B. Operations 76" /><select
           id="draftArt"
@@ -475,6 +479,9 @@
         ><label
           ><input type="checkbox" id="editMainPlan" /> Als Hauptplan markieren (Kachel rückt an die erste Stelle)</label
         ></div
+      ><label class="dLab" style="max-width: 420px"
+        >Startet nach<select id="editAfter"></select></label
+      ><div id="editAfterHint" class="dHint"></div
       ><h3>Datenstand<span class="termInfo" tabindex="0" data-term="status">i</span></h3><div id="validationGrid" class="validationGrid"></div
       ><div id="activationLock" class="planLock"></div><h3>Importquellen</h3
       ><div class="ocrToolbar"

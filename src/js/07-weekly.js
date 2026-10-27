@@ -214,7 +214,7 @@ function wkOutlook(p) {
     (bn && bn.rows.length
       ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
       : "") +
-    `<li>Fertigstellung <b>${fmtEta(fc.overall.real, fc.base)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
     `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
   );
 }

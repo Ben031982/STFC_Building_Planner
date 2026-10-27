@@ -23,7 +23,7 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 
 | Datei | Inhalt |
 |---|---|
-| `00-assets` | Gebäudebilder, Material-IDs, Konstanten |
+| `00-assets` | Gebäude- und Schiffsbilder, Material- und Schiffsteil-IDs, Schiffsliste, Konstanten |
 | `01-store` | Laden, Speichern, Migration, Speicher-Absicherung |
 | `02-util` | Hilfsfunktionen, Σ-Werte, Snapshot-Zeiten |
 | `03-plan-model` | Planressourcen, Fortschritt, Planhistorie |
@@ -48,6 +48,8 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 | `22-setup-help` | Einrichtungs-Karte, Begriffserklärungen (ⓘ), Exportsuche beim Öffnen, Aufleuchten geänderter Kennzahlen |
 | `23-target-date` | Zieltermin prüfen mit Plan-Karten (Seite Was-wäre-wenn), Datum je Plan in `targetDate` |
 | `24-efficiency` | Effizienzen: Wirkung und Verlauf (Seite Ressourcen & Effizienzen) |
+| `25-ships` | Schiffe: Schiffsplan anlegen, Schiffswerft-Stufe (Gebäude 15) |
+| `26-chain` | „Startet nach“: Vorgänger zuerst vom Bestand abziehen, Panel in der Übersicht |
 
 ## Bauen
 
@@ -67,7 +69,7 @@ python tests/run_tests.py
 
 Ohne Argument wird zuerst gebaut. Mit `python tests/run_tests.py datei.html` lässt sich jede fertige Datei prüfen, mit `-k name` nur ein Teil der Tests.
 
-Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen, den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien) sowie ab 2.1 Datenintegrität (ältere, doppelte, ungültige und kaputte Exporte, Snapshot löschen, Importreihenfolge), Prognose-Grenzfälle (ein Snapshot, Stillstand, negativ, über 3 Jahre, Ausreißer) und Zielplan-Konsistenz (Zielwechsel, erledigte Bauten, Plan löschen), Zieltermin und Wochenbericht (Vorwoche, Ausblick).
+Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen, den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien) sowie ab 2.1 Datenintegrität (ältere, doppelte, ungültige und kaputte Exporte, Snapshot löschen, Importreihenfolge), Prognose-Grenzfälle (ein Snapshot, Stillstand, negativ, über 3 Jahre, Ausreißer) und Zielplan-Konsistenz (Zielwechsel, erledigte Bauten, Plan löschen), Zieltermin und Wochenbericht (Vorwoche, Ausblick), ab 3.0 Schiffe (Schiffsteile aus dem Export, Nachtragen, Schiffsplan, Neubau, keine Packs) und „Startet nach“.
 
 Hinweise für neue Tests: Die Uhr steht im Test fest (25.10.2026, 09:00 UTC) – Plan-IDs enthalten die Uhrzeit, für einen zweiten Plan die Uhr vorstellen (`second_plan`). Kein `reload()` nach dem Speichern: Headless-Chromium verliert dabei manchmal den localStorage einer lokalen Datei; stattdessen `reopen()`.
 
