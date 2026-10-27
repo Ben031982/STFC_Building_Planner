@@ -387,9 +387,9 @@ function packEmpty() {
   return !pk || !Object.values(pk.contents || {}).some((c) => +c.amount > 0);
 }
 function packCalc(p) {
-  if (isShip(p)) return null; // ab 3.0: Stationspacks gelten nicht für Schiffe
-  const pack = (s.packs || [])[0];
-  if (!pack || !p.hasPlanData || packEmpty()) return null;
+  // ab 3.2: Schiffe rechnen mit dem Pack ihrer Klasse („Anderes Schiff“: keiner)
+  const pack = planPack(p);
+  if (!pack || !p.hasPlanData || packEmptyOf(pack)) return null;
   const rows = getPlanResources(p),
     fc = planForecast(p),
     out = [];
@@ -432,8 +432,13 @@ function packCalc(p) {
 function renderPacks(p) {
   const pc = packCalc(p),
     card = $("packCard");
-  if (isShip(p)) {
-    card.innerHTML = '<span class="muted">Packs bis zum Ziel: für Schiffe nicht berechnet – der Stationspack gilt nur für Gebäude.</span>';
+  if (isShip(p) && (!p.ship || p.ship.key === "other")) {
+    card.innerHTML = '<span class="muted">Packs bis zum Ziel: Für „Anderes Schiff“ gibt es keinen Pack.</span>';
+    return;
+  }
+  if (!pc && isShip(p) && p.hasPlanData) {
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>Packs bis zum Ziel:</b> <span class="muted">Der Pack für ${SHIP_CLASSES[p.ship.cls].label} (${escAttr(planPack(p).name)}) ist noch nicht gepflegt. Trag einmal ein, was er enthält.</span></span><button class="miniBtn" id="packFillBtn">Schiffs-Pack pflegen</button></div>`;
+    $("packFillBtn").onclick = () => openPackFor(p);
     return;
   }
   if (!pc) {
@@ -445,12 +450,26 @@ function renderPacks(p) {
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
-  $("packEditBtn").onclick = openPacks;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  $("packEditBtn").onclick = () => openPackFor(p);
 }
-function openPacks() {
-  const pk = (s.packs || [])[0];
-  $("packRows").innerHTML = MATERIALS.map((m) => {
+// Stationspack oder (ab 3.2) Schiffs-Pack einer Klasse bearbeiten
+var packEditCls = null;
+function openPacks(cls) {
+  packEditCls = typeof cls === "string" && SHIP_CLASSES[cls] ? cls : null;
+  if (packEditCls) ensureShipPacks();
+  const pk = packEditCls ? s.shipPacks[packEditCls] : (s.packs || [])[0],
+    mats = packEditCls ? shipPackMats(packEditCls) : MATERIALS;
+  $("packTitle").textContent = packEditCls ? "Schiffs-Pack pflegen: " + SHIP_CLASSES[packEditCls].label : "Stationspack pflegen";
+  $("packSub").textContent = packEditCls
+    ? "Gilt für alle " + SHIP_CLASSES[packEditCls].label + "-Pläne."
+    : "Gilt für alle Gebäudepläne.";
+  $("packIntro").textContent = packEditCls
+    ? "Trag ein, was der Pack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Erfasst werden Σ-Tritanium, die 7★ Materialien und die 7★ Teile der Klasse. „ca.“ markiert gerundete Werte aus dem Spiel (etwa „14,3 Tsd.“). Latinum, Parstahl, Dilithium und niedrigere Sterne zählen nicht. 7★ Common Erz, Gas und Kristall zählen nicht für die Pack-Berechnung (per Latinum kaufbar)."
+    : "Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst. 7★ Common zählt nicht für die Pack-Berechnung (per Latinum kaufbar).";
+  $("packNameLab").hidden = !packEditCls;
+  $("packName").value = packEditCls ? pk.name : "";
+  $("packRows").innerHTML = mats.map((m) => {
     const c = pk.contents[m] || {};
     return `<tr><td>${m}</td><td><input type="number" min="0" step="1" data-pm="${m}" value="${c.amount ?? ""}"></td><td><input type="checkbox" data-pa="${m}"${c.approx ? " checked" : ""}></td></tr>`;
   }).join("");
@@ -471,7 +490,7 @@ function bottleneckRows(p) {
   return { fc, rows: rows.slice(0, 3) };
 }
 function packEffect(p) {
-  if (isShip(p) || packEmpty()) return null;
+  if (packEmptyFor(p)) return null;
   const w = wifCalc(p, { now: 1, week: 0, pct: 0, bonus: {} });
   if (!w || w.base.real.d == null || w.scen.real.d == null) return null;
   // in Kalendertagen, damit Zahl und Datum zusammenpassen
@@ -511,7 +530,10 @@ function renderBottleneckCard(p) {
   const pe = packEffect(p),
     driver = bn.rows[0].m;
   let foot;
-  if (isShip(p)) foot = "Stationspacks gelten nicht für Schiffe – hier zählt nur dein Einkommen.";
+  if (shipPackMissingText(p))
+    foot =
+      escAttr(shipPackMissingText(p)) +
+      (p.ship && p.ship.key !== "other" ? ' <button class="miniBtn" id="bnPackBtn">Schiffs-Pack pflegen</button>' : "");
   else if (!pe)
     foot =
       'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
@@ -521,15 +543,15 @@ function renderBottleneckCard(p) {
     if (n < 1) {
       const close = bn.rows.filter((x) => max - x.eta.real < 1).map((x) => x.m.replace("7★ ", ""));
       foot =
-        "Mit 1 Stationspack: <b class=\"flat\">kein ganzer Tag früher</b>" +
+        "Mit 1 " + escAttr(packLabel(p)) + ': <b class="flat">kein ganzer Tag früher</b>' +
         (close.length > 1 ? " – " + close.join(", ") + " sind fast gleichzeitig gedeckt." : ".");
     } else
       foot =
-        `Mit 1 Stationspack: fertig <b>${n} ${n === 1 ? "Tag" : "Tage"} früher</b> (${when})` +
+        `Mit 1 ${escAttr(packLabel(p))}: fertig <b>${n} ${n === 1 ? "Tag" : "Tage"} früher</b> (${when})` +
         (pe.next && pe.next !== driver ? " – danach bremst " + escAttr(pe.next) + "." : " – " + escAttr(driver) + " bleibt der Engpass.");
   }
   h += `<div class="bnFoot">${foot}</div>`;
   list.innerHTML = h;
   const b = $("bnPackBtn");
-  if (b) b.onclick = openPacks;
+  if (b) b.onclick = () => openPackFor(p);
 }

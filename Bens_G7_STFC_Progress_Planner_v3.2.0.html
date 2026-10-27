@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
-<title>Ben's G7 STFC Progress Planner v3.1.0</title>
+<title>Ben's G7 STFC Progress Planner v3.2.0</title>
 <style>
 @font-face {
   font-family: "Oxanium";
@@ -1662,7 +1662,7 @@ tr.sqAfter td {
   padding: 8px;
 }
 .footer:after {
-  content: " · Version 3.1.0";
+  content: " · Version 3.2.0";
   color: #68a6cc;
 }
 @media (max-width: 1200px) {
@@ -3317,6 +3317,7 @@ td:has(.prog) {
   color: #9fd3ea;
 }
 #draftBuildingBox[hidden],
+#packNameLab[hidden],
 #draftAfterLab[hidden],
 #draftAfterHint[hidden],
 #editAfterLab[hidden],
@@ -3709,6 +3710,15 @@ td:has(.prog) {
               ><div class="chartHead"
                 ><h3>Stationspack</h3><button id="packEditBtn2" class="miniBtn">Bearbeiten</button></div
               ><div id="packSummary" class="muted" style="font-size: 13px; margin-top: 6px"></div
+              ><h3 style="margin-top: 16px">Schiffs-Packs</h3
+              ><p class="muted" style="font-size: 12.5px; margin: 4px 0 8px"
+                >Ein Pack je Klasse, gilt für alle Schiffspläne dieser Klasse. Der Inhalt hängt von deiner OPS-Stufe ab –
+                nach einem OPS-Aufstieg hier aktualisieren. „Anderes Schiff“ hat keinen Pack.</p
+              ><div class="histWrap"
+                ><table class="histTable" style="width: 100%"
+                  ><thead
+                    ><tr><th>Klasse</th><th>Pack</th><th>Inhalt</th><th>Gültig ab</th><th>Preis</th><th></th></tr></thead
+                  ><tbody id="shipPackRows"></tbody></table></div
               ><h3 style="margin-top: 16px">Letzte Änderungen</h3
               ><div id="log" class="muted" style="font-size: 12px"></div></section></div
           ><input id="file" type="file" accept=".json" multiple hidden /><details class="dangerZone"
@@ -3941,9 +3951,11 @@ td:has(.prog) {
   ><div id="packModal" class="modal"
     ><div class="box"
       ><div class="head"
-        ><div><h2>Stationspack pflegen</h2><span class="muted">Gilt für alle Zielpläne.</span></div
+        ><div><h2 id="packTitle">Stationspack pflegen</h2><span id="packSub" class="muted">Gilt für alle Gebäudepläne.</span></div
         ><button id="closePack" class="btn">Schließen</button></div
-      ><p class="muted"
+      ><label class="dLab" id="packNameLab" hidden style="max-width: 420px"
+        >Name des Packs<input id="packName" /></label
+      ><p class="muted" id="packIntro"
         >Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem
         OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte
         aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst.
@@ -4421,6 +4433,8 @@ function migrateState(st) {
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;
+  // ab 3.2: Schiffs-Packs je Klasse
+  ensureShipPacks(st);
   return st;
 }
 let s = readStore(K),
@@ -5252,9 +5266,9 @@ function packEmpty() {
   return !pk || !Object.values(pk.contents || {}).some((c) => +c.amount > 0);
 }
 function packCalc(p) {
-  if (isShip(p)) return null; // ab 3.0: Stationspacks gelten nicht für Schiffe
-  const pack = (s.packs || [])[0];
-  if (!pack || !p.hasPlanData || packEmpty()) return null;
+  // ab 3.2: Schiffe rechnen mit dem Pack ihrer Klasse („Anderes Schiff“: keiner)
+  const pack = planPack(p);
+  if (!pack || !p.hasPlanData || packEmptyOf(pack)) return null;
   const rows = getPlanResources(p),
     fc = planForecast(p),
     out = [];
@@ -5297,8 +5311,13 @@ function packCalc(p) {
 function renderPacks(p) {
   const pc = packCalc(p),
     card = $("packCard");
-  if (isShip(p)) {
-    card.innerHTML = '<span class="muted">Packs bis zum Ziel: für Schiffe nicht berechnet – der Stationspack gilt nur für Gebäude.</span>';
+  if (isShip(p) && (!p.ship || p.ship.key === "other")) {
+    card.innerHTML = '<span class="muted">Packs bis zum Ziel: Für „Anderes Schiff“ gibt es keinen Pack.</span>';
+    return;
+  }
+  if (!pc && isShip(p) && p.hasPlanData) {
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>Packs bis zum Ziel:</b> <span class="muted">Der Pack für ${SHIP_CLASSES[p.ship.cls].label} (${escAttr(planPack(p).name)}) ist noch nicht gepflegt. Trag einmal ein, was er enthält.</span></span><button class="miniBtn" id="packFillBtn">Schiffs-Pack pflegen</button></div>`;
+    $("packFillBtn").onclick = () => openPackFor(p);
     return;
   }
   if (!pc) {
@@ -5310,12 +5329,26 @@ function renderPacks(p) {
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(pk.name) + (pc.total === 1 ? "" : "s") + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
-  $("packEditBtn").onclick = openPacks;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  $("packEditBtn").onclick = () => openPackFor(p);
 }
-function openPacks() {
-  const pk = (s.packs || [])[0];
-  $("packRows").innerHTML = MATERIALS.map((m) => {
+// Stationspack oder (ab 3.2) Schiffs-Pack einer Klasse bearbeiten
+var packEditCls = null;
+function openPacks(cls) {
+  packEditCls = typeof cls === "string" && SHIP_CLASSES[cls] ? cls : null;
+  if (packEditCls) ensureShipPacks();
+  const pk = packEditCls ? s.shipPacks[packEditCls] : (s.packs || [])[0],
+    mats = packEditCls ? shipPackMats(packEditCls) : MATERIALS;
+  $("packTitle").textContent = packEditCls ? "Schiffs-Pack pflegen: " + SHIP_CLASSES[packEditCls].label : "Stationspack pflegen";
+  $("packSub").textContent = packEditCls
+    ? "Gilt für alle " + SHIP_CLASSES[packEditCls].label + "-Pläne."
+    : "Gilt für alle Gebäudepläne.";
+  $("packIntro").textContent = packEditCls
+    ? "Trag ein, was der Pack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Erfasst werden Σ-Tritanium, die 7★ Materialien und die 7★ Teile der Klasse. „ca.“ markiert gerundete Werte aus dem Spiel (etwa „14,3 Tsd.“). Latinum, Parstahl, Dilithium und niedrigere Sterne zählen nicht. 7★ Common Erz, Gas und Kristall zählen nicht für die Pack-Berechnung (per Latinum kaufbar)."
+    : "Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst. 7★ Common zählt nicht für die Pack-Berechnung (per Latinum kaufbar).";
+  $("packNameLab").hidden = !packEditCls;
+  $("packName").value = packEditCls ? pk.name : "";
+  $("packRows").innerHTML = mats.map((m) => {
     const c = pk.contents[m] || {};
     return `<tr><td>${m}</td><td><input type="number" min="0" step="1" data-pm="${m}" value="${c.amount ?? ""}"></td><td><input type="checkbox" data-pa="${m}"${c.approx ? " checked" : ""}></td></tr>`;
   }).join("");
@@ -5336,7 +5369,7 @@ function bottleneckRows(p) {
   return { fc, rows: rows.slice(0, 3) };
 }
 function packEffect(p) {
-  if (isShip(p) || packEmpty()) return null;
+  if (packEmptyFor(p)) return null;
   const w = wifCalc(p, { now: 1, week: 0, pct: 0, bonus: {} });
   if (!w || w.base.real.d == null || w.scen.real.d == null) return null;
   // in Kalendertagen, damit Zahl und Datum zusammenpassen
@@ -5376,7 +5409,10 @@ function renderBottleneckCard(p) {
   const pe = packEffect(p),
     driver = bn.rows[0].m;
   let foot;
-  if (isShip(p)) foot = "Stationspacks gelten nicht für Schiffe – hier zählt nur dein Einkommen.";
+  if (shipPackMissingText(p))
+    foot =
+      escAttr(shipPackMissingText(p)) +
+      (p.ship && p.ship.key !== "other" ? ' <button class="miniBtn" id="bnPackBtn">Schiffs-Pack pflegen</button>' : "");
   else if (!pe)
     foot =
       'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
@@ -5386,17 +5422,17 @@ function renderBottleneckCard(p) {
     if (n < 1) {
       const close = bn.rows.filter((x) => max - x.eta.real < 1).map((x) => x.m.replace("7★ ", ""));
       foot =
-        "Mit 1 Stationspack: <b class=\"flat\">kein ganzer Tag früher</b>" +
+        "Mit 1 " + escAttr(packLabel(p)) + ': <b class="flat">kein ganzer Tag früher</b>' +
         (close.length > 1 ? " – " + close.join(", ") + " sind fast gleichzeitig gedeckt." : ".");
     } else
       foot =
-        `Mit 1 Stationspack: fertig <b>${n} ${n === 1 ? "Tag" : "Tage"} früher</b> (${when})` +
+        `Mit 1 ${escAttr(packLabel(p))}: fertig <b>${n} ${n === 1 ? "Tag" : "Tage"} früher</b> (${when})` +
         (pe.next && pe.next !== driver ? " – danach bremst " + escAttr(pe.next) + "." : " – " + escAttr(driver) + " bleibt der Engpass.");
   }
   h += `<div class="bnFoot">${foot}</div>`;
   list.innerHTML = h;
   const b = $("bnPackBtn");
-  if (b) b.onclick = openPacks;
+  if (b) b.onclick = () => openPackFor(p);
 }
 let dragPlanId = null;
 function movePlan(id, to) {
@@ -5525,6 +5561,7 @@ function renderImportPage() {
   const el = $("impPlans");
   if (!el) return;
   renderPackSummary();
+  renderShipPacks();
   renderScan();
   renderUpdateBars();
   renderSetupToggle();
@@ -5735,7 +5772,7 @@ function renderWeekly() {
           : `<span class="wifLoss">${-g} Tage später als Ende Vorwoche</span>`;
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
-  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${isShip(p) ? "Packs: für Schiffe nicht berechnet" : fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
+  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : shipPackMissingText(p) ? (p.ship && p.ship.key === "other" ? "kein Pack für „Anderes Schiff“" : "Schiffs-Pack nicht gepflegt") : packEmptyFor(p) ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
   h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
   // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
   h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
@@ -5872,7 +5909,7 @@ function wifInput() {
 function wifCalc(p, inp) {
   if (!p || !p.hasPlanData) return null;
   const fc = planForecast(p),
-    pack = isShip(p) ? null : (s.packs || [])[0], // ab 3.0: keine Stationspacks für Schiffe
+    pack = planPack(p), // ab 3.2: Schiffe mit dem Pack ihrer Klasse
     f = 1 + inp.pct / 100;
   if (!fc) return null;
   const rows = [];
@@ -5970,7 +6007,8 @@ function renderWif() {
   if (w.rows.some((x) => x.miss > 0 && !x.amt && (inp.now || inp.week)))
     notes.push("Materialien ohne Packinhalt profitieren nicht von Packs.");
   notes.push(
-    "Gewinn = Unterschied im realistischen Szenario (Median). Packinhalt laut Daten & Import › Stationspack" +
+    "Gewinn = Unterschied im realistischen Szenario (Median). Packinhalt laut Daten & Import › " +
+      (isShip(p) ? "Schiffs-Packs (" + packLabel(p) + ")" : "Stationspack") +
       (inp.pct ? ", hier " + (inp.pct > 0 ? "+" : "") + inp.pct + " %" : "") +
       ". Preis " +
       fx(w.price) +
@@ -5979,7 +6017,9 @@ function renderWif() {
   const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   $("wifNote").textContent = isShip(p)
     ? (yb ? "Schiffswerft " + yb.yard + " fehlt – die Termine zeigen nur, wann die Ressourcen gedeckt sind. " : "") +
-      "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+      (shipPackMissingText(p)
+        ? shipPackMissingText(p) + " Die Pack-Stellschrauben haben deshalb keine Wirkung; einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+        : notes.join(" "))
     : (packEmpty()
       ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
       : "") + notes.join(" ");
@@ -6824,7 +6864,7 @@ function bkPayload(d) {
     {
       app: "Bens STFC Progress Planner",
       type: "backup",
-      version: "3.1.0",
+      version: "3.2.0",
       createdAt: d.toISOString(),
       state: JSON.parse(serializeState()),
     },
@@ -7631,9 +7671,10 @@ function render() {
   if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);
-    if (isShip(p)) {
+    if (!pc && shipPackMissingText(p)) {
       $("packsValue").textContent = "–";
-      $("packsDetail").textContent = "Für Schiffe nicht berechnet";
+      $("packsDetail").textContent =
+        p.ship && p.ship.key === "other" ? "Für „Anderes Schiff“ gibt es keinen Pack" : "Schiffs-Pack unter Daten & Import › Schiffs-Packs pflegen";
     } else if (!pc) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent = p.hasPlanData
@@ -7650,7 +7691,9 @@ function render() {
         (pc.approx ? "ca. " : "") +
         fx(pc.total * pc.pack.priceEUR) +
         " € · bestimmt durch " +
-        pc.driver.replace("7★ ", "");
+        pc.driver.replace("7★ ", "") +
+        (isShip(p) ? " · " + pc.pack.name : "") +
+        (packInclText(p) ? " · " + packInclText(p) : "");
     }
   }
   renderSnaps();
@@ -9335,7 +9378,9 @@ $("packModal").onclick = (e) => {
   if (e.target === $("packModal")) $("packModal").classList.remove("on");
 };
 $("savePack").onclick = () => {
-  const pk = s.packs[0],
+  // ab 3.2: Stationspack oder Schiffs-Pack der gerade bearbeiteten Klasse
+  const ship = typeof packEditCls === "string" && packEditCls,
+    pk = ship ? s.shipPacks[ship] : s.packs[0],
     c = {};
   let bad = false;
   document.querySelectorAll("[data-pm]").forEach((i) => {
@@ -9366,7 +9411,8 @@ $("savePack").onclick = () => {
     }
   }
   pk.validFrom = $("packValid").value || pk.validFrom;
-  s.logs.push("Stationspack aktualisiert");
+  if (ship && $("packName").value.trim()) pk.name = $("packName").value.trim();
+  s.logs.push(ship ? "Schiffs-Pack aktualisiert: " + SHIP_CLASSES[ship].label : "Stationspack aktualisiert");
   $("packModal").classList.remove("on");
   save();
 };
@@ -10477,6 +10523,111 @@ function renderChainPanel(p) {
       })
       .join("") +
     `</tbody></table></div><div class="chartNote" style="margin-top:8px">Fehlt = Kosten des Schiffswerft-Plans + Kosten des Schiffs − Bestand. Prognose, Engpass und Zieltermin des Schiffs rechnen mit diesem Wert. Ändern unter „Plandaten verwalten“ › „Schiffswerft-Plan“.</div>`;
+}
+// Schiffs-Packs (ab 3.2): ein Pack je Schiffsklasse, Inhalt von Hand gepflegt (hängt von der OPS-Stufe ab).
+// „Anderes Schiff“ hat bewusst keinen Pack (meist Spezialwährung).
+// Achtung: läuft schon beim ersten render() bzw. in migrateState() – keine let/const/var-Werte auf oberster Ebene
+// benutzen, nur Funktionen.
+
+function shipPackNames() {
+  return {
+    battleship: "Ultra-Kampfschiffs-Machtpaket",
+    interceptor: "Ultra-Abfangjäger-Machtpaket",
+    explorer: "Ultra-Forschungsschiff-Machtpaket",
+    survey: "Ultra-Vermessungsschiffsmachtpaket",
+  };
+}
+// Startwerte: in der veröffentlichten Datei leer. Ein eigener Build (tools/build.py --seed) setzt hier Werte ein,
+// die nur greifen, solange noch kein Schiffs-Pack gepflegt ist.
+function shipPackSeed() {
+  return /*@@SHIP_PACK_SEED@@*/ null;
+}
+function packEmptyOf(pk) {
+  return !pk || !Object.values(pk.contents || {}).some((c) => c && +c.amount > 0);
+}
+// s.shipPacks auf die vier Klassen normalisieren (alte Daten, fehlende Felder)
+function ensureShipPacks(st) {
+  st = st || s;
+  if (!st) return;
+  const names = shipPackNames(),
+    old = st.shipPacks && typeof st.shipPacks === "object" ? st.shipPacks : {},
+    out = {};
+  for (const cls of Object.keys(names)) {
+    const o = old[cls] && typeof old[cls] === "object" ? old[cls] : {};
+    out[cls] = {
+      name: typeof o.name === "string" && o.name.trim() ? o.name : names[cls],
+      priceEUR: Number.isFinite(+o.priceEUR) && o.priceEUR !== "" && o.priceEUR != null ? +o.priceEUR : 100,
+      validFrom: typeof o.validFrom === "string" ? o.validFrom : "",
+      contents: o.contents && typeof o.contents === "object" ? o.contents : {},
+    };
+  }
+  const seed = shipPackSeed();
+  if (seed && Object.values(out).every(packEmptyOf))
+    for (const [cls, v] of Object.entries(seed))
+      if (out[cls] && v && v.contents) out[cls] = Object.assign({}, out[cls], v, { contents: Object.assign({}, v.contents) });
+  st.shipPacks = out;
+}
+// Materialien, die ein Schiffs-Pack erfasst: Σ-Tritanium, 7★ Materialien, 7★ Teile der Klasse
+function shipPackMats(cls) {
+  return ["Σ-Tritanium"]
+    .concat(MATERIALS.filter((m) => /^7★ /.test(m)))
+    .concat(
+      partMats(cls)
+        .slice()
+        .reverse(),
+    );
+}
+// Pack, mit dem ein Plan rechnet: Gebäude → Stationspack, Schiff → Pack seiner Klasse, „Anderes Schiff“ → keiner
+function planPack(p) {
+  if (!p) return null;
+  if (!isShip(p)) return (s.packs || [])[0] || null;
+  if (!p.ship || p.ship.key === "other") return null;
+  if (!s.shipPacks || !s.shipPacks[p.ship.cls]) ensureShipPacks();
+  return s.shipPacks[p.ship.cls] || null;
+}
+function packEmptyFor(p) {
+  return packEmptyOf(planPack(p));
+}
+// Bezeichnung in Texten: „Stationspack“ bzw. der Name des Schiffs-Packs
+function packLabel(p) {
+  const pk = planPack(p);
+  return isShip(p) && pk ? pk.name : "Stationspack";
+}
+function packPlural(name, n) {
+  return n === 1 ? name : /paket$/i.test(name) ? name + "e" : name + "s";
+}
+// „inkl. Schiffswerft 76“, wenn ein aktiver Schiffswerft-Plan mitgerechnet wird
+function packInclText(p) {
+  const anc = typeof chainAncestors === "function" ? chainAncestors(p).filter((q) => calcPlanStatus(q) === "active") : [];
+  return anc.length ? "inkl. " + anc.map((q) => q.name).join(", ") : "";
+}
+// Hinweis für Schiffe ohne nutzbaren Pack (null, wenn ein Pack gepflegt ist oder es kein Schiff ist)
+function shipPackMissingText(p) {
+  if (!isShip(p)) return null;
+  if (!p.ship || p.ship.key === "other") return "Für „Anderes Schiff“ gibt es keinen Pack – hier zählt nur dein Einkommen.";
+  if (packEmptyFor(p))
+    return "Der Pack für " + SHIP_CLASSES[p.ship.cls].label + " ist noch nicht gepflegt (Daten & Import › Schiffs-Packs).";
+  return null;
+}
+function openPackFor(p) {
+  if (isShip(p) && p.ship && p.ship.key !== "other") openPacks(p.ship.cls);
+  else openPacks();
+}
+
+// ---------------------------------------------------------------- Daten & Import: Schiffs-Packs
+function renderShipPacks() {
+  const el = $("shipPackRows");
+  if (!el) return;
+  ensureShipPacks();
+  el.innerHTML = Object.entries(s.shipPacks)
+    .map(([cls, pk]) => {
+      const n = Object.values(pk.contents || {}).filter((c) => c && +c.amount > 0).length;
+      return `<tr><td>${SHIP_CLASSES[cls].label}</td><td>${escAttr(pk.name)}</td><td>${
+        n ? n + " Material" + (n === 1 ? "" : "ien") : '<span class="muted">noch nicht gepflegt</span>'
+      }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"}</td><td>${fx(pk.priceEUR)} €</td><td><button class="miniBtn" data-shippack="${cls}">Bearbeiten</button></td></tr>`;
+    })
+    .join("");
+  el.querySelectorAll("[data-shippack]").forEach((b) => (b.onclick = () => openPacks(b.dataset.shippack)));
 }
 
 </script></body></html>

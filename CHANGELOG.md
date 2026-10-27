@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.2.0] – in Arbeit
+
+### Neu
+- **Schiffs-Packs:** ein Pack je Klasse (Kampfschiff, Abfangjäger, Forschungsschiff, Miner), gepflegt unter „Daten & Import“ › „Schiffs-Packs“ mit Σ-Tritanium, 7★ Materialien und den 7★ Teilen der Klasse. Der Inhalt hängt von der OPS-Stufe ab und wird von Hand aktualisiert. Schiffspläne rechnen damit wie Gebäudepläne mit dem Stationspack: „Packs bis zum Ziel“, Effekt von 1 Pack in der Engpass-Karte, „1 Pack pro Woche“, Pack-Stellschrauben in Was-wäre-wenn und Wochenbericht. Ein Schiffswerft-Plan zählt mit („inkl. Schiffswerft 76“). „Anderes Schiff“ hat bewusst keinen Pack.
+
+### Technik
+- Neue Quelldatei `27-ship-packs.js`. `tools/build.py --seed <json>` baut eine eigene Datei mit Startwerten für die Schiffs-Packs; sie greifen nur, solange noch kein Schiffs-Pack gepflegt ist. Die veröffentlichte Datei startet leer.
+- Tests: Schiffs-Pack je Klasse, Startwerte nur im eigenen Build (insgesamt 64).
+
 ## [3.1.0] – 2026-10-27
 
 ### Geändert

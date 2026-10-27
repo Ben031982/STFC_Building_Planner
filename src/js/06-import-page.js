@@ -32,6 +32,7 @@ function renderImportPage() {
   const el = $("impPlans");
   if (!el) return;
   renderPackSummary();
+  renderShipPacks();
   renderScan();
   renderUpdateBars();
   renderSetupToggle();

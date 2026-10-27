@@ -52,7 +52,7 @@ function wifInput() {
 function wifCalc(p, inp) {
   if (!p || !p.hasPlanData) return null;
   const fc = planForecast(p),
-    pack = isShip(p) ? null : (s.packs || [])[0], // ab 3.0: keine Stationspacks für Schiffe
+    pack = planPack(p), // ab 3.2: Schiffe mit dem Pack ihrer Klasse
     f = 1 + inp.pct / 100;
   if (!fc) return null;
   const rows = [];
@@ -150,7 +150,8 @@ function renderWif() {
   if (w.rows.some((x) => x.miss > 0 && !x.amt && (inp.now || inp.week)))
     notes.push("Materialien ohne Packinhalt profitieren nicht von Packs.");
   notes.push(
-    "Gewinn = Unterschied im realistischen Szenario (Median). Packinhalt laut Daten & Import › Stationspack" +
+    "Gewinn = Unterschied im realistischen Szenario (Median). Packinhalt laut Daten & Import › " +
+      (isShip(p) ? "Schiffs-Packs (" + packLabel(p) + ")" : "Stationspack") +
       (inp.pct ? ", hier " + (inp.pct > 0 ? "+" : "") + inp.pct + " %" : "") +
       ". Preis " +
       fx(w.price) +
@@ -159,7 +160,9 @@ function renderWif() {
   const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   $("wifNote").textContent = isShip(p)
     ? (yb ? "Schiffswerft " + yb.yard + " fehlt – die Termine zeigen nur, wann die Ressourcen gedeckt sind. " : "") +
-      "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+      (shipPackMissingText(p)
+        ? shipPackMissingText(p) + " Die Pack-Stellschrauben haben deshalb keine Wirkung; einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+        : notes.join(" "))
     : (packEmpty()
       ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
       : "") + notes.join(" ");

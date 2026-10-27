@@ -309,6 +309,15 @@
               ><div class="chartHead"
                 ><h3>Stationspack</h3><button id="packEditBtn2" class="miniBtn">Bearbeiten</button></div
               ><div id="packSummary" class="muted" style="font-size: 13px; margin-top: 6px"></div
+              ><h3 style="margin-top: 16px">Schiffs-Packs</h3
+              ><p class="muted" style="font-size: 12.5px; margin: 4px 0 8px"
+                >Ein Pack je Klasse, gilt für alle Schiffspläne dieser Klasse. Der Inhalt hängt von deiner OPS-Stufe ab –
+                nach einem OPS-Aufstieg hier aktualisieren. „Anderes Schiff“ hat keinen Pack.</p
+              ><div class="histWrap"
+                ><table class="histTable" style="width: 100%"
+                  ><thead
+                    ><tr><th>Klasse</th><th>Pack</th><th>Inhalt</th><th>Gültig ab</th><th>Preis</th><th></th></tr></thead
+                  ><tbody id="shipPackRows"></tbody></table></div
               ><h3 style="margin-top: 16px">Letzte Änderungen</h3
               ><div id="log" class="muted" style="font-size: 12px"></div></section></div
           ><input id="file" type="file" accept=".json" multiple hidden /><details class="dangerZone"
@@ -541,9 +550,11 @@
   ><div id="packModal" class="modal"
     ><div class="box"
       ><div class="head"
-        ><div><h2>Stationspack pflegen</h2><span class="muted">Gilt für alle Zielpläne.</span></div
+        ><div><h2 id="packTitle">Stationspack pflegen</h2><span id="packSub" class="muted">Gilt für alle Gebäudepläne.</span></div
         ><button id="closePack" class="btn">Schließen</button></div
-      ><p class="muted"
+      ><label class="dLab" id="packNameLab" hidden style="max-width: 420px"
+        >Name des Packs<input id="packName" /></label
+      ><p class="muted" id="packIntro"
         >Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem
         OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte
         aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst.

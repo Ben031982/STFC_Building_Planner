@@ -441,9 +441,10 @@ function render() {
   if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);
-    if (isShip(p)) {
+    if (!pc && shipPackMissingText(p)) {
       $("packsValue").textContent = "–";
-      $("packsDetail").textContent = "Für Schiffe nicht berechnet";
+      $("packsDetail").textContent =
+        p.ship && p.ship.key === "other" ? "Für „Anderes Schiff“ gibt es keinen Pack" : "Schiffs-Pack unter Daten & Import › Schiffs-Packs pflegen";
     } else if (!pc) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent = p.hasPlanData
@@ -460,7 +461,9 @@ function render() {
         (pc.approx ? "ca. " : "") +
         fx(pc.total * pc.pack.priceEUR) +
         " € · bestimmt durch " +
-        pc.driver.replace("7★ ", "");
+        pc.driver.replace("7★ ", "") +
+        (isShip(p) ? " · " + pc.pack.name : "") +
+        (packInclText(p) ? " · " + packInclText(p) : "");
     }
   }
   renderSnaps();

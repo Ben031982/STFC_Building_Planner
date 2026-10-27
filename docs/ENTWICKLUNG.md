@@ -50,6 +50,7 @@ Die JS-Dateien sind **klassische Skripte ohne Module**: Sie teilen sich einen ge
 | `24-efficiency` | Effizienzen: Wirkung und Verlauf (Seite Ressourcen & Effizienzen) |
 | `25-ships` | Schiffe: Schiffsplan anlegen, Schiffswerft-Stufe (Gebäude 15) |
 | `26-chain` | Schiffswerft-Plan (ab 3.1, vorher „Startet nach“): Kosten der Schiffswerft zuerst vom Bestand abziehen, Kasten in der Übersicht |
+| `27-ship-packs` | Schiffs-Packs je Klasse: Daten, Editor-Anbindung, Daten & Import; `planPack(p)` liefert Stationspack oder Schiffs-Pack |
 
 ## Bauen
 
@@ -69,7 +70,7 @@ python tests/run_tests.py
 
 Ohne Argument wird zuerst gebaut. Mit `python tests/run_tests.py datei.html` lässt sich jede fertige Datei prüfen, mit `-k name` nur ein Teil der Tests.
 
-Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen, den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien) sowie ab 2.1 Datenintegrität (ältere, doppelte, ungültige und kaputte Exporte, Snapshot löschen, Importreihenfolge), Prognose-Grenzfälle (ein Snapshot, Stillstand, negativ, über 3 Jahre, Ausreißer) und Zielplan-Konsistenz (Zielwechsel, erledigte Bauten, Plan löschen), Zieltermin und Wochenbericht (Vorwoche, Ausblick), ab 3.0 Schiffe (Schiffsteile aus dem Export, Nachtragen, Schiffsplan, Neubau, keine Packs), Schiffswerft-Plan und „Schiffswerft fehlt“, ab 3.1 „Ziel erreicht“ und das Auflösen alter Gebäudeketten.
+Die Tests decken ab: leerer Start mit Einführung, alle Seiten, Exporte einlesen, Plan importieren und Prognose, Backup und Wiederherstellen, Übernahme von Daten aus 1.0, die Speicher-Absicherung, die Zielerkennung (Operations als Voraussetzung, Planname bleibt), das kopierte Effizienz-Format, den Update-Assistenten, die Engpass-Karte, die Prognose-Qualität samt Gewichtung, die Einrichtungs-Karte, die Begriffserklärungen, die Exportsuche beim Öffnen, den Optik-Feinschliff (Symbole, Diagramm, Bewegung, Markierung der Engpass-Materialien) sowie ab 2.1 Datenintegrität (ältere, doppelte, ungültige und kaputte Exporte, Snapshot löschen, Importreihenfolge), Prognose-Grenzfälle (ein Snapshot, Stillstand, negativ, über 3 Jahre, Ausreißer) und Zielplan-Konsistenz (Zielwechsel, erledigte Bauten, Plan löschen), Zieltermin und Wochenbericht (Vorwoche, Ausblick), ab 3.0 Schiffe (Schiffsteile aus dem Export, Nachtragen, Schiffsplan, Neubau, keine Packs), Schiffswerft-Plan und „Schiffswerft fehlt“, ab 3.1 „Ziel erreicht“ und das Auflösen alter Gebäudeketten, ab 3.2 Schiffs-Packs und Startwerte im eigenen Build.
 
 Hinweise für neue Tests: Die Uhr steht im Test fest (25.10.2026, 09:00 UTC) – Plan-IDs enthalten die Uhrzeit, für einen zweiten Plan die Uhr vorstellen (`second_plan`). Kein `reload()` nach dem Speichern: Headless-Chromium verliert dabei manchmal den localStorage einer lokalen Datei; stattdessen `reopen()`.
 
@@ -81,3 +82,8 @@ Hinweise für neue Tests: Die Uhr steht im Test fest (25.10.2026, 09:00 UTC) –
 4. Auf GitHub: **Actions › Release erstellen › Run workflow**. Die Action baut, lässt alle Tests laufen, setzt den Tag `v<VERSION>` und legt das Release mit Planner-Datei und Userguide an. Der Text kommt aus dem CHANGELOG-Abschnitt.
 
 Die Action bricht ohne Release ab, wenn ein Test fehlschlägt, der Tag schon existiert oder der CHANGELOG-Abschnitt fehlt bzw. noch „in Arbeit“ ist.
+
+
+## Eigener Build mit Startwerten
+
+`python tools/build.py --seed pfad/zu/schiffs-packs.json --out pfad.html` setzt Startwerte für die Schiffs-Packs ein (Format wie `s.shipPacks`: je Klasse `name`, `priceEUR`, `validFrom`, `contents`). Sie greifen nur, solange noch kein Schiffs-Pack gepflegt ist. Die veröffentlichte Datei und die Release-Action bauen ohne `--seed`.

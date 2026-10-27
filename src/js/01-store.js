@@ -158,6 +158,8 @@ function migrateState(st) {
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;
+  // ab 3.2: Schiffs-Packs je Klasse
+  ensureShipPacks(st);
   return st;
 }
 let s = readStore(K),

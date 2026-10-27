@@ -102,6 +102,7 @@
   color: #9fd3ea;
 }
 #draftBuildingBox[hidden],
+#packNameLab[hidden],
 #draftAfterLab[hidden],
 #draftAfterHint[hidden],
 #editAfterLab[hidden],

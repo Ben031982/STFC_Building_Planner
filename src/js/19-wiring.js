@@ -55,7 +55,9 @@ $("packModal").onclick = (e) => {
   if (e.target === $("packModal")) $("packModal").classList.remove("on");
 };
 $("savePack").onclick = () => {
-  const pk = s.packs[0],
+  // ab 3.2: Stationspack oder Schiffs-Pack der gerade bearbeiteten Klasse
+  const ship = typeof packEditCls === "string" && packEditCls,
+    pk = ship ? s.shipPacks[ship] : s.packs[0],
     c = {};
   let bad = false;
   document.querySelectorAll("[data-pm]").forEach((i) => {
@@ -86,7 +88,8 @@ $("savePack").onclick = () => {
     }
   }
   pk.validFrom = $("packValid").value || pk.validFrom;
-  s.logs.push("Stationspack aktualisiert");
+  if (ship && $("packName").value.trim()) pk.name = $("packName").value.trim();
+  s.logs.push(ship ? "Schiffs-Pack aktualisiert: " + SHIP_CLASSES[ship].label : "Stationspack aktualisiert");
   $("packModal").classList.remove("on");
   save();
 };

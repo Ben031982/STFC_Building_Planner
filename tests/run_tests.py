@@ -1365,8 +1365,8 @@ def schiffsplan_anlegen_importieren_und_prognose(b, html, tmp):
     check("7★ Common Explorer Parts" in a.text("#effPanelRows"), "Teile fehlen im Effizienz-Panel")
     a.click("#nw")
     a.wait_for_timeout(150)
-    check("gelten nicht für Schiffe" in a.text("#wifNote"), "Hinweis bei Was-wäre-wenn fehlt")
-    check("nicht berechnet" in a.text("#packsDetail"), "Pack-Karte beim aktiven Schiff falsch")
+    check("Pack für Forschungsschiff ist noch nicht gepflegt" in a.text("#wifNote"), f"Hinweis bei Was-wäre-wenn fehlt: {a.text('#wifNote')!r}")
+    check("Schiffs-Pack" in a.text("#packsDetail"), f"Pack-Karte beim aktiven Schiff falsch: {a.text('#packsDetail')!r}")
     a.click("#nwk")
     check("7★ Rare Explorer Parts" in a.text("#wkBody"), "Schiffsteile fehlen im Wochenbericht")
     txt = page_texts(a)
@@ -1415,14 +1415,12 @@ def schiffe_ohne_packs_und_teile_nachtragen(b, html, tmp):
     check(n == 0, f"Schiffsteile nicht nachgetragen ({n} Snapshots ohne Teile)")
     check(a.js("()=>s.snapshots.length") == len(files), "Nachtragen hat Snapshots doppelt angelegt")
     check(a.js("()=>s.logs.at(-1)").startswith("Schiffsteile aus"), "Kein Protokolleintrag")
-    # Schiffsplan: keine Pack-Rechnung
+    # Schiffsplan: der Stationspack gilt nicht – ohne gepflegten Schiffs-Pack keine Pack-Rechnung
     a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=3)).isoformat())
     new_ship_plan(a)
     a.js("()=>{s.active=s.plans.at(-1).id;render()}")
-    check(a.js("()=>packCalc(s.plans.at(-1))") is None, "Pack-Rechnung für Schiff")
-    check("nicht berechnet" in a.text("#packsDetail"), f"Pack-Karte beim Schiff falsch: {a.text('#packsDetail')!r}")
-    a.click("#navFc")
-    check("für Schiffe nicht berechnet" in a.text("#packCard"), "Pack-Bereich unter Prognose & Packs falsch")
+    check(a.js("()=>packCalc(s.plans.at(-1))") is None, "Pack-Rechnung für Schiff mit Stationspack")
+    check(a.js("()=>planPack(s.plans.at(-1))!==s.packs[0]"), "Schiff rechnet mit dem Stationspack")
     # Gebäudeplan rechnet Packs weiter
     a.js("()=>{s.active=s.plans[0].id;render()}")
     check(a.js("()=>!!packCalc(s.plans[0])"), "Gebäudeplan rechnet keine Packs mehr")
@@ -1672,6 +1670,64 @@ def gebaeude_hinweis_gehoert_nicht_zum_plan(b, html, tmp):
     later_export(3, [{"id": 0, "level": 76}, {"id": 1, "level": 75}])
     txt = a.text("#carePanel")
     check("1 Gebäudestufe" in txt and "letzten Bestätigung" in txt, f"Neue Stufe nach Bestätigung nicht (nur neu) gemeldet: {txt[:300]!r}")
+    a.done()
+
+
+@test
+def schiffs_pack_rechnet_mit_dem_pack_der_klasse(b, html, tmp):
+    a = App(b, html, tmp)
+    ids = ship_with_yard_plan(a)  # Schiffsplan Klasse Forschungsschiff
+    a.js(f"()=>{{s.plans[1].after='{ids[0]}';s.active=s.plans[1].id;save();render()}}")  # nach „Schiffswerft 76“
+    a.click("#nd")
+    check("Schiffs-Pack" in a.text("#packsDetail") and a.js("()=>packCalc(s.plans[1])") is None, f"Ohne Schiffs-Pack falsche Anzeige: {a.text('#packsDetail')!r}")
+    # Schiffs-Pack über Daten & Import pflegen
+    a.click("#ni")
+    a.wait_for_timeout(200)
+    check(a.locator("#shipPackRows tr").count() == 4, "Daten & Import zeigt nicht vier Schiffs-Packs")
+    a.click('#shipPackRows [data-shippack="explorer"]')
+    check(a.text("#packTitle") == "Schiffs-Pack pflegen: Forschungsschiff" and a.is_visible("#packNameLab"), "Editor für den Schiffs-Pack falsch")
+    check(a.locator('[data-pm="7★ Rare Explorer Parts"]').count() == 1 and a.locator('[data-pm="Σ-Parsteel"]').count() == 0, "Editor zeigt falsche Materialien")
+    for m, v in {"Σ-Tritanium": 8650000, "7★ Rare Gas": 1700, "7★ Rare Ore": 965, "7★ Uncommon Gas": 7900, "7★ Uncommon Ore": 4470, "7★ Rare Explorer Parts": 770, "7★ Uncommon Explorer Parts": 14300, "7★ Common Explorer Parts": 36500}.items():
+        a.fill(f'[data-pm="{m}"]', str(v))
+    a.click("#savePack")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.shipPacks.explorer.contents['7★ Rare Explorer Parts'].amount") == 770, "Schiffs-Pack nicht gespeichert")
+    check(not a.js("()=>((s.packs||[])[0]||{contents:{}}).contents['7★ Rare Explorer Parts']"), "Stationspack durch Schiffs-Pack verändert")
+    pc = a.js("()=>{const pc=packCalc(s.plans[1]);return pc&&{total:pc.total,driver:pc.driver,name:pc.pack.name}}")
+    check(pc and pc["total"] > 0 and pc["name"] == "Ultra-Forschungsschiff-Machtpaket", f"Pack-Rechnung für das Schiff falsch: {pc}")
+    a.js("()=>{s.active=s.plans[1].id;render()}")
+    a.click("#nd")
+    det = a.text("#packsDetail")
+    check("Ultra-Forschungsschiff-Machtpaket" in det and "inkl. Schiffswerft 76" in det, f"Pack-Karte nennt Pack oder Schiffswerft nicht: {det!r}")
+    check("Mit 1 Ultra-Forschungsschiff-Machtpaket" in a.text("#bottleneckList") or "Pack" in a.text("#bottleneckList"), "Engpass-Karte ohne Pack-Effekt")
+    a.click("#navFc")
+    check("Ultra-Forschungsschiff-Machtpakete" in a.text("#packCard") or "Ultra-Forschungsschiff-Machtpaket" in a.text("#packCard"), "Prognose-Seite ohne Schiffs-Pack")
+    # „Anderes Schiff“ hat keinen Pack
+    a.js("()=>{s.plans[1].ship.key='other';render()}")
+    check(a.js("()=>planPack(s.plans[1])") is None and "Anderes Schiff" in a.text("#packCard"), "„Anderes Schiff“ rechnet mit einem Pack")
+    a = reopen(a, b, html, tmp)
+    check(a.js("()=>s.shipPacks.explorer.contents['7★ Rare Explorer Parts'].amount") == 770, "Schiffs-Pack nach erneutem Öffnen verloren")
+    check(a.js("()=>packEmptyOf(s.shipPacks.interceptor)") is True, "Andere Klassen nicht leer")
+    a.done()
+
+
+@test
+def startwerte_fuer_schiffs_packs_nur_im_eigenen_build(b, html, tmp):
+    # veröffentlichte Datei: leer
+    a = App(b, html, tmp)
+    check(a.js("()=>Object.values(s.shipPacks).every(packEmptyOf)"), "Veröffentlichte Datei hat Startwerte")
+    a.done()
+    # eigener Build mit --seed: Startwerte nur, solange nichts gepflegt ist
+    seed = tmp / "seed.json"
+    seed.write_text(json.dumps({"interceptor": {"name": "Testpaket", "priceEUR": 100, "contents": {"7★ Rare Interceptor Parts": {"amount": 770}}}}), encoding="utf-8")
+    out = tmp / "seeded.html"
+    subprocess.run([sys.executable, str(ROOT / "tools" / "build.py"), "--seed", str(seed), "--out", str(out)], check=True, capture_output=True)
+    a = App(b, out, tmp)
+    check(a.js("()=>s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount") == 770 and a.js("()=>s.shipPacks.interceptor.name") == "Testpaket",
+          "Startwerte im eigenen Build nicht übernommen")
+    a.js("()=>{s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount=999;save()}")
+    a = reopen(a, b, out, tmp)
+    check(a.js("()=>s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount") == 999, "Startwerte überschreiben gepflegte Werte")
     a.done()
 
 
