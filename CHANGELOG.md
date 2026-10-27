@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.4.0] – in Arbeit
+## [3.4.0] – 2026-10-27
 
 ### Neu
 - **Gebäude beim Namen:** Der Planner kennt die Gebäudenummern im Spock's-Export (Liste von Ben, gegen seine Daten geprüft). Der Datenpflege-Hinweis nennt das gestiegene Gebäude und kommt nur noch, wenn es in einem Plan steht („Shipyard 73 → 74 – gehört zu Operations 76“). „Gehört nicht zum Plan“ bleibt nur für unbekannte Nummern.
