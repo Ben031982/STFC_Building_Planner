@@ -134,6 +134,32 @@ function goalEvents() {
       (g.eta ? (g.since ? ", " : " – ") + "letzte Prognose " + d(g.eta) : ""),
   }));
 }
+// ab 3.3: Liste „Erreichte Ziele“ unter Verlauf, Einträge mit Rückfrage löschbar
+function renderGoals() {
+  const el = $("goalList");
+  if (!el) return;
+  const gs = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at)),
+    d = (x) => (x ? new Date(x).toLocaleDateString("de-DE") : "–");
+  $("goalCount").textContent = gs.length ? gs.length + (gs.length === 1 ? " Ziel" : " Ziele") : "";
+  el.innerHTML = gs.length
+    ? `<table class="histTable" style="width:100%"><thead><tr><th>Erreicht am</th><th>Ziel</th><th>Geplant seit</th><th>Letzte Prognose</th><th></th></tr></thead><tbody id="goalRows">${gs
+        .map(
+          (g) =>
+            `<tr><td>${d(g.at)}</td><td>${escAttr(g.name)}</td><td>${d(g.since)}</td><td>${d(g.eta)}</td><td><button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
+        )
+        .join("")}</tbody></table>`
+    : '<p class="muted">Noch kein Ziel abgeschlossen.</p>';
+  el.querySelectorAll("[data-goal]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const g = s.goals.find((x) => x.id === b.dataset.goal);
+        if (!g || !confirm("Eintrag „Ziel erreicht: " + g.name + "“ löschen? Der Plan kommt dadurch nicht zurück.")) return;
+        s.goals = s.goals.filter((x) => x !== g);
+        s.logs.push("Eintrag „Ziel erreicht“ gelöscht: " + g.name);
+        save();
+      }),
+  );
+}
 function jumpEvents(p, mats) {
   const by = {};
   if (!p || !p.hasPlanData) return [];

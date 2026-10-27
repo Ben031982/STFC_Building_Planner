@@ -1574,6 +1574,30 @@ def ziel_erreicht_plan_abschliessen(b, html, tmp):
     a.click("#nwk")
     a.wait_for_timeout(300)
     check("Ziel erreicht" in a.text("#wkEv") and main_name + " abgeschlossen" in a.text("#wkEv"), "Wochenbericht zeigt „Ziel erreicht“ nicht")
+    # ab 3.3: Liste „Erreichte Ziele“ unter Verlauf, Eintrag löschbar
+    a.click("#nd")
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    check(main_name in a.text("#goalRows") and a.text("#goalCount") == "1 Ziel", f"Liste „Erreichte Ziele“ falsch: {a.text('#goalList')!r}")
+    a.click("#goalRows [data-goal]")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.goals.length") == 0 and "Noch kein Ziel abgeschlossen" in a.text("#goalList"), "Eintrag nicht gelöscht")
+    check(a.js("()=>s.plans.length") == 1, "Löschen des Eintrags hat Pläne verändert")
+    a.done()
+
+
+@test
+def hinweis_aufs_abschliessen_bei_gedeckt(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.js("()=>{const q=s.plans[0];for(const r of Object.values(q.planData.resources))if(r.cost>0){r.cost=1;r.needed=0}q.confirmation.dataHash=planHash(q);save();render()}")
+    check(a.js("()=>planForecast(s.plans[0]).overall.real") == 0, "Testaufbau: Plan nicht gedeckt")
+    a.click("#nd")
+    check(a.text("#etaValue") == "Gedeckt" and "Sobald gebaut" in a.text("#etaDetail"), f"Hinweis bei „Gedeckt“ fehlt: {a.text('#etaDetail')!r}")
+    a.click("#etaGoalLink")
+    a.wait_for_timeout(200)
+    check(a.has_class("#planDataModal", "on") and a.is_visible("#completePlanBtn"), "Link öffnet die Plandaten nicht")
     a.done()
 
 

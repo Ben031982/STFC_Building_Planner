@@ -309,6 +309,19 @@ function renderForecast(p) {
   $("etaValue").textContent = val;
   $("etaValue").classList.toggle("etaBlock", !!yb);
   $("etaDetail").textContent = det;
+  // ab 3.3: alles gedeckt → dezenter Hinweis aufs Abschließen (gedeckt heißt noch nicht gebaut)
+  if (o.real === 0 && !yb) {
+    $("etaDetail").insertAdjacentHTML(
+      "beforeend",
+      '<span class="etaGoal">Sobald gebaut: <a href="#" id="etaGoalLink">Plandaten verwalten › Ziel erreicht</a> – dann erscheint der Plan als erreicht im Wochenbericht.</span>',
+    );
+    $("etaGoalLink").onclick = (e) => {
+      e.preventDefault();
+      openManage();
+      const b = $("completePlanBtn");
+      if (b) b.scrollIntoView({ block: "center" });
+    };
+  }
   const q = renderQuality(fc),
     // fehlen Daten, ist das Szenario offen – nicht „nicht absehbar“ (das heißt: über 100 Jahre)
     card = (d, far) => (d == null && !far && o.missingData.length ? "zu wenig Daten" : fmtEta(d, fc.base, far));

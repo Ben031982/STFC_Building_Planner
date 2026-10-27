@@ -192,3 +192,13 @@
   color: #5bd2a0;
   white-space: nowrap;
 }
+
+/* Hinweis aufs Abschließen bei „Gedeckt“ (ab 3.3) */
+.etaGoal {
+  display: block;
+  margin-top: 6px;
+  color: #93a7b9;
+}
+.etaGoal a {
+  color: #9fd3ea;
+}

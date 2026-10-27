@@ -142,7 +142,7 @@ function render() {
     s.plans
       .map(
         (x, xi) =>
-          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span>${x.after && planById(x.after) ? `<br><span class="chain">⛓ nach ${escAttr(planById(x.after).name)}</span>` : ""}</div></div>${(() => {
+          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span>${validAfter(x) ? `<br><span class="chain">⛓ nach ${escAttr(validAfter(x).name)}</span>` : ""}</div></div>${(() => {
             if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>Schiff</span><b></b></div>`;
             const pr = planProgress(x),
               d = pr ? pr.done : x.done,
@@ -472,6 +472,7 @@ function render() {
   renderScan();
   renderCare();
   renderEvents();
+  renderGoals();
   logForecast();
   renderImportPage();
   flashChanged(p);
