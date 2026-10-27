@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.3.0] – in Arbeit
+## [3.3.0] – 2026-10-27
 
 ### Neu
 - **Erreichte Ziele unter Verlauf:** Alle mit „Ziel erreicht“ abgeschlossenen Pläne stehen dauerhaft in einer Liste (erreicht am, geplant seit, letzte Prognose). Ein Eintrag lässt sich nach Rückfrage löschen; der Plan kommt dadurch nicht zurück.
