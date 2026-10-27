@@ -199,7 +199,9 @@ function planForecast(p) {
   return { res, overall, base };
 }
 // Gesamtprognose (realistisch) als Text – „zu wenig Daten“ statt „nicht absehbar“, solange Daten fehlen
-function fcRealTxt(fc) {
+function fcRealTxt(fc, p) {
+  const yb = p && typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yb) return "Schiffswerft " + yb.yard + " fehlt";
   const o = fc.overall;
   return o.real == null && !o.realFar && o.missingData.length ? "zu wenig Daten" : fmtEta(o.real, fc.base, o.realFar);
 }
@@ -289,14 +291,32 @@ function renderForecast(p) {
       " · optimistisch " +
       (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
   }
-  $("etaValue").textContent = val;
   if (typeof chainAncestors === "function" && chainAncestors(p).some((q) => calcPlanStatus(q) === "active"))
     det += " · nach " + chainAncestors(p).map((q) => q.name).join(" → ");
+  // ab 3.0: Schiff ohne nötige Schiffswerft – kein Fertigdatum, nur wann die Ressourcen gedeckt sind
+  const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yb) {
+    val = "Schiffswerft " + yb.yard + " fehlt";
+    det =
+      (o.real === 0
+        ? "Ressourcen bereits gedeckt"
+        : o.real != null
+          ? "Ressourcen voraussichtlich " + (o.real > FC_YEAR ? "" : "am ") + fcDate(fc.base, o.real) + " gedeckt"
+          : det) +
+      " · " +
+      shipYardHint(yb);
+  }
+  $("etaValue").textContent = val;
+  $("etaValue").classList.toggle("etaBlock", !!yb);
   $("etaDetail").textContent = det;
   const q = renderQuality(fc),
     // fehlen Daten, ist das Szenario offen – nicht „nicht absehbar“ (das heißt: über 100 Jahre)
     card = (d, far) => (d == null && !far && o.missingData.length ? "zu wenig Daten" : fmtEta(d, fc.base, far));
+  if (yb) $("fcQBadge").hidden = $("fcQLine").hidden = true;
   $("fcSummary").innerHTML =
+    (yb
+      ? `<div class="yardBlock"><b>Schiffswerft ${yb.yard} fehlt</b> (bei dir ${yb.have}). Die Termine unten zeigen nur, wann die Ressourcen gedeckt sind – bauen kannst du erst danach. ${escAttr(shipYardHint(yb))}.</div>`
+      : "") +
     (q
       ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></div>`
       : "") +

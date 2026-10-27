@@ -47,7 +47,9 @@ function targetCheck(p, dateStr) {
     if (!crit || h / need < crit.h / crit.need) crit = r;
     return r;
   });
-  const noData = rows.filter((r) => r.kind === "data").map((r) => r.m);
+  const noData = rows.filter((r) => r.kind === "data").map((r) => r.m),
+    yard = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yard) return { fc, days, rows, lvl: null, crit, noData, allDone: false, yard };
   return { fc, days, rows, lvl: noData.length ? null : worst || 1, crit, noData, allDone: !crit && !noData.length };
 }
 
@@ -56,7 +58,9 @@ function tdPlans() {
 }
 
 function tdVerdict(r) {
-  return r.allDone
+  return r.yard
+    ? ["Nicht bewertbar", "Schiffswerft " + r.yard.yard + " fehlt", "t3"]
+    : r.allDone
     ? ["Erreichbar", "alles schon gedeckt", "t1"]
     : r.lvl
       ? TD_VERDICT[r.lvl].concat(TD_LV[r.lvl].cls)
@@ -75,7 +79,7 @@ function renderTdCards(sel) {
         const r = targetCheck(p, p.targetDate);
         state = r.err
           ? `<span>${escAttr(r.err)}</span>`
-          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>noch ${Math.max(0, Math.floor(r.days))} Tage</span>`;
+          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>${r.yard ? tdVerdict(r)[1] : "noch " + Math.max(0, Math.floor(r.days)) + " Tage"}</span>`;
       }
       return `<article class="plan${act && p.id === sel ? " active" : ""}${act ? "" : " off"}" data-td="${escAttr(p.id)}"><div class="pt"><img src="${ART[artKey(p)]}" alt=""><div><h3>${escAttr(p.name)}${p.isMain ? '<span class="mainStar"> ★</span>' : ""}</h3><span class="muted">${isShip(p) ? shipLabel(p) : "Level " + p.start + " → " + p.target}</span></div></div><div class="tdRow"><span>Fertig bis</span>${act ? `<input type="date" data-tdd="${escAttr(p.id)}" value="${escAttr(p.targetDate || "")}">` : "<span>–</span>"}</div><div class="tdState">${state}</div></article>`;
     })
@@ -130,7 +134,7 @@ function renderTarget() {
     fc = planForecast(p);
   $("tdSel").innerHTML =
     `Details für <b>${escAttr(p.name)}</b>` +
-    (fc ? " · Prognose heute: " + fcRealTxt(fc) : "") +
+    (fc ? " · Prognose heute: " + fcRealTxt(fc, p) : "") +
     (plans.length > 1 ? " · auf einen anderen Plan klicken, um seine Details zu sehen" : "");
   if (!p.targetDate) {
     out.innerHTML = '<p class="muted tdMsg">Wunschdatum wählen, dann siehst du, ob dein Einkommen reicht.</p>';

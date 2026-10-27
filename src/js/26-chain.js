@@ -47,14 +47,7 @@ function suggestAfterForYard(yard) {
   if (!Number.isFinite(yard)) return null;
   const y = shipyardLevel();
   if (y && y.level >= yard) return null;
-  const hit = s.plans
-    .filter((q) => !isShip(q))
-    .filter((q) => {
-      const t = (q.planData || {}).target,
-        n = String((t && t.building) || q.name).toLowerCase();
-      return /shipyard|schiffswerft/.test(n) && q.target >= yard;
-    })
-    .sort((a, b) => a.target - b.target)[0];
+  const hit = s.plans.filter((q) => isShipyardPlan(q, yard)).sort((a, b) => a.target - b.target)[0];
   return hit ? hit.id : null;
 }
 function afterHint(p, afterId) {
@@ -69,10 +62,12 @@ function afterHint(p, afterId) {
 function chainDraftRender() {
   const sel = $("draftAfter");
   if (!sel) return;
-  let suggest = null;
-  if (typeof draftType !== "undefined" && draftType === "ship") {
-    const sh = SHIPS.find((x) => x.key === $("draftShip").value),
-      yard = $("draftShip").value === "other" ? +$("draftYard").value || NaN : sh ? sh.yard : NaN;
+  let suggest = null,
+    yard = NaN;
+  const ship = typeof draftType !== "undefined" && draftType === "ship";
+  if (ship) {
+    const sh = SHIPS.find((x) => x.key === $("draftShip").value);
+    yard = $("draftShip").value === "other" ? +$("draftYard").value || NaN : sh ? sh.yard : NaN;
     suggest = suggestAfterForYard(yard);
   }
   const cur = sel.dataset.touched ? sel.value : suggest || "";
@@ -80,6 +75,13 @@ function chainDraftRender() {
   sel.value = cur;
   $("draftAfterHint").textContent =
     (suggest && cur === suggest ? "Vorgeschlagen, weil das Schiff eine höhere Schiffswerft braucht. " : "") + afterHint(null, cur);
+  // Schiffswerft zu niedrig und kein Schiffswerft-Plan gewählt: Hinweis, dass es kein Fertigdatum gibt
+  const y = ship && Number.isFinite(yard) ? shipyardLevel() : null,
+    yh = $("draftYardHint");
+  yh.hidden = !(y && y.level < yard && !isShipyardPlan(planById(cur), yard));
+  yh.innerHTML = yh.hidden
+    ? ""
+    : `Ohne Schiffswerft ${yard} zeigt der Planner kein Fertigdatum. Für ein Datum lege einen Plan <b>Schiffswerft ${yard}</b> an und wähle ihn unter „Startet nach“.`;
 }
 function chainManageFill(p) {
   const sel = $("editAfter");

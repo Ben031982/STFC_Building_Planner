@@ -16,7 +16,8 @@ function logForecast() {
     o = fc.overall,
     e = {
       d: dayKey(Date.now()),
-      eta: o.real == null ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
+      // ab 3.0: Schiff ohne nötige Schiffswerft hat kein Fertigdatum
+      eta: o.real == null || shipYardBlock(p) ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
       driver: o.realDriver || null,
       packs: pc ? pc.total : null,
     };
@@ -158,7 +159,7 @@ function renderWeekly() {
           : `<span class="wifLoss">${-g} Tage später als Ende Vorwoche</span>`;
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
-  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${isShip(p) ? "Packs: für Schiffe nicht berechnet" : fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
+  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${isShip(p) ? "Packs: für Schiffe nicht berechnet" : fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
   h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
   // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
   h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
@@ -214,7 +215,9 @@ function wkOutlook(p) {
     (bn && bn.rows.length
       ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
       : "") +
-    `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    (shipYardBlock(p)
+      ? `<li>Fertigstellung offen – <b>Schiffswerft ${shipYardBlock(p).yard} fehlt</b> (${escAttr(shipYardHint(shipYardBlock(p)))})</li></ul>`
+      : `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>`) +
     `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
   );
 }

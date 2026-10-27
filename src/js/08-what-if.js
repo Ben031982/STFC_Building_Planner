@@ -156,8 +156,10 @@ function renderWif() {
       fx(w.price) +
       " € pro Pack.",
   );
+  const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   $("wifNote").textContent = isShip(p)
-    ? "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+    ? (yb ? "Schiffswerft " + yb.yard + " fehlt – die Termine zeigen nur, wann die Ressourcen gedeckt sind. " : "") +
+      "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
     : (packEmpty()
       ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
       : "") + notes.join(" ");

@@ -3356,6 +3356,33 @@ td:has(.prog) {
   font-size: 12px;
 }
 
+/* Schiffswerft fehlt (ab 3.0) */
+.dYardHint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(244, 165, 58, 0.1);
+  border: 1px solid rgba(244, 165, 58, 0.35);
+  color: #ffd993;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.dYardHint[hidden] {
+  display: none;
+}
+.heroEta strong.etaBlock {
+  color: var(--am);
+  font-size: 34px;
+}
+.yardBlock {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(244, 165, 58, 0.1);
+  border: 1px solid rgba(244, 165, 58, 0.35);
+  color: #ffd993;
+}
+
 </style>
 </head>
 <body
@@ -3789,6 +3816,7 @@ td:has(.prog) {
           ><label class="dLab">Tier von<input id="draftTierFrom" type="number" min="1" placeholder="z. B. 7" /></label
           ><label class="dLab">Tier bis<input id="draftTierTo" type="number" min="1" placeholder="z. B. 9" /></label></div
         ><div id="draftReq" class="dReq"></div
+        ><div id="draftYardHint" class="dYardHint" hidden></div
       ></div
       ><label class="dLab" id="draftAfterLab"
         >Startet nach<select id="draftAfter"></select></label
@@ -4999,7 +5027,9 @@ function planForecast(p) {
   return { res, overall, base };
 }
 // Gesamtprognose (realistisch) als Text – „zu wenig Daten“ statt „nicht absehbar“, solange Daten fehlen
-function fcRealTxt(fc) {
+function fcRealTxt(fc, p) {
+  const yb = p && typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yb) return "Schiffswerft " + yb.yard + " fehlt";
   const o = fc.overall;
   return o.real == null && !o.realFar && o.missingData.length ? "zu wenig Daten" : fmtEta(o.real, fc.base, o.realFar);
 }
@@ -5089,14 +5119,32 @@ function renderForecast(p) {
       " · optimistisch " +
       (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
   }
-  $("etaValue").textContent = val;
   if (typeof chainAncestors === "function" && chainAncestors(p).some((q) => calcPlanStatus(q) === "active"))
     det += " · nach " + chainAncestors(p).map((q) => q.name).join(" → ");
+  // ab 3.0: Schiff ohne nötige Schiffswerft – kein Fertigdatum, nur wann die Ressourcen gedeckt sind
+  const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yb) {
+    val = "Schiffswerft " + yb.yard + " fehlt";
+    det =
+      (o.real === 0
+        ? "Ressourcen bereits gedeckt"
+        : o.real != null
+          ? "Ressourcen voraussichtlich " + (o.real > FC_YEAR ? "" : "am ") + fcDate(fc.base, o.real) + " gedeckt"
+          : det) +
+      " · " +
+      shipYardHint(yb);
+  }
+  $("etaValue").textContent = val;
+  $("etaValue").classList.toggle("etaBlock", !!yb);
   $("etaDetail").textContent = det;
   const q = renderQuality(fc),
     // fehlen Daten, ist das Szenario offen – nicht „nicht absehbar“ (das heißt: über 100 Jahre)
     card = (d, far) => (d == null && !far && o.missingData.length ? "zu wenig Daten" : fmtEta(d, fc.base, far));
+  if (yb) $("fcQBadge").hidden = $("fcQLine").hidden = true;
   $("fcSummary").innerHTML =
+    (yb
+      ? `<div class="yardBlock"><b>Schiffswerft ${yb.yard} fehlt</b> (bei dir ${yb.have}). Die Termine unten zeigen nur, wann die Ressourcen gedeckt sind – bauen kannst du erst danach. ${escAttr(shipYardHint(yb))}.</div>`
+      : "") +
     (q
       ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></div>`
       : "") +
@@ -5507,7 +5555,8 @@ function logForecast() {
     o = fc.overall,
     e = {
       d: dayKey(Date.now()),
-      eta: o.real == null ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
+      // ab 3.0: Schiff ohne nötige Schiffswerft hat kein Fertigdatum
+      eta: o.real == null || shipYardBlock(p) ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
       driver: o.realDriver || null,
       packs: pc ? pc.total : null,
     };
@@ -5649,7 +5698,7 @@ function renderWeekly() {
           : `<span class="wifLoss">${-g} Tage später als Ende Vorwoche</span>`;
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
-  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${isShip(p) ? "Packs: für Schiffe nicht berechnet" : fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
+  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${isShip(p) ? "Packs: für Schiffe nicht berechnet" : fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
   h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
   // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
   h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
@@ -5705,7 +5754,9 @@ function wkOutlook(p) {
     (bn && bn.rows.length
       ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
       : "") +
-    `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    (shipYardBlock(p)
+      ? `<li>Fertigstellung offen – <b>Schiffswerft ${shipYardBlock(p).yard} fehlt</b> (${escAttr(shipYardHint(shipYardBlock(p)))})</li></ul>`
+      : `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>`) +
     `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
   );
 }
@@ -5888,8 +5939,10 @@ function renderWif() {
       fx(w.price) +
       " € pro Pack.",
   );
+  const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   $("wifNote").textContent = isShip(p)
-    ? "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+    ? (yb ? "Schiffswerft " + yb.yard + " fehlt – die Termine zeigen nur, wann die Ressourcen gedeckt sind. " : "") +
+      "Stationspacks gelten nicht für Schiffe – die Pack-Stellschrauben haben hier keine Wirkung. Einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
     : (packEmpty()
       ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
       : "") + notes.join(" ");
@@ -9730,7 +9783,9 @@ function targetCheck(p, dateStr) {
     if (!crit || h / need < crit.h / crit.need) crit = r;
     return r;
   });
-  const noData = rows.filter((r) => r.kind === "data").map((r) => r.m);
+  const noData = rows.filter((r) => r.kind === "data").map((r) => r.m),
+    yard = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (yard) return { fc, days, rows, lvl: null, crit, noData, allDone: false, yard };
   return { fc, days, rows, lvl: noData.length ? null : worst || 1, crit, noData, allDone: !crit && !noData.length };
 }
 
@@ -9739,7 +9794,9 @@ function tdPlans() {
 }
 
 function tdVerdict(r) {
-  return r.allDone
+  return r.yard
+    ? ["Nicht bewertbar", "Schiffswerft " + r.yard.yard + " fehlt", "t3"]
+    : r.allDone
     ? ["Erreichbar", "alles schon gedeckt", "t1"]
     : r.lvl
       ? TD_VERDICT[r.lvl].concat(TD_LV[r.lvl].cls)
@@ -9758,7 +9815,7 @@ function renderTdCards(sel) {
         const r = targetCheck(p, p.targetDate);
         state = r.err
           ? `<span>${escAttr(r.err)}</span>`
-          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>noch ${Math.max(0, Math.floor(r.days))} Tage</span>`;
+          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>${r.yard ? tdVerdict(r)[1] : "noch " + Math.max(0, Math.floor(r.days)) + " Tage"}</span>`;
       }
       return `<article class="plan${act && p.id === sel ? " active" : ""}${act ? "" : " off"}" data-td="${escAttr(p.id)}"><div class="pt"><img src="${ART[artKey(p)]}" alt=""><div><h3>${escAttr(p.name)}${p.isMain ? '<span class="mainStar"> ★</span>' : ""}</h3><span class="muted">${isShip(p) ? shipLabel(p) : "Level " + p.start + " → " + p.target}</span></div></div><div class="tdRow"><span>Fertig bis</span>${act ? `<input type="date" data-tdd="${escAttr(p.id)}" value="${escAttr(p.targetDate || "")}">` : "<span>–</span>"}</div><div class="tdState">${state}</div></article>`;
     })
@@ -9813,7 +9870,7 @@ function renderTarget() {
     fc = planForecast(p);
   $("tdSel").innerHTML =
     `Details für <b>${escAttr(p.name)}</b>` +
-    (fc ? " · Prognose heute: " + fcRealTxt(fc) : "") +
+    (fc ? " · Prognose heute: " + fcRealTxt(fc, p) : "") +
     (plans.length > 1 ? " · auf einen anderen Plan klicken, um seine Details zu sehen" : "");
   if (!p.targetDate) {
     out.innerHTML = '<p class="muted tdMsg">Wunschdatum wählen, dann siehst du, ob dein Einkommen reicht.</p>';
@@ -10122,6 +10179,32 @@ document.querySelectorAll("#draftType [data-dt]").forEach(
 $("draftShip").onchange = shipDraftPick;
 $("draftBuild").onchange = shipDraftRender;
 $("draftYard").oninput = shipDraftRender;
+
+// ---------------------------------------------------------------- Schiffswerft fehlt (ab 3.0)
+// Gebäudeplan für die Schiffswerft, der mindestens die nötige Stufe erreicht
+function isShipyardPlan(q, yard) {
+  if (!q || isShip(q)) return false;
+  const t = (q.planData || {}).target,
+    n = String((t && t.building) || q.name).toLowerCase();
+  return /shipyard|schiffswerft/.test(n) && +q.target >= yard;
+}
+// Schiff, dessen Schiffswerft laut Export zu niedrig ist und kein aktiver Schiffswerft-Plan als Vorgänger:
+// dann gibt es kein Fertigdatum, nur „Ressourcen gedeckt am …“. Unbekannte Stufe → keine Sperre.
+function shipYardBlock(p) {
+  if (!isShip(p) || !p.ship) return null;
+  const yard = +p.ship.yard;
+  if (!Number.isFinite(yard) || yard <= 0) return null;
+  const y = shipyardLevel();
+  if (!y || y.level >= yard) return null;
+  const yp = (typeof chainAncestors === "function" ? chainAncestors(p) : []).filter((q) => isShipyardPlan(q, yard));
+  if (yp.some((q) => calcPlanStatus(q) === "active")) return null;
+  return { yard, have: y.level, pending: yp[0] || null };
+}
+function shipYardHint(b) {
+  return b.pending
+    ? "Ein Fertigdatum gibt es, sobald „" + b.pending.name + "“ bestätigt ist"
+    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Startet nach“ wählen";
+}
 // „startet nach“ (ab 3.0): Ein Plan kann auf einen anderen folgen. Was die Vorgänger kosten, wird zuerst vom
 // Bestand abgezogen; „fehlt“ heißt dann: Kosten der Vorgänger + eigene Kosten − Bestand.
 // Pläne ohne Vorgänger rechnen wie bisher jeder für sich.
@@ -10171,14 +10254,7 @@ function suggestAfterForYard(yard) {
   if (!Number.isFinite(yard)) return null;
   const y = shipyardLevel();
   if (y && y.level >= yard) return null;
-  const hit = s.plans
-    .filter((q) => !isShip(q))
-    .filter((q) => {
-      const t = (q.planData || {}).target,
-        n = String((t && t.building) || q.name).toLowerCase();
-      return /shipyard|schiffswerft/.test(n) && q.target >= yard;
-    })
-    .sort((a, b) => a.target - b.target)[0];
+  const hit = s.plans.filter((q) => isShipyardPlan(q, yard)).sort((a, b) => a.target - b.target)[0];
   return hit ? hit.id : null;
 }
 function afterHint(p, afterId) {
@@ -10193,10 +10269,12 @@ function afterHint(p, afterId) {
 function chainDraftRender() {
   const sel = $("draftAfter");
   if (!sel) return;
-  let suggest = null;
-  if (typeof draftType !== "undefined" && draftType === "ship") {
-    const sh = SHIPS.find((x) => x.key === $("draftShip").value),
-      yard = $("draftShip").value === "other" ? +$("draftYard").value || NaN : sh ? sh.yard : NaN;
+  let suggest = null,
+    yard = NaN;
+  const ship = typeof draftType !== "undefined" && draftType === "ship";
+  if (ship) {
+    const sh = SHIPS.find((x) => x.key === $("draftShip").value);
+    yard = $("draftShip").value === "other" ? +$("draftYard").value || NaN : sh ? sh.yard : NaN;
     suggest = suggestAfterForYard(yard);
   }
   const cur = sel.dataset.touched ? sel.value : suggest || "";
@@ -10204,6 +10282,13 @@ function chainDraftRender() {
   sel.value = cur;
   $("draftAfterHint").textContent =
     (suggest && cur === suggest ? "Vorgeschlagen, weil das Schiff eine höhere Schiffswerft braucht. " : "") + afterHint(null, cur);
+  // Schiffswerft zu niedrig und kein Schiffswerft-Plan gewählt: Hinweis, dass es kein Fertigdatum gibt
+  const y = ship && Number.isFinite(yard) ? shipyardLevel() : null,
+    yh = $("draftYardHint");
+  yh.hidden = !(y && y.level < yard && !isShipyardPlan(planById(cur), yard));
+  yh.innerHTML = yh.hidden
+    ? ""
+    : `Ohne Schiffswerft ${yard} zeigt der Planner kein Fertigdatum. Für ein Datum lege einen Plan <b>Schiffswerft ${yard}</b> an und wähle ihn unter „Startet nach“.`;
 }
 function chainManageFill(p) {
   const sel = $("editAfter");

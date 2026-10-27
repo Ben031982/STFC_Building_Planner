@@ -152,3 +152,29 @@ document.querySelectorAll("#draftType [data-dt]").forEach(
 $("draftShip").onchange = shipDraftPick;
 $("draftBuild").onchange = shipDraftRender;
 $("draftYard").oninput = shipDraftRender;
+
+// ---------------------------------------------------------------- Schiffswerft fehlt (ab 3.0)
+// Gebäudeplan für die Schiffswerft, der mindestens die nötige Stufe erreicht
+function isShipyardPlan(q, yard) {
+  if (!q || isShip(q)) return false;
+  const t = (q.planData || {}).target,
+    n = String((t && t.building) || q.name).toLowerCase();
+  return /shipyard|schiffswerft/.test(n) && +q.target >= yard;
+}
+// Schiff, dessen Schiffswerft laut Export zu niedrig ist und kein aktiver Schiffswerft-Plan als Vorgänger:
+// dann gibt es kein Fertigdatum, nur „Ressourcen gedeckt am …“. Unbekannte Stufe → keine Sperre.
+function shipYardBlock(p) {
+  if (!isShip(p) || !p.ship) return null;
+  const yard = +p.ship.yard;
+  if (!Number.isFinite(yard) || yard <= 0) return null;
+  const y = shipyardLevel();
+  if (!y || y.level >= yard) return null;
+  const yp = (typeof chainAncestors === "function" ? chainAncestors(p) : []).filter((q) => isShipyardPlan(q, yard));
+  if (yp.some((q) => calcPlanStatus(q) === "active")) return null;
+  return { yard, have: y.level, pending: yp[0] || null };
+}
+function shipYardHint(b) {
+  return b.pending
+    ? "Ein Fertigdatum gibt es, sobald „" + b.pending.name + "“ bestätigt ist"
+    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Startet nach“ wählen";
+}

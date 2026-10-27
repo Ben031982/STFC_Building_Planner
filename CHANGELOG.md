@@ -9,6 +9,7 @@
 - Klasse mit eigenen Grafiken: Kampfschiff, Abfangjäger, Forschungsschiff, Miner. Sie bestimmt, welche Schiffsteile zählen.
 - Ziel: Tier-Aufstieg (Tier von → bis) oder Neubau eines Schiffs (Bau → Tier).
 - Voraussetzung Schiffswerft: Der Planner liest deine Stufe aus dem Export und zeigt „erfüllt“ oder „noch nicht erfüllt“ – im Dialog und in der Übersicht.
+- Ist die Schiffswerft zu niedrig und kein bestätigter Schiffswerft-Plan als Vorgänger eingetragen, gibt es kein Fertigdatum: Die Übersicht zeigt „Schiffswerft 76 fehlt“ und wann die Ressourcen gedeckt wären, Zieltermin und Wochenbericht „nicht bewertbar“, der Dialog einen Hinweis. Mit aktivem Schiffswerft-Plan unter „Startet nach“ kommt das Datum zurück.
 
 **Schiffsteile**
 - Die zwölf Schiffsteile (Common, Uncommon, Rare je Klasse) kommen aus dem Spock's-Export und fließen in Prognose, Engpass, Zieltermin, Effizienzen und Wochenbericht ein. Common-Teile zählen voll; nur 7★ Common Ore, Gas und Crystal bleiben wie bisher außen vor (per Latinum kaufbar).
@@ -31,7 +32,7 @@
 
 ### Technik
 - Neue Quelldateien `25-ships.js` (Schiffe), `26-chain.js` (Startet nach), `17-ships.css`; Schiffsteil-Nummern und die Gebäudenummer der Schiffswerft (15) mit Bens Daten bestätigt.
-- 10 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach), insgesamt 58.
+- 11 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach, Schiffswerft fehlt), insgesamt 59.
 
 ## [2.1.1] – 2026-10-27
 
