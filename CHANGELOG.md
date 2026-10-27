@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.0.0] – in Arbeit
+## [3.0.0] – 2026-10-27
 
 ### Neue Funktionen: Schiffe
 
