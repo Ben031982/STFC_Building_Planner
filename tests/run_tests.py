@@ -1804,6 +1804,72 @@ def startwerte_fuer_schiffs_packs_nur_im_eigenen_build(b, html, tmp):
     a.done()
 
 
+@test
+def verlauf_zeitleiste_und_prognoseband(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    t = a.text("#tlBody")
+    check("Operations" in t and "voraussichtlich" in t, f"Zeitleiste zeigt den aktiven Plan nicht: {t!r}")
+    # Prognoseband wird mitgespeichert (Zahl oder null, aber das Feld existiert)
+    a.js("()=>{logForecast()}")
+    e = a.js("()=>{const L=s.fcLog[s.plans[0].id];return L[L.length-1]}")
+    check("cons" in e and "opt" in e, f"fcLog ohne Band: {e}")
+    # Verlauf der Prognose: ab zwei Einträgen ein Diagramm
+    a.js("()=>{const L=s.fcLog[s.plans[0].id];const e=L[L.length-1];L.unshift(Object.assign({},e,{d:'2026-10-18',eta:e.eta+3*864e5}));save()}")
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#fhBody svg polyline')"), "Verlauf der Prognose zeichnet keine Linie")
+    # Ziel erreicht → ✓ in der Zeitleiste
+    a.js("()=>{s.goals=s.goals||[];s.goals.push({id:'g1',at:'2026-10-20T10:00:00Z',name:'Alt-Ziel',since:'2026-10-01T10:00:00Z',eta:null});save()}")
+    a.click("#navHist")
+    check("erreicht" in a.text("#tlBody") and "Alt-Ziel" in a.text("#tlBody"), "Erreichtes Ziel fehlt in der Zeitleiste")
+    a.done()
+
+
+@test
+def einkommen_je_woche_nebengebaeude_zaehlen_nicht(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(days=(40, 33, 26, 19, 12, 5, 0)))
+    a.create_active_plan()
+    n = a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').length")
+    check(n >= 3, f"zu wenige Wochen: {n}")
+    check(a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').every(w=>Number.isFinite(w.rate)&&!w.unsure)"), "Wochen ohne Bau dürfen nicht unsicher sein")
+    # unbekanntes Nebengebäude in zwei Exporten → Woche unsicher
+    a.js("()=>{const sn=s.snapshots.slice().sort((x,y)=>new Date(snapTime(x))-new Date(snapTime(y)));sn[2].bld={99:1};sn[3].bld={99:2};save()}")
+    u = a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').filter(w=>w.unsure).length")
+    check(u == 1, f"Nebengebäude-Woche nicht erkannt: {u}")
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#iwBody rect.vzBarX')"), "unsichere Woche nicht blass gezeichnet")
+    a.js("()=>{document.querySelector('#iwBody rect.vzBarX').dispatchEvent(new MouseEvent('click'))}")
+    check(a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').filter(w=>w.unsure).length") == 0, "Klick zählt die Woche nicht mit")
+    a.done()
+
+
+@test
+def verlauf_zeitleiste_zeigt_alle_aktiven_plaene(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    # render() berechnet hasPlanData nur für den gewählten Plan – die Zeitleiste darf davon nicht abhängen
+    a.js("()=>{s.plans.forEach(p=>{p.hasPlanData=false});renderTimeline();renderFcHistory()}")
+    n = a.js("()=>(document.getElementById('tlBody').textContent.match(/voraussichtlich/g)||[]).length")
+    check(n == 2, f"Zeitleiste zeigt nicht alle aktiven Pläne ({n} von 2)")
+    # Prognose-Protokoll gilt für jeden aktiven Plan, nicht nur den Hauptplan
+    a.js("()=>{s.fcLog={};s.plans.forEach(p=>{p.hasPlanData=false});logForecast()}")
+    k = a.js("()=>Object.keys(s.fcLog).length")
+    check(k == 2, f"Prognose-Protokoll nur für {k} von 2 aktiven Plänen")
+    # weit entfernte Termine sprengen die Achse nicht (höchstens 3 Jahre)
+    a.js("()=>{const p=s.plans[0];p.planData.resources[Object.keys(p.planData.resources)[0]].onHand=0;renderTimeline()}")
+    ticks = a.js("()=>document.querySelectorAll('#tlBody .vzGrid').length")
+    check(ticks <= 20, f"zu viele Achsenmarken: {ticks}")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")

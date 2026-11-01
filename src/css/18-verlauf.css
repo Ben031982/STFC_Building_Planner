@@ -1,0 +1,12 @@
+/* 4.0: Verlauf-Diagramme */
+.vzGrid{stroke:var(--line,#1f2e3d)}.vzAx{fill:#8ca5b7;font-size:12px}
+.vzName{fill:#e7f1f8;font-size:13px}.vzName.dim{fill:#8ca5b7}
+.vzDone{fill:#2a6f8f;opacity:.55}.vzOk{fill:#5bd2a0;font-size:14px}
+.vzAct{fill:#46c2ee;opacity:.25}.vzActFill{fill:#46c2ee}.vzBand{fill:#ffd166;opacity:.55}
+.vzLbl{fill:#e7f1f8;font-size:12px}.vzWait{fill:none;stroke:#8ca5b7;stroke-dasharray:4 3}
+.vzNow{stroke:#ffd166;stroke-width:1.5}.vzNowT{fill:#ffd166;font-size:12px}
+.vzBandFill{fill:#46c2ee;opacity:.12}.vzLine{fill:none;stroke:#46c2ee;stroke-width:2.5}.vzDot{fill:#46c2ee}
+.vzMark{stroke:#ffd166;stroke-dasharray:3 4;opacity:.7}.vzMarkT{fill:#ffd166;font-size:11px}
+.vzMarkG{stroke:#7aeab0;stroke-dasharray:3 4}.vzMarkGT{fill:#7aeab0;font-size:11px}
+.vzBar{fill:#2a6f8f}.vzBarNow{fill:#46c2ee}.vzBarX{fill:#2a6f8f;fill-opacity:.28;stroke:#8ca5b7;stroke-dasharray:4 3}
+.vzSel{background:var(--bg2,#071b2a);color:inherit;border:1px solid #31556f;border-radius:6px;padding:5px 8px}

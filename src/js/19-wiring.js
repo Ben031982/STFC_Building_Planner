@@ -223,3 +223,8 @@ $("restoreOk").onclick = async () => {
 };
 if (!s.backup || typeof s.backup !== "object") s.backup = { since: new Date().toISOString() };
 render();
+
+$("iwSel").onchange = () => {
+  incomeSel = $("iwSel").value;
+  renderIncomeWeeks();
+};

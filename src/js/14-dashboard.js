@@ -483,6 +483,7 @@ function render() {
   renderCare();
   renderEvents();
   renderGoals();
+  renderVerlauf();
   logForecast();
   renderImportPage();
   flashChanged(p);

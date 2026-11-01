@@ -189,6 +189,11 @@
                     gewichtet. Prognose ab 3 Abschnitten. 7★ Common
                     zählt nicht für die Gesamtprognose (per Latinum kaufbar).</div
                   ></section
+                ><section class="panel" id="fhPanel"
+                  ><h3>Verlauf der Prognose</h3
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Wann der aktive Plan an jedem Tag voraussichtlich fertig gewesen wäre (realistisch), mit Band von konservativ bis optimistisch – das Band wird erst ab 4.0 mitgespeichert. Senkrechte Linien: Plan-Importe und geänderte Packs.</p
+                  ><div id="fhBody"></div></section
                 ><section class="panel"
                   ><h3>Abschnitte<span class="termInfo" tabindex="0" data-term="abschnitt">i</span></h3
                   ><p class="muted" style="margin: 4px 0 8px"
@@ -201,6 +206,14 @@
                         ><tr><th>Zeitraum</th><th>Tage</th><th>Markierung</th><th>Behandlung</th></tr></thead
                       ><tbody id="fcIntervals"></tbody></table></div></section></div
               ><div id="pane-hist" class="tabPane"
+                ><section class="panel" id="tlPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3>Zeitleiste aller Ziele</h3><span class="muted">✓ erreicht · gelbes Band = konservativ bis optimistisch</span></div
+                  ><div id="tlBody"></div></section
+                ><section class="panel" id="iwPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3>Einkommen je Woche</h3><select id="iwSel" class="vzSel"></select></div
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Durchschnittliches Tageseinkommen je Kalenderwoche aus den Abschnitten der Prognose (ohne als Pack oder Bau markierte). Nur Ausbauten, die dieses Material betreffen, sind als Linie eingezeichnet. Wochen mit Nebengebäuden (blass) zählen nicht in Ø und Trend – ein Klick auf den Balken zählt sie trotzdem mit.</p
+                  ><div id="iwBody"></div></section
                 ><section class="panel" id="goalPanel" style="margin-bottom: 12px"
                   ><div class="chartHead"><h3>Erreichte Ziele</h3><span id="goalCount" class="muted"></span></div
                   ><p class="muted" style="margin: 4px 0 6px"

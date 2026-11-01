@@ -8,10 +8,19 @@ function dayKey(t) {
   return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 function logForecast() {
-  const p = mainPlan();
-  if (!p || !p.hasPlanData) return;
+  // ab 4.0: jeder aktive Plan wird protokolliert, nicht nur der Hauptplan
+  let changed = false;
+  for (const p of s.plans) {
+    p.status = calcPlanStatus(p);
+    p.hasPlanData = p.status === "active";
+    if (logForecastFor(p)) changed = true;
+  }
+  if (changed) persist();
+}
+function logForecastFor(p) {
+  if (!p || !p.hasPlanData) return false;
   const fc = planForecast(p);
-  if (!fc) return;
+  if (!fc) return false;
   const pc = packCalc(p),
     o = fc.overall,
     e = {
@@ -21,15 +30,19 @@ function logForecast() {
       driver: o.realDriver || null,
       packs: pc ? pc.total : null,
     };
+  // ab 4.0: Band konservativ/optimistisch mitspeichern (null = nicht absehbar)
+  const bandAt = (v) => (v == null || shipYardBlock(p) ? null : v === 0 ? 0 : Math.round(fc.base + v * 864e5));
+  e.cons = bandAt(o.cons);
+  e.opt = bandAt(o.opt);
   s.fcLog = s.fcLog && typeof s.fcLog === "object" ? s.fcLog : {};
   const L = (s.fcLog[p.id] = Array.isArray(s.fcLog[p.id]) ? s.fcLog[p.id] : []);
   const last = L[L.length - 1];
   if (last && last.d === e.d) {
-    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs) return;
+    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs && last.cons === e.cons && last.opt === e.opt) return false;
     L[L.length - 1] = e;
   } else L.push(e);
   if (L.length > 400) L.splice(0, L.length - 400);
-  persist();
+  return true;
 }
 function weekBounds(off) {
   const n = new Date();

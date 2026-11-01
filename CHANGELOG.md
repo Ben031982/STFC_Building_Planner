@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.0] – in Arbeit
+
+### Neu (Teil 1: Verlauf)
+- **Zeitleiste aller Ziele** (Tab „Verlauf“, über „Erreichte Ziele“): jeder aktive Plan eine Reihe, einzeln gerechnet (nicht nacheinander); Achse höchstens 3 Jahre. Erreichte Ziele mit ✓ und Datum, aktive Pläne mit Fortschritt, Fertigdatum und Band konservativ bis optimistisch, noch nicht aktive Pläne gestrichelt („wartet auf …“).
+- **Einkommen je Woche** (Tab „Verlauf“): Tageseinkommen je Kalenderwoche für Σ-Tritanium, Σ-Parsteel, Σ-Dilithium und 7★ Rare/Uncommon. Linien nur für Ausbauten, die das Material betreffen. Wochen mit Nebengebäuden sind blass („Wert unsicher“) und zählen nicht in Ø und Trend; ein Klick zählt sie trotzdem mit.
+- **Verlauf der Prognose** (Tab „Prognose & Packs“): Fertigdatum je Tag mit Band, Markern für Plan-Importe und geänderte Packs und Vergleich zur Vorwoche. Das Band (konservativ/optimistisch) wird ab jetzt täglich mitgespeichert, und zwar für jeden aktiven Plan (bisher nur Hauptplan).
+
+### Technik
+- Neue Datei src/js/28-verlauf.js, src/css/18-verlauf.css. Tests: Zeitleiste/Prognoseband, Einkommen je Woche mit Nebengebäuden (insgesamt 69).
+
 ## [3.4.0] – 2026-10-27
 
 ### Neu
