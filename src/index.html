@@ -60,7 +60,7 @@
                       ><div class="heroBar"><i id="pBar"></i></div
                       ><div class="heroProgRow"
                         ><span><b id="pProg"></b> erledigt</span
-                        ><button id="managePlanBtn" class="btn">Plandaten verwalten</button></div
+                        ><span class="heroBtns"><button id="shareBtn" class="btn">Als Bild teilen</button><button id="managePlanBtn" class="btn">Plandaten verwalten</button></span></div
                       ><span hidden id="pName"></span><span hidden id="pStatusDot"></span></div></div
                   ><div class="heroEta"
                     ><span class="heroLbl">VORAUSSICHTLICH FERTIG<span id="fcQBadge" class="qBadge" hidden></span
@@ -567,6 +567,38 @@
         ></div
       ><div id="chartBigStats" class="chartBigStats"></div><div id="chartBigBox" class="chartBigBox"></div
       ><div id="chartBigNote" class="chartBigNote"></div></div></div
+  ><div id="shareModal" class="modal"
+    ><div class="box shareBox"
+      ><div class="head"
+        ><div><h2>Als Bild teilen</h2><span class="muted">Für den Allianz-Chat · entsteht komplett in deinem Browser</span></div
+        ><button id="shClose" class="btn">Schließen</button></div
+      ><div class="shareGrid"
+        ><div class="shareForm"
+          ><label class="dLab">Was soll aufs Bild?<select id="shPlan"></select></label
+          ><div class="shGroup"><span class="muted">Detailgrad</span
+            ><label class="shRadio"><input type="radio" name="shDetail" id="shExact" checked /> Genaue Zahlen</label
+            ><label class="shRadio"><input type="radio" name="shDetail" id="shCoarse" /> Nur Prozent &amp; Datum</label></div
+          ><div id="shInc" class="shGroup"><span class="muted">Inhalt</span
+            ><label class="shRadio"><input type="checkbox" data-inc="goal" /> Ziel &amp; Fortschritt</label
+            ><label class="shRadio"><input type="checkbox" data-inc="eta" /> Voraussichtliches Fertigdatum</label
+            ><label class="shRadio"><input type="checkbox" data-inc="bottleneck" /> Engpass</label
+            ><label class="shRadio"><input type="checkbox" data-inc="res" /> Ressourcen (Fehlmengen)</label
+            ><label class="shRadio"><input type="checkbox" data-inc="packs" /> Packs bis zum Ziel</label
+            ><label class="shRadio"><input type="checkbox" data-inc="timeline" /> Mini-Zeitleiste</label></div
+          ><p id="shAllNote" class="muted">Bei „Alle Ziele“ gilt nur der Detailgrad. Jeder aktive Plan steht in einer Zeile, einzeln gerechnet.</p
+          ><div class="shGroup"
+            ><label class="shRadio"><input type="checkbox" id="shName" checked /> Spielername anzeigen</label
+            ><input id="shPlayer" placeholder="Dein Spielername" maxlength="30" /></div
+          ><div class="modalActions" style="justify-content: flex-start"
+            ><button id="shSave" class="btn primary">Bild speichern</button
+            ><button id="shCopy" class="btn">Kopieren</button></div
+          ></div
+        ><div class="shareView"
+          ><canvas id="shCanvas" width="1080" height="1080"></canvas
+          ><span class="muted">PNG, 1080 × 1080 px</span></div
+        ></div
+      ></div
+    ></div
   ><div id="packModal" class="modal"
     ><div class="box"
       ><div class="head"

@@ -1,0 +1,10 @@
+/* 4.0: Als Bild teilen */
+.heroBtns{display:flex;gap:8px;flex-wrap:wrap}
+.shareBox{max-width:980px;width:96vw}
+.shareGrid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+.shareForm{display:flex;flex-direction:column;gap:12px}
+.shGroup{display:flex;flex-direction:column;gap:6px}
+.shRadio{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.shareView{display:flex;flex-direction:column;gap:6px;align-items:center}
+.shareView canvas{width:100%;max-width:540px;aspect-ratio:1/1;border-radius:14px;background:#070d14}
+@media (max-width:760px){.shareGrid{grid-template-columns:1fr}}

@@ -7,8 +7,12 @@
 - **Einkommen je Woche** (Tab „Verlauf“): Tageseinkommen je Kalenderwoche für Σ-Tritanium, Σ-Parsteel, Σ-Dilithium und 7★ Rare/Uncommon. Linien nur für Ausbauten, die das Material betreffen. Wochen mit Nebengebäuden sind blass („Wert unsicher“) und zählen nicht in Ø und Trend; ein Klick zählt sie trotzdem mit.
 - **Verlauf der Prognose** (Tab „Prognose & Packs“): Fertigdatum je Tag mit Band, Markern für Plan-Importe und geänderte Packs und Vergleich zur Vorwoche. Das Band (konservativ/optimistisch) wird ab jetzt täglich mitgespeichert, und zwar für jeden aktiven Plan (bisher nur Hauptplan).
 
+### Neu (Teil 2: Teilen)
+- **Als Bild teilen** (Übersicht, neben „Plandaten verwalten“): quadratische Karte (PNG, 1080 × 1080) für den Allianz-Chat, komplett im Browser gezeichnet. Wählbar: ein Plan oder „Alle Ziele“ (eine Zeile je aktivem Plan), Detailgrad „Genaue Zahlen“ oder „Nur Prozent & Datum“ (grobes Datum wie „Mitte Dez.“, ab einem Jahr „später als Q4 27“) und der Inhalt per Häkchen: Ziel & Fortschritt, Fertigdatum, Engpass, Fehlmengen, Packs bis zum Ziel, Mini-Zeitleiste. Spielername ist standardmäßig an. Bild speichern oder in die Zwischenablage kopieren (wo der Browser es erlaubt). Die Auswahl wird gemerkt.
+- Fertigdatum mit Vergleich zur Vorwoche („1 Tag früher als vor einer Woche“), sobald das Prognose-Protokoll genug Tage hat.
+
 ### Technik
-- Neue Datei src/js/28-verlauf.js, src/css/18-verlauf.css. Tests: Zeitleiste/Prognoseband, Einkommen je Woche mit Nebengebäuden (insgesamt 69).
+- Neue Dateien src/js/28-verlauf.js, src/js/29-share.js, src/css/18-verlauf.css. Tests: Zeitleiste/Prognoseband, Einkommen je Woche mit Nebengebäuden (insgesamt 70).
 
 ## [3.4.0] – 2026-10-27
 

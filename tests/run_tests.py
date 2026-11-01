@@ -1870,6 +1870,40 @@ def verlauf_zeitleiste_zeigt_alle_aktiven_plaene(b, html, tmp):
     a.done()
 
 
+@test
+def teilen_als_bild_modell_und_dialog(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    pid = a.js("()=>s.plans[0].id")
+    # Einzelkarte, genaue Zahlen
+    m = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.playerName='Ben';o.inc.packs=true;return buildShareModel(o)}", pid)
+    check(m["kind"] == "single" and "Ben" in m["stand"], f"Modell Einzelkarte: {m}")
+    check(m["res"] and all(any(ch.isdigit() for ch in r["val"]) for r in m["res"]), "genaue Mengen fehlen")
+    check(m["eta"] and m["pct"].endswith("%"), "Datum/Prozent fehlen")
+    # grob: keine Mengen, kein Packpreis, kein Wochenvergleich, Datum ohne Tag
+    g = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.exact=false;o.inc.packs=true;return buildShareModel(o)}", pid)
+    check(g["res"] is None, "grobe Karte zeigt Mengen")
+    check(not any("€" in c["text"] or "Packs" in c["text"] for c in g["chips"]), "grobe Karte zeigt Packs/Preis")
+    check(not any(ch.isdigit() for ch in g["eta"].split(" ")[0]), f"grobes Datum nennt einen Tag: {g['eta']!r}")
+    # ohne Namen
+    n = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.name=false;o.playerName='Ben';return buildShareModel(o)}", pid)
+    check("Ben" not in n["stand"], "Name trotz abgeschaltetem Häkchen")
+    # Übersichtskarte, Datum nur mit einem Punkt am Ende
+    al = a.js("()=>{const o=shareDefaults();o.plan='all';return buildShareModel(o)}")
+    check(al["kind"] == "all" and al["rows"] and not al["rows"][0]["date"].endswith(".."), f"Übersichtskarte: {al}")
+    # Dialog: öffnet, zeichnet, merkt sich die Auswahl über ein Neuladen
+    a.click("#nd")
+    a.click("#shareBtn")
+    a.wait_for_timeout(400)
+    check(a.is_visible("#shareModal"), "Dialog öffnet nicht")
+    check(a.js("()=>{const d=document.getElementById('shCanvas').getContext('2d').getImageData(300,300,1,1).data;return d[3]>0}"), "Canvas bleibt leer")
+    check(a.js("()=>document.getElementById('shCanvas').toDataURL('image/png').startsWith('data:image/png')"), "PNG-Export fehlt")
+    a.js("()=>{document.getElementById('shCoarse').checked=true;shareRefresh()}")
+    check(a.js("()=>s.share.exact===false"), "Auswahl wird nicht gespeichert")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")

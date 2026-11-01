@@ -228,3 +228,13 @@ $("iwSel").onchange = () => {
   incomeSel = $("iwSel").value;
   renderIncomeWeeks();
 };
+
+$("shareBtn").onclick = openShare;
+$("shClose").onclick = () => $("shareModal").classList.remove("on");
+$("shareModal").onclick = (e) => {
+  if (e.target === $("shareModal")) $("shareModal").classList.remove("on");
+};
+["shPlan", "shExact", "shCoarse", "shName", "shPlayer"].forEach((i) => ($(i).oninput = $(i).onchange = shareRefresh));
+document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.onchange = shareRefresh));
+$("shSave").onclick = shareSave;
+$("shCopy").onclick = shareCopy;
