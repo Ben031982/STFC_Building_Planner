@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 42 42' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 2 L38 11.5 V30.5 L21 40 L4 30.5 V11.5 Z' fill='none' stroke='%2346C2EE' stroke-width='2'/%3E%3Crect x='12' y='24' width='4.5' height='7' rx='1' fill='%2346C2EE'/%3E%3Crect x='18.75' y='19' width='4.5' height='12' rx='1' fill='%2346C2EE'/%3E%3Crect x='25.5' y='13' width='4.5' height='18' rx='1' fill='%23F4A53A'/%3E%3C/svg%3E">
-<title>Ben's G7 STFC Progress Planner v3.4.0</title>
+<title>Ben's G7 STFC Progress Planner v4.0.0</title>
 <style>
 @font-face {
   font-family: "Oxanium";
@@ -1662,7 +1662,7 @@ tr.sqAfter td {
   padding: 8px;
 }
 .footer:after {
-  content: " · Version 3.4.0";
+  content: " · Version 4.0.0";
   color: #68a6cc;
 }
 @media (max-width: 1200px) {
@@ -3438,6 +3438,28 @@ td:has(.prog) {
 .goalBox[hidden] {
   display: none;
 }
+/* 4.0: Verlauf-Diagramme */
+.vzGrid{stroke:var(--line,#1f2e3d)}.vzAx{fill:#8ca5b7;font-size:12px}
+.vzName{fill:#e7f1f8;font-size:13px}.vzName.dim{fill:#8ca5b7}
+.vzDone{fill:#2a6f8f;opacity:.55}.vzOk{fill:#5bd2a0;font-size:14px}
+.vzAct{fill:#46c2ee;opacity:.25}.vzActFill{fill:#46c2ee}.vzBand{fill:#ffd166;opacity:.55}
+.vzLbl{fill:#e7f1f8;font-size:12px}.vzWait{fill:none;stroke:#8ca5b7;stroke-dasharray:4 3}
+.vzNow{stroke:#ffd166;stroke-width:1.5}.vzNowT{fill:#ffd166;font-size:12px}
+.vzBandFill{fill:#46c2ee;opacity:.12}.vzLine{fill:none;stroke:#46c2ee;stroke-width:2.5}.vzDot{fill:#46c2ee}
+.vzMark{stroke:#ffd166;stroke-dasharray:3 4;opacity:.7}.vzMarkT{fill:#ffd166;font-size:11px}
+.vzMarkG{stroke:#7aeab0;stroke-dasharray:3 4}.vzMarkGT{fill:#7aeab0;font-size:11px}
+.vzBar{fill:#2a6f8f}.vzBarNow{fill:#46c2ee}.vzBarX{fill:#2a6f8f;fill-opacity:.28;stroke:#8ca5b7;stroke-dasharray:4 3}
+.vzSel{background:var(--bg2,#071b2a);color:inherit;border:1px solid #31556f;border-radius:6px;padding:5px 8px}
+/* 4.0: Als Bild teilen */
+.heroBtns{display:flex;gap:8px;flex-wrap:wrap}
+.shareBox{max-width:980px;width:96vw}
+.shareGrid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+.shareForm{display:flex;flex-direction:column;gap:12px}
+.shGroup{display:flex;flex-direction:column;gap:6px}
+.shRadio{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.shareView{display:flex;flex-direction:column;gap:6px;align-items:center}
+.shareView canvas{width:100%;max-width:540px;aspect-ratio:1/1;border-radius:14px;background:#070d14}
+@media (max-width:760px){.shareGrid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -3492,7 +3514,7 @@ td:has(.prog) {
                       ><div class="heroBar"><i id="pBar"></i></div
                       ><div class="heroProgRow"
                         ><span><b id="pProg"></b> erledigt</span
-                        ><button id="managePlanBtn" class="btn">Plandaten verwalten</button></div
+                        ><span class="heroBtns"><button id="shareBtn" class="btn">Als Bild teilen</button><button id="managePlanBtn" class="btn">Plandaten verwalten</button></span></div
                       ><span hidden id="pName"></span><span hidden id="pStatusDot"></span></div></div
                   ><div class="heroEta"
                     ><span class="heroLbl">VORAUSSICHTLICH FERTIG<span id="fcQBadge" class="qBadge" hidden></span
@@ -3621,6 +3643,11 @@ td:has(.prog) {
                     gewichtet. Prognose ab 3 Abschnitten. 7★ Common
                     zählt nicht für die Gesamtprognose (per Latinum kaufbar).</div
                   ></section
+                ><section class="panel" id="fhPanel"
+                  ><h3>Verlauf der Prognose</h3
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Wann der aktive Plan an jedem Tag voraussichtlich fertig gewesen wäre (realistisch), mit Band von konservativ bis optimistisch – das Band wird erst ab 4.0 mitgespeichert. Senkrechte Linien: Plan-Importe und geänderte Packs.</p
+                  ><div id="fhBody"></div></section
                 ><section class="panel"
                   ><h3>Abschnitte<span class="termInfo" tabindex="0" data-term="abschnitt">i</span></h3
                   ><p class="muted" style="margin: 4px 0 8px"
@@ -3633,6 +3660,14 @@ td:has(.prog) {
                         ><tr><th>Zeitraum</th><th>Tage</th><th>Markierung</th><th>Behandlung</th></tr></thead
                       ><tbody id="fcIntervals"></tbody></table></div></section></div
               ><div id="pane-hist" class="tabPane"
+                ><section class="panel" id="tlPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3>Zeitleiste aller Ziele</h3><span class="muted">✓ erreicht · gelbes Band = konservativ bis optimistisch</span></div
+                  ><div id="tlBody"></div></section
+                ><section class="panel" id="iwPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3>Einkommen je Woche</h3><select id="iwSel" class="vzSel"></select></div
+                  ><p class="muted" style="margin: 4px 0 8px"
+                    >Durchschnittliches Tageseinkommen je Kalenderwoche aus den Abschnitten der Prognose (ohne als Pack oder Bau markierte). Nur Ausbauten, die dieses Material betreffen, sind als Linie eingezeichnet. Wochen mit Nebengebäuden (blass) zählen nicht in Ø und Trend – ein Klick auf den Balken zählt sie trotzdem mit.</p
+                  ><div id="iwBody"></div></section
                 ><section class="panel" id="goalPanel" style="margin-bottom: 12px"
                   ><div class="chartHead"><h3>Erreichte Ziele</h3><span id="goalCount" class="muted"></span></div
                   ><p class="muted" style="margin: 4px 0 6px"
@@ -3986,6 +4021,38 @@ td:has(.prog) {
         ></div
       ><div id="chartBigStats" class="chartBigStats"></div><div id="chartBigBox" class="chartBigBox"></div
       ><div id="chartBigNote" class="chartBigNote"></div></div></div
+  ><div id="shareModal" class="modal"
+    ><div class="box shareBox"
+      ><div class="head"
+        ><div><h2>Als Bild teilen</h2><span class="muted">Für den Allianz-Chat · entsteht komplett in deinem Browser</span></div
+        ><button id="shClose" class="btn">Schließen</button></div
+      ><div class="shareGrid"
+        ><div class="shareForm"
+          ><label class="dLab">Was soll aufs Bild?<select id="shPlan"></select></label
+          ><div class="shGroup"><span class="muted">Detailgrad</span
+            ><label class="shRadio"><input type="radio" name="shDetail" id="shExact" checked /> Genaue Zahlen</label
+            ><label class="shRadio"><input type="radio" name="shDetail" id="shCoarse" /> Nur Prozent &amp; Datum</label></div
+          ><div id="shInc" class="shGroup"><span class="muted">Inhalt</span
+            ><label class="shRadio"><input type="checkbox" data-inc="goal" /> Ziel &amp; Fortschritt</label
+            ><label class="shRadio"><input type="checkbox" data-inc="eta" /> Voraussichtliches Fertigdatum</label
+            ><label class="shRadio"><input type="checkbox" data-inc="bottleneck" /> Engpass</label
+            ><label class="shRadio"><input type="checkbox" data-inc="res" /> Ressourcen (Fehlmengen)</label
+            ><label class="shRadio"><input type="checkbox" data-inc="packs" /> Packs bis zum Ziel</label
+            ><label class="shRadio"><input type="checkbox" data-inc="timeline" /> Mini-Zeitleiste</label></div
+          ><p id="shAllNote" class="muted">Bei „Alle Ziele“ gilt nur der Detailgrad. Jeder aktive Plan steht in einer Zeile, einzeln gerechnet.</p
+          ><div class="shGroup"
+            ><label class="shRadio"><input type="checkbox" id="shName" checked /> Spielername anzeigen</label
+            ><input id="shPlayer" placeholder="Dein Spielername" maxlength="30" /></div
+          ><div class="modalActions" style="justify-content: flex-start"
+            ><button id="shSave" class="btn primary">Bild speichern</button
+            ><button id="shCopy" class="btn">Kopieren</button></div
+          ></div
+        ><div class="shareView"
+          ><canvas id="shCanvas" width="1080" height="1080"></canvas
+          ><span class="muted">PNG, 1080 × 1080 px</span></div
+        ></div
+      ></div
+    ></div
   ><div id="packModal" class="modal"
     ><div class="box"
       ><div class="head"
@@ -5793,10 +5860,19 @@ function dayKey(t) {
   return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 function logForecast() {
-  const p = mainPlan();
-  if (!p || !p.hasPlanData) return;
+  // ab 4.0: jeder aktive Plan wird protokolliert, nicht nur der Hauptplan
+  let changed = false;
+  for (const p of s.plans) {
+    p.status = calcPlanStatus(p);
+    p.hasPlanData = p.status === "active";
+    if (logForecastFor(p)) changed = true;
+  }
+  if (changed) persist();
+}
+function logForecastFor(p) {
+  if (!p || !p.hasPlanData) return false;
   const fc = planForecast(p);
-  if (!fc) return;
+  if (!fc) return false;
   const pc = packCalc(p),
     o = fc.overall,
     e = {
@@ -5806,15 +5882,19 @@ function logForecast() {
       driver: o.realDriver || null,
       packs: pc ? pc.total : null,
     };
+  // ab 4.0: Band konservativ/optimistisch mitspeichern (null = nicht absehbar)
+  const bandAt = (v) => (v == null || shipYardBlock(p) ? null : v === 0 ? 0 : Math.round(fc.base + v * 864e5));
+  e.cons = bandAt(o.cons);
+  e.opt = bandAt(o.opt);
   s.fcLog = s.fcLog && typeof s.fcLog === "object" ? s.fcLog : {};
   const L = (s.fcLog[p.id] = Array.isArray(s.fcLog[p.id]) ? s.fcLog[p.id] : []);
   const last = L[L.length - 1];
   if (last && last.d === e.d) {
-    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs) return;
+    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs && last.cons === e.cons && last.opt === e.opt) return false;
     L[L.length - 1] = e;
   } else L.push(e);
   if (L.length > 400) L.splice(0, L.length - 400);
-  persist();
+  return true;
 }
 function weekBounds(off) {
   const n = new Date();
@@ -7132,7 +7212,7 @@ function bkPayload(d) {
     {
       app: "Bens STFC Progress Planner",
       type: "backup",
-      version: "3.4.0",
+      version: "4.0.0",
       createdAt: d.toISOString(),
       state: JSON.parse(serializeState()),
     },
@@ -7981,7 +8061,8 @@ function render() {
   renderCare();
   renderEvents();
   renderGoals();
-  logForecast();
+  logForecast(); // zuerst protokollieren, damit der Verlauf den heutigen Eintrag schon enthält
+  renderVerlauf();
   renderImportPage();
   flashChanged(p);
 }
@@ -9825,6 +9906,21 @@ $("restoreOk").onclick = async () => {
 };
 if (!s.backup || typeof s.backup !== "object") s.backup = { since: new Date().toISOString() };
 render();
+
+$("iwSel").onchange = () => {
+  incomeSel = $("iwSel").value;
+  renderIncomeWeeks();
+};
+
+$("shareBtn").onclick = openShare;
+$("shClose").onclick = () => $("shareModal").classList.remove("on");
+$("shareModal").onclick = (e) => {
+  if (e.target === $("shareModal")) $("shareModal").classList.remove("on");
+};
+["shPlan", "shExact", "shCoarse", "shName", "shPlayer"].forEach((i) => ($(i).oninput = $(i).onchange = shareRefresh));
+document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.onchange = shareRefresh));
+$("shSave").onclick = shareSave;
+$("shCopy").onclick = shareCopy;
 const TUT_KEY = "bens-stfc-tutorial",
   TUT = [
     [
@@ -10907,6 +11003,780 @@ function renderShipPacks() {
     })
     .join("");
   el.querySelectorAll("[data-shippack]").forEach((b) => (b.onclick = () => openPacks(b.dataset.shippack)));
+}
+// 4.0 Teil 1: Zeitleiste aller Ziele, Verlauf der Prognose, Einkommen je Woche.
+// Achtung: läuft schon beim ersten render() – keine let/const/var-Werte auf oberster Ebene, nur Funktionen.
+
+function vzDay() {
+  return 864e5;
+}
+function vzFmtD(t) {
+  return new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+}
+// Datum mit Jahr, wenn es nicht im laufenden Jahr liegt
+function vzFmtDY(t) {
+  const d = new Date(t);
+  return d.getFullYear() === new Date().getFullYear()
+    ? vzFmtD(t)
+    : d.toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "2-digit" });
+}
+function vzSvgOpen(W, H) {
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img">`;
+}
+// Fortschritt eines Plans in % (Fehlmenge gegen Bedarf, relevante Materialien ohne 7★ Common)
+function vzProgress(p) {
+  if (!p || !p.hasPlanData) return null;
+  let need = 0,
+    miss = 0;
+  for (const r of getPlanResources(p)) {
+    if (isLatinumMat(r[0])) continue;
+    const n = r[5] || r[2];
+    if (!(n > 0)) continue;
+    need += n;
+    miss += Math.min(Math.max(r[3], 0), n);
+  }
+  return need > 0 ? Math.max(0, Math.min(100, (1 - miss / need) * 100)) : null;
+}
+
+// ---------------------------------------------------------------- Zeitleiste aller Ziele
+function timelineRows(now) {
+  const rows = [],
+    D = vzDay();
+  for (const g of Array.isArray(s.goals) ? s.goals : []) {
+    const b = new Date(g.at).getTime(),
+      a = g.since ? new Date(g.since).getTime() : b - 7 * D;
+    rows.push({ name: g.name, a: Math.min(a, b), b, kind: "done" });
+  }
+  const etaOf = {};
+  for (const p of s.plans) {
+    const st = calcPlanStatus(p);
+    p.status = st;
+    p.hasPlanData = st === "active"; // render() setzt das sonst nur für den gewählten Plan
+    const fc = p.hasPlanData ? planForecast(p) : null,
+      o = fc && fc.overall,
+      blocked = isShip(p) && typeof shipYardBlock === "function" ? shipYardBlock(p) : null,
+      real = o && o.real != null && !blocked ? fc.base + o.real * D : null;
+    if (real) etaOf[p.id] = real;
+    const since = planSince(p),
+      pred = typeof validAfter === "function" ? validAfter(p) : null,
+      predEnd = pred ? etaOf[pred.id] || null : null;
+    if (st === "active" && real) {
+      rows.push({
+        name: p.name,
+        a: since ? new Date(since).getTime() : now,
+        b: real,
+        lo: o.cons != null && o.opt != null ? fc.base + Math.min(o.cons, o.opt) * D : null,
+        hi: o.cons != null && o.opt != null ? fc.base + Math.max(o.cons, o.opt) * D : null,
+        pct: vzProgress(p),
+        kind: "active",
+      });
+    } else {
+      rows.push({
+        name: p.name,
+        a: predEnd || now,
+        b: null,
+        kind: "wait",
+        note: pred ? "wartet auf " + pred.name : blocked ? "wartet auf Schiffswerft " + blocked.yard : "noch nicht aktiv",
+      });
+    }
+  }
+  return rows;
+}
+function renderTimeline() {
+  const el = $("tlBody");
+  if (!el) return;
+  const now = Date.now(),
+    D = vzDay(),
+    rows = timelineRows(now);
+  if (!rows.length) {
+    el.innerHTML = '<p class="muted">Noch keine Ziele oder Pläne.</p>';
+    return;
+  }
+  // Zeitraum: bis zum spätesten Fertigdatum (ohne Band), höchstens 3 Jahre – spätere Termine werden abgeschnitten
+  let t0 = Math.min(...rows.map((r) => r.a), now),
+    t1 = Math.min(Math.max(...rows.map((r) => r.b || now), now + 30 * D) + 45 * D, now + 3 * 365 * D);
+  t0 -= 5 * D;
+  const W = 1100,
+    L = 190,
+    R = 150,
+    T = 34,
+    RH = 50,
+    H = T + rows.length * RH + 34,
+    X = (t) => L + ((t - t0) / (t1 - t0)) * (W - L - R);
+  let g = "";
+  const m0 = new Date(t0);
+  m0.setDate(1);
+  m0.setHours(0, 0, 0, 0);
+  // Beschriftung nach Länge des Zeitraums: Monate, Quartale oder Halbjahre
+  const months = (t1 - t0) / (30.4 * D),
+    stepM = months > 30 ? 6 : months > 14 ? 3 : 1;
+  for (let m = new Date(m0); m.getTime() <= t1; m.setMonth(m.getMonth() + stepM)) {
+    const x = X(m.getTime());
+    if (x < L - 1) continue;
+    g += `<line x1="${x}" x2="${x}" y1="${T - 8}" y2="${H - 26}" class="vzGrid"/><text x="${x + 4}" y="${T - 14}" class="vzAx">${m.toLocaleDateString("de-DE", { month: "short", year: "2-digit" })}</text>`;
+  }
+  rows.forEach((r, i) => {
+    const y = T + i * RH,
+      xa = X(r.a),
+      cut = r.b != null && r.b > t1,
+      xb = r.b != null ? X(Math.min(r.b, t1)) : xa + 90;
+    g += `<text x="${L - 12}" y="${y + 22}" class="vzName${r.kind === "done" ? " dim" : ""}" text-anchor="end">${escAttr(r.name)}</text>`;
+    if (r.kind === "done")
+      g += `<rect x="${xa}" y="${y + 8}" width="${Math.max(xb - xa, 8)}" height="20" rx="6" class="vzDone"/><text x="${xb + 8}" y="${y + 23}" class="vzOk">✓</text><text x="${xb + 26}" y="${y + 23}" class="vzAx">erreicht ${vzFmtDY(r.b)}</text>`;
+    else if (r.kind === "active") {
+      if (r.lo != null && r.hi != null)
+        g += `<rect x="${X(Math.min(r.lo, t1))}" y="${y + 31}" width="${Math.max(X(Math.min(r.hi, t1)) - X(Math.min(r.lo, t1)), 4)}" height="6" rx="3" class="vzBand"/>${r.hi > t1 ? `<text x="${X(t1) + 4}" y="${y + 38}" class="vzAx">…</text>` : ""}`;
+      const w = Math.max(xb - xa, 8),
+        pc = r.pct == null ? 0 : r.pct / 100;
+      g += `<rect x="${xa}" y="${y + 8}" width="${w}" height="20" rx="6" class="vzAct"/><rect x="${xa}" y="${y + 8}" width="${w * pc}" height="20" rx="6" class="vzActFill"/><text x="${xb + 8}" y="${y + 23}" class="vzLbl">${cut ? "erst " : "voraussichtlich "}${vzFmtDY(r.b)}</text>`;
+    } else
+      g += `<rect x="${xa}" y="${y + 8}" width="90" height="20" rx="6" class="vzWait"/><text x="${xa + 98}" y="${y + 23}" class="vzAx">${escAttr(r.note)}</text>`;
+  });
+  g += `<line x1="${X(now)}" x2="${X(now)}" y1="${T - 8}" y2="${H - 26}" class="vzNow"/><text x="${X(now)}" y="${H - 8}" class="vzNowT" text-anchor="middle">heute</text>`;
+  el.innerHTML =
+    vzSvgOpen(W, H) +
+    g +
+    '</svg><p class="muted" style="margin:6px 0 0;font-size:12px">Jeder Plan ist einzeln gerechnet – so, als bekäme er dein gesamtes Einkommen. Mehrere Pläne nacheinander dauern entsprechend länger.</p>';
+}
+
+// ---------------------------------------------------------------- Verlauf der Prognose
+function renderFcHistory() {
+  const el = $("fhBody");
+  if (!el) return;
+  const p = activePlan(),
+    L = ((s.fcLog || {})[p && p.id] || []).filter((x) => x.eta != null && Number.isFinite(x.eta) && x.eta > 0);
+  if (!p || L.length < 2) {
+    el.innerHTML =
+      '<p class="muted">Der Verlauf entsteht, sobald die Prognose an mindestens zwei verschiedenen Tagen berechnet wurde (ein Eintrag pro Tag, solange der Planner geöffnet wird).</p>';
+    return;
+  }
+  const D = vzDay(),
+    W = 1100,
+    H = 300,
+    Lm = 70,
+    Rm = 20,
+    T = 20,
+    B = 40,
+    tOf = (x) => new Date(x.d + "T12:00:00").getTime(),
+    tmin = tOf(L[0]),
+    tmax = Math.max(tOf(L[L.length - 1]), tmin + D),
+    lo = Math.min(...L.map((x) => x.opt || x.eta)) - 3 * D,
+    hi = Math.max(...L.map((x) => x.cons || x.eta)) + 3 * D,
+    X = (t) => Lm + ((t - tmin) / (tmax - tmin)) * (W - Lm - Rm),
+    Y = (e) => T + ((hi - e) / (hi - lo)) * (H - T - B);
+  let g = "";
+  for (let k = 0; k <= 4; k++) {
+    const e = lo + ((hi - lo) * k) / 4;
+    g += `<line x1="${Lm}" x2="${W - Rm}" y1="${Y(e)}" y2="${Y(e)}" class="vzGrid"/><text x="${Lm - 8}" y="${Y(e) + 4}" class="vzAx" text-anchor="end">${vzFmtD(e)}</text>`;
+  }
+  const step = Math.max(1, Math.round(L.length / 6));
+  for (let i = 0; i < L.length; i += step) g += `<text x="${X(tOf(L[i]))}" y="${H - 12}" class="vzAx" text-anchor="middle">${vzFmtD(tOf(L[i]))}</text>`;
+  const bandPts = L.filter((x) => x.cons && x.opt);
+  if (bandPts.length > 1)
+    g += `<polygon points="${bandPts.map((x) => X(tOf(x)) + "," + Y(x.cons)).join(" ")} ${bandPts
+      .slice()
+      .reverse()
+      .map((x) => X(tOf(x)) + "," + Y(x.opt))
+      .join(" ")}" class="vzBandFill"/>`;
+  g += `<polyline points="${L.map((x) => X(tOf(x)) + "," + Y(x.eta)).join(" ")}" class="vzLine"/>`;
+  // Marker: Plan-Importe und geänderte Packs
+  const marks = [];
+  for (const e of planImportEvents(p)) if (e.t >= tmin && e.t <= tmax + D) marks.push({ t: e.t, l: "Plan-Import" });
+  for (let i = 1; i < L.length; i++)
+    if (L[i].packs != null && L[i - 1].packs != null && L[i].packs !== L[i - 1].packs) marks.push({ t: tOf(L[i]), l: L[i].packs + " Packs" });
+  marks.sort((a, b) => a.t - b.t);
+  let lastX = -99;
+  for (const m of marks) {
+    const x = X(m.t);
+    g += `<line x1="${x}" x2="${x}" y1="${T}" y2="${H - B}" class="vzMark"/>`;
+    if (x - lastX > 70) {
+      g += `<text x="${x > W - 110 ? x - 4 : x + 4}" y="${T + 12}" class="vzMarkT" text-anchor="${x > W - 110 ? "end" : "start"}">${escAttr(m.l)}</text>`;
+      lastX = x;
+    }
+  }
+  const last = L[L.length - 1],
+    wk = L.filter((x) => tOf(last) - tOf(x) >= 6.5 * D).pop(),
+    diff = wk ? Math.round((wk.eta - last.eta) / D) : null,
+    sub =
+      diff == null
+        ? "noch keine Vorwoche"
+        : diff > 0
+          ? diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor einer Woche"
+          : diff < 0
+            ? -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor einer Woche"
+            : "unverändert zur Vorwoche";
+  g += `<circle cx="${X(tOf(last))}" cy="${Y(last.eta)}" r="5" class="vzDot"/>`;
+  el.innerHTML =
+    vzSvgOpen(W, H) +
+    g +
+    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Aktuell (realistisch)</span><b>${new Date(last.eta).toLocaleDateString("de-DE")}</b><span class="muted">${sub}</span></div><div><span class="muted">Früheste / späteste Prognose</span><b>${vzFmtD(Math.min(...L.map((x) => x.eta)))} – ${vzFmtD(Math.max(...L.map((x) => x.eta)))}</b><span class="muted">im gezeigten Zeitraum</span></div><div><span class="muted">Einträge</span><b>${L.length}</b><span class="muted">seit ${new Date(tOf(L[0])).toLocaleDateString("de-DE")}</span></div></div>`;
+}
+
+// ---------------------------------------------------------------- Einkommen je Woche
+function incomeMats() {
+  return ["Σ-Tritanium", "Σ-Parsteel", "Σ-Dilithium"]
+    .concat(MATERIALS.filter((m) => /^7★ (Rare|Uncommon) /.test(m)));
+}
+// Gebäude, die für Plan p oder Material m eine Rolle spielen
+function bldRelevant(p, m, name) {
+  if (!name) return false;
+  const short = String(m).replace(/^Σ-/, "").replace(/^7★ /, ""),
+    mine = name.toLowerCase().includes(short.toLowerCase()) && /Generator|Warehouse|Vault|Lager|Tresor/i.test(name);
+  const req = ((p && p.planData && p.planData.requiredBuildings) || []).some((b) => b.name === name);
+  return mine || req;
+}
+function weeklyIncome(p, m) {
+  const D = vzDay(),
+    st = rateStats(p, m),
+    ov = s.rateOverrides || {},
+    wk = {};
+  const wkKey = (t) => {
+    const d = new Date(t);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d.getTime();
+  };
+  for (const r of st.rows) {
+    // Abschnitt anteilig auf die Wochen verteilen (Wochenstart per Datum, nicht per +7·24h – Sommerzeit)
+    for (let t = wkKey(+r.from); t < +r.to; ) {
+      const nx = new Date(t);
+      nx.setDate(nx.getDate() + 7);
+      const a = Math.max(t, +r.from),
+        b = Math.min(nx.getTime(), +r.to),
+        days = (b - a) / D;
+      if (days <= 0) {
+        t = nx.getTime();
+        continue;
+      }
+      const w = (wk[t] = wk[t] || { t, days: 0, sum: 0, incDays: 0, incSum: 0, rows: [] });
+      w.days += days;
+      w.sum += r.rate * days;
+      if (r.included) {
+        w.incDays += days;
+        w.incSum += r.rate * days;
+      }
+      w.rows.push(r.key);
+      t = nx.getTime();
+    }
+  }
+  // unabhängige Gebäude je Woche
+  const bs = bldSnaps();
+  for (let i = 1; i < bs.length; i++)
+    for (const c of bldChanges(bs[i - 1].snap.bld, bs[i].snap.bld)) {
+      const w = wk[wkKey(bs[i].t)];
+      if (w) (c.name && bldRelevant(p, m, c.name) ? (w.rel = w.rel || []) : (w.side = w.side || [])).push(c);
+    }
+  const pin = s.weekIncomeOk || {};
+  return Object.values(wk)
+    .sort((a, b) => a.t - b.t)
+    .map((w) => {
+      const unsure = !!w.side && !pin[m + "|" + w.t];
+      return Object.assign(w, { rate: w.incDays > 0 ? w.incSum / w.incDays : null, unsure });
+    })
+    .filter((w) => w.rate != null);
+}
+var incomeSel = null;
+function renderIncomeWeeks() {
+  const el = $("iwBody");
+  if (!el) return;
+  const p = activePlan(),
+    mats = incomeMats();
+  incomeSel = mats.includes(incomeSel) ? incomeSel : mats[0];
+  const sel = $("iwSel");
+  if (sel && sel.options.length !== mats.length) sel.innerHTML = mats.map((m) => `<option>${escAttr(m)}</option>`).join("");
+  if (sel) sel.value = incomeSel;
+  const m = incomeSel,
+    W6 = p && p.hasPlanData ? weeklyIncome(p, m).slice(-8) : [];
+  if (W6.length < 2) {
+    el.innerHTML = '<p class="muted">Zu wenig Daten – es braucht Snapshots aus mindestens zwei Wochen.</p>';
+    return;
+  }
+  const D = vzDay(),
+    W = 1100,
+    H = 280,
+    Lm = 78,
+    Rm = 20,
+    T = 20,
+    B = 40,
+    mx = Math.max(...W6.map((w) => w.rate), 1) * 1.15,
+    X = (i) => Lm + ((i + 0.5) * (W - Lm - Rm)) / W6.length,
+    Y = (v) => T + ((mx - v) / mx) * (H - T - B),
+    bw = ((W - Lm - Rm) / W6.length) * 0.55,
+    fv = (v) => (Math.abs(v) >= 1e6 ? (v / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 2 }) + " Mio." : Math.round(v).toLocaleString("de-DE"));
+  let g = "";
+  for (let k = 0; k <= 4; k++) {
+    const v = (mx * k) / 4;
+    g += `<line x1="${Lm}" x2="${W - Rm}" y1="${Y(v)}" y2="${Y(v)}" class="vzGrid"/><text x="${Lm - 8}" y="${Y(v) + 4}" class="vzAx" text-anchor="end">${fv(v)}</text>`;
+  }
+  W6.forEach((w, i) => {
+    const last = i === W6.length - 1,
+      cls = w.unsure ? "vzBarX" : last ? "vzBarNow" : "vzBar";
+    g += `<rect x="${X(i) - bw / 2}" y="${Y(Math.max(w.rate, 0))}" width="${bw}" height="${Math.max(Y(0) - Y(Math.max(w.rate, 0)), 1)}" rx="4" class="${cls}" data-wk="${w.t}"/><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) - 6}" class="vzAx" text-anchor="middle">${fv(w.rate)}</text>`;
+    if (w.unsure)
+      g += `<text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 18}" class="vzAx" text-anchor="middle">Nebengebäude</text><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 31}" class="vzAx" text-anchor="middle">Wert unsicher</text>`;
+    if (w.rel)
+      g += `<line x1="${X(i) - bw / 2 - 8}" x2="${X(i) - bw / 2 - 8}" y1="${T}" y2="${H - B}" class="vzMarkG"/><text x="${X(i) - bw / 2 - 4}" y="${T + 12}" class="vzMarkGT">${escAttr(bldChangeText(w.rel))}</text>`;
+    g += `<text x="${X(i)}" y="${H - 12}" class="vzAx" text-anchor="middle">KW ${isoWeek(w.t)}</text>`;
+  });
+  const ok = W6.filter((w) => !w.unsure),
+    avg = ok.length ? ok.reduce((a, w) => a + w.rate * w.incDays, 0) / ok.reduce((a, w) => a + w.incDays, 0) : null,
+    cur = W6[W6.length - 1],
+    tr = ok.length >= 3 && ok[0].rate > 0 ? (ok[ok.length - 1].rate / ok[0].rate - 1) * 100 : null;
+  el.innerHTML =
+    vzSvgOpen(W, H) +
+    g +
+    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Diese Woche</span><b>${fv(cur.rate)}/Tag</b><span class="muted">bisher ${Math.round(cur.incDays)} ${Math.round(cur.incDays) === 1 ? "Tag" : "Tage"}${cur.unsure ? " · Nebengebäude" : ""}</span></div><div><span class="muted">Ø ${W6.length} Wochen</span><b>${avg == null ? "–" : fv(avg) + "/Tag"}</b><span class="muted">${ok.length} von ${W6.length} Wochen${W6.length - ok.length ? ", " + (W6.length - ok.length) + " ausgelassen" : ""}</span></div><div><span class="muted">Trend</span><b>${tr == null ? "zu wenig Daten" : (tr > 0 ? "+" : "") + Math.round(tr) + " %"}</b><span class="muted">erste → letzte Woche (ohne unsichere)</span></div></div>`;
+  el.querySelectorAll("rect.vzBarX").forEach((r) => {
+    r.style.cursor = "pointer";
+    r.onclick = () => {
+      s.weekIncomeOk = s.weekIncomeOk || {};
+      s.weekIncomeOk[m + "|" + r.dataset.wk] = true;
+      save();
+    };
+  });
+}
+function renderVerlauf() {
+  renderTimeline();
+  renderFcHistory();
+  renderIncomeWeeks();
+}
+// 4.0 Teil 2: Als Bild teilen (Karte für den Allianz-Chat). Alles läuft im Browser, gezeichnet wird auf ein Canvas.
+// Achtung: läuft schon beim ersten render() – keine let/const/var-Werte auf oberster Ebene, nur Funktionen.
+
+function shareDefaults() {
+  return {
+    plan: "all",
+    exact: true,
+    inc: { goal: true, eta: true, bottleneck: true, res: true, packs: false, timeline: false },
+    name: true,
+    playerName: "",
+  };
+}
+function shareOpts() {
+  const d = shareDefaults(),
+    o = s.share && typeof s.share === "object" ? s.share : {};
+  return {
+    plan: typeof o.plan === "string" ? o.plan : d.plan,
+    exact: o.exact !== false,
+    inc: Object.assign({}, d.inc, o.inc && typeof o.inc === "object" ? o.inc : {}),
+    name: o.name !== false,
+    playerName: typeof o.playerName === "string" ? o.playerName : "",
+  };
+}
+// Datum grob: „Mitte Dez.“, ab einem Jahr Abstand „später als Q4 27“
+function shareCoarseDate(t) {
+  const now = Date.now(),
+    d = new Date(t);
+  if (t - now > 365 * 864e5) {
+    const lim = new Date(now + 365 * 864e5);
+    return "später als Q" + (Math.floor(lim.getMonth() / 3) + 1) + " " + String(lim.getFullYear()).slice(2);
+  }
+  const part = d.getDate() <= 10 ? "Anfang" : d.getDate() <= 20 ? "Mitte" : "Ende",
+    mon = d.toLocaleDateString("de-DE", { month: "short" }).replace(".", "") + ".";
+  return part + " " + mon + (d.getFullYear() !== new Date().getFullYear() ? " " + String(d.getFullYear()).slice(2) : "");
+}
+function shareExactDate(t, long) {
+  const now = Date.now();
+  if (t - now > 365 * 864e5) return "später als Q" + (Math.floor(new Date(now + 365 * 864e5).getMonth() / 3) + 1) + " " + String(new Date(now + 365 * 864e5).getFullYear()).slice(2);
+  return long
+    ? new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "long" })
+    : new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }).replace(/\.?$/, ".");
+}
+// aktive Pläne mit Prognose (hasPlanData je Plan selbst setzen – render() tut das nur für den gewählten)
+function shareActivePlans() {
+  return s.plans.filter((p) => {
+    p.status = calcPlanStatus(p);
+    p.hasPlanData = p.status === "active";
+    return p.hasPlanData;
+  });
+}
+function shareEta(p) {
+  const fc = planForecast(p),
+    o = fc && fc.overall,
+    blocked = isShip(p) && typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
+  if (blocked) return { blocked: blocked.yard };
+  if (!o || o.real == null) return { t: null };
+  return { t: o.real === 0 ? Date.now() : fc.base + o.real * 864e5 };
+}
+// Vergleich mit der Vorwoche aus dem Prognose-Protokoll (Tage früher > 0)
+function shareWeekDiff(p) {
+  const L = ((s.fcLog || {})[p.id] || []).filter((x) => x.eta > 0);
+  if (L.length < 2) return null;
+  const last = L[L.length - 1],
+    old = L.filter((x) => new Date(last.d) - new Date(x.d) >= 6.5 * 864e5).pop();
+  return old ? Math.round((old.eta - last.eta) / 864e5) : null;
+}
+function shareTimeline(cur) {
+  const done = (Array.isArray(s.goals) ? s.goals : [])
+      .slice()
+      .sort((a, b) => new Date(a.at) - new Date(b.at))
+      .map((g) => ({ name: g.name, st: "done" })),
+    rest = shareActivePlans()
+      .filter((p) => !cur || p.id !== cur.id)
+      .map((p) => ({ name: p.name, st: "future" }));
+  const list = done.slice(-2).concat(cur ? [{ name: cur.name, st: "now" }] : [], rest).slice(0, 6);
+  return list;
+}
+// Modell: alles, was die Karte zeigt, als Daten (so lässt es sich testen, ohne Pixel zu lesen)
+function buildShareModel(o) {
+  o = o || shareOpts();
+  const now = Date.now(),
+    who = o.name && o.playerName.trim() ? " · " + o.playerName.trim() : "",
+    stand = "Stand " + new Date(now).toLocaleDateString("de-DE") + who,
+    plans = shareActivePlans(),
+    doneN = (Array.isArray(s.goals) ? s.goals : []).length;
+  if (o.plan === "all" || !plans.some((p) => p.id === o.plan)) {
+    const rows = plans.map((p) => {
+        const e = shareEta(p),
+          pc = vzProgress(p) || 0;
+        return {
+          name: p.name,
+          pct: o.exact ? Math.round(pc * 10) / 10 : Math.round(pc),
+          date: e.blocked ? "nach Werft" : e.t == null ? "–" : o.exact ? shareExactDate(e.t) : shareCoarseDate(e.t),
+          t: e.t || null,
+        };
+      }),
+      next = rows.filter((r) => r.t).sort((a, b) => a.t - b.t)[0];
+    return {
+      kind: "all",
+      title: "Meine Ziele",
+      stand,
+      badge: rows.length + (rows.length === 1 ? " PLAN" : " PLÄNE"),
+      chips: (doneN ? ["✓ " + doneN + (doneN === 1 ? " Ziel" : " Ziele") + " erreicht"] : []).concat(next ? ["Nächstes: " + next.name] : []),
+      rows: rows.slice(0, 10),
+      more: Math.max(0, rows.length - 10),
+      note: o.exact ? "Jeder Plan einzeln gerechnet" : "Nur Prozent & Datum",
+      exact: o.exact,
+    };
+  }
+  const p = plans.find((x) => x.id === o.plan),
+    e = shareEta(p),
+    pc = vzProgress(p) || 0,
+    rows = getPlanResources(p).filter((r) => !isLatinumMat(r[0]) && r[3] > 0),
+    bn = planBottleneck(p, getPlanResources(p)),
+    pk = o.inc.packs && o.exact ? packCalc(p) : null,
+    diff = o.exact && o.inc.eta ? shareWeekDiff(p) : null;
+  const chips = [];
+  if (o.inc.bottleneck && bn && !bn.none) chips.push({ warn: true, text: "⚠ Engpass: " + bn.name });
+  if (!o.exact && o.inc.res && rows.length) chips.push({ text: "fehlt noch ~" + Math.max(1, 100 - Math.round(pc)) + " %" });
+  if (o.exact && o.inc.eta) chips.push({ text: "Prognose realistisch" });
+  if (pk && pk.total > 0) chips.push({ text: pk.total + " Packs" + (pk.pack.priceEUR ? " · " + fx(Math.round(pk.total * pk.pack.priceEUR)) + " €" : "") });
+  return {
+    kind: "single",
+    title: p.name,
+    stand,
+    badge: statusLabel(p.status).toUpperCase(),
+    pct: o.inc.goal ? (o.exact ? pc.toLocaleString("de-DE", { maximumFractionDigits: 1 }) : String(Math.round(pc))) + " %" : null,
+    pctValue: pc,
+    etaLabel: o.inc.eta ? (e.blocked ? "Wartet auf" : "Voraussichtlich fertig") : null,
+    eta: o.inc.eta ? (e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t)) : null,
+    etaSub: diff == null ? null : diff > 0 ? "▲ " + diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor einer Woche" : diff < 0 ? "▼ " + -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor einer Woche" : "unverändert zur Vorwoche",
+    etaSubUp: diff != null && diff >= 0,
+    chips,
+    res:
+      o.exact && o.inc.res
+        ? rows.length
+          ? rows.slice(0, 3).map((r) => ({ name: r[0], val: fx(Math.round(r[3])) }))
+          : [{ name: "Alles gedeckt", val: "✓" }]
+        : null,
+    timeline: o.inc.timeline ? shareTimeline(p) : null,
+    note: o.exact ? "Schätzung aus meinem Einkommen" : "Nur Prozent & Datum",
+    exact: o.exact,
+  };
+}
+
+// ---------------------------------------------------------------- Zeichnen (Canvas, 560er-Raster auf 1080 px)
+function shRound(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+function shText(c, t, x, y, size, color, weight, align, fam) {
+  c.font = (weight || 400) + " " + size + 'px "' + (fam || "IBM Plex Sans") + '", system-ui, sans-serif';
+  c.fillStyle = color;
+  c.textAlign = align || "left";
+  c.textBaseline = "alphabetic";
+  c.fillText(t, x, y);
+}
+function shPill(c, t, x, y, size, fg, bg, border) {
+  c.font = "500 " + size + 'px "IBM Plex Sans", system-ui, sans-serif';
+  const w = c.measureText(t).width + 26,
+    h = size + 13;
+  shRound(c, x, y, w, h, h / 2);
+  c.fillStyle = bg;
+  c.fill();
+  if (border) {
+    c.strokeStyle = border;
+    c.lineWidth = 1;
+    c.stroke();
+  }
+  shText(c, t, x + 13, y + h / 2 + size * 0.35, size, fg, 500);
+  return w;
+}
+function shBackground(c) {
+  const S = 560;
+  c.save();
+  shRound(c, 0, 0, S, S, 26);
+  c.clip();
+  let g = c.createLinearGradient(0, 0, S, S);
+  g.addColorStop(0, "#0c2236");
+  g.addColorStop(1, "#070d14");
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+  g = c.createRadialGradient(440, 70, 0, 440, 70, 260);
+  g.addColorStop(0, "rgba(27,79,122,.95)");
+  g.addColorStop(1, "rgba(27,79,122,0)");
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+  g = c.createRadialGradient(56, 560, 0, 56, 560, 280);
+  g.addColorStop(0, "rgba(59,42,110,.95)");
+  g.addColorStop(1, "rgba(59,42,110,0)");
+  c.fillStyle = g;
+  c.fillRect(0, 0, S, S);
+  c.fillStyle = "rgba(255,255,255,.55)";
+  [[67, 120, 1.2], [185, 45, 1], [342, 190, 1.4], [493, 392, 1], [263, 493, 1.2], [112, 358, 1], [515, 67, 1.3], [420, 300, 1]].forEach(([x, y, r]) => {
+    c.beginPath();
+    c.arc(x, y, r, 0, 7);
+    c.fill();
+  });
+  [["#ff9c3b", 0, 0.22], ["#c26cff", 0.22, 0.46], ["#46c2ee", 0.46, 1]].forEach(([col, a, b]) => {
+    c.fillStyle = col;
+    c.fillRect(0, S * a, 14, S * (b - a));
+  });
+  c.restore();
+  shRound(c, 0.5, 0.5, S - 1, S - 1, 26);
+  c.strokeStyle = "#2f5f86";
+  c.lineWidth = 1;
+  c.stroke();
+}
+function shHeader(c, m) {
+  shText(c, m.title, 38, 62, 26, "#eaf4fb", 700);
+  shText(c, m.stand, 38, 84, 13, "#9fc2d9", 400);
+  c.font = "700 12px \"IBM Plex Sans\", system-ui, sans-serif";
+  const w = c.measureText(m.badge).width + 26;
+  shRound(c, 530 - w, 36, w, 26, 13);
+  c.fillStyle = "#ff9c3b";
+  c.fill();
+  shText(c, m.badge, 530 - w / 2, 53, 12, "#2a1600", 700, "center");
+}
+function shFooter(c, m) {
+  shText(c, "Bens G7 STFC Progress Planner", 38, 542, 11, "#7f9db2", 400);
+  shText(c, m.note, 530, 542, 11, "#7f9db2", 400, "right");
+}
+function shTimeline(c, list, y) {
+  if (!list || !list.length) return;
+  shText(c, "MEINE ZIELE", 38, y, 12, "#9fc2d9", 500);
+  const n = list.length,
+    x0 = 50,
+    x1 = 518,
+    ty = y + 24,
+    cx = (i) => (n === 1 ? (x0 + x1) / 2 : x0 + ((x1 - x0) * i) / (n - 1)),
+    nowI = Math.max(0, list.findIndex((q) => q.st === "now"));
+  c.fillStyle = "rgba(255,255,255,.14)";
+  c.fillRect(x0, ty - 2, x1 - x0, 4);
+  c.fillStyle = "#46c2ee";
+  c.fillRect(x0, ty - 2, cx(nowI) - x0, 4);
+  list.forEach((q, i) => {
+    const x = cx(i);
+    c.beginPath();
+    c.arc(x, ty, 10, 0, 7);
+    if (q.st === "done") {
+      c.fillStyle = "#7aeab0";
+      c.fill();
+      shText(c, "✓", x, ty + 4, 12, "#06301d", 700, "center");
+    } else if (q.st === "now") {
+      c.save();
+      c.shadowColor = "#ffd166";
+      c.shadowBlur = 12;
+      c.fillStyle = "#ffd166";
+      c.fill();
+      c.restore();
+    } else {
+      c.fillStyle = "#0c2236";
+      c.fill();
+      c.setLineDash([3, 2]);
+      c.strokeStyle = "#7f9db2";
+      c.lineWidth = 2;
+      c.stroke();
+      c.setLineDash([]);
+    }
+    let t = q.name;
+    c.font = '400 11px "IBM Plex Sans", system-ui, sans-serif';
+    while (c.measureText(t).width > 80 && t.length > 4) t = t.slice(0, -2);
+    if (t !== q.name) t += "…";
+    shText(c, t, Math.min(Math.max(x, 48), 512), ty + 25, 11, q.st === "now" ? "#46c2ee" : "#9fc2d9", 400, "center");
+  });
+}
+function drawShare(c, m) {
+  c.save();
+  c.scale(1080 / 560, 1080 / 560);
+  shBackground(c);
+  shHeader(c, m);
+  if (m.kind === "all") {
+    let x = 38;
+    m.chips.forEach((t) => {
+      x += shPill(c, t, x, 100, 12, "#eaf4fb", "rgba(255,255,255,.08)", "rgba(255,255,255,.13)") + 6;
+    });
+    const n = Math.max(m.rows.length, 1),
+      rh = Math.min(46, 340 / n),
+      y0 = 150;
+    m.rows.forEach((r, i) => {
+      const y = y0 + i * rh;
+      shText(c, r.name, 38, y + rh / 2 + 5, 13.5, "#eaf4fb", 500);
+      shRound(c, 196, y + rh / 2 - 4.5, 184, 9, 4.5);
+      c.fillStyle = "#16344a";
+      c.fill();
+      const w = Math.max(9, (184 * Math.min(r.pct, 100)) / 100),
+        g = c.createLinearGradient(196, 0, 196 + 184, 0);
+      g.addColorStop(0, "#46c2ee");
+      g.addColorStop(1, "#7aeab0");
+      shRound(c, 196, y + rh / 2 - 4.5, w, 9, 4.5);
+      c.fillStyle = g;
+      c.fill();
+      shText(c, (m.exact ? String(r.pct).replace(".", ",") : r.pct) + " %", 436, y + rh / 2 + 5, 13.5, "#46c2ee", 600, "right");
+      shText(c, r.date, 530, y + rh / 2 + 5, 13.5, "#ffc98b", 600, "right");
+      c.fillStyle = "rgba(255,255,255,.08)";
+      c.fillRect(38, y + rh, 492, 1);
+    });
+    if (m.more) shText(c, "+ " + m.more + " weitere", 38, y0 + m.rows.length * rh + 18, 12, "#9fc2d9", 400);
+    if (!m.rows.length) shText(c, "Noch kein aktiver Plan", 38, 180, 14, "#9fc2d9", 400);
+  } else {
+    // Ring
+    const cx = 133,
+      cy = 203,
+      R = 95,
+      r = 75;
+    if (m.pct) {
+      c.save();
+      c.shadowColor = "rgba(70,194,238,.45)";
+      c.shadowBlur = 24;
+      c.beginPath();
+      c.arc(cx, cy, (R + r) / 2, 0, 7);
+      c.lineWidth = R - r;
+      c.strokeStyle = "#16344a";
+      c.stroke();
+      c.beginPath();
+      c.arc(cx, cy, (R + r) / 2, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * Math.min(m.pctValue, 100)) / 100);
+      c.strokeStyle = "#46c2ee";
+      c.stroke();
+      c.restore();
+      c.beginPath();
+      c.arc(cx, cy, r - 1, 0, 7);
+      c.fillStyle = "rgba(9,24,37,.6)";
+      c.fill();
+      shText(c, m.pct, cx, cy + 5, 34, "#eaf4fb", 700, "center");
+      shText(c, "geschafft", cx, cy + 26, 12, "#9fc2d9", 400, "center");
+    }
+    if (m.eta) {
+      const ex = m.pct ? 253 : 38;
+      shText(c, m.etaLabel, ex, 190, 13, "#9fc2d9", 400);
+      const g = c.createLinearGradient(ex, 0, ex + 240, 0);
+      g.addColorStop(0, "#ffd166");
+      g.addColorStop(1, "#ff9c3b");
+      c.font = '700 ' + (m.eta.length > 14 ? 28 : 34) + 'px "IBM Plex Sans", system-ui, sans-serif';
+      c.fillStyle = g;
+      c.textAlign = "left";
+      c.fillText(m.eta, ex, 232);
+      if (m.etaSub) shText(c, m.etaSub, ex, 256, 13, m.etaSubUp ? "#7aeab0" : "#ffb07a", 400);
+    }
+    let x = 38;
+    m.chips.forEach((ch) => {
+      x += shPill(c, ch.text, x, 322, 13, ch.warn ? "#ffc98b" : "#eaf4fb", ch.warn ? "rgba(255,156,59,.15)" : "rgba(255,255,255,.08)", ch.warn ? "rgba(255,156,59,.55)" : "rgba(255,255,255,.13)") + 6;
+    });
+    if (m.res) {
+      const h = 34 + m.res.length * 22;
+      shRound(c, 38, 362, 492, h, 14);
+      c.fillStyle = "rgba(10,26,40,.6)";
+      c.fill();
+      c.strokeStyle = "rgba(255,255,255,.1)";
+      c.stroke();
+      shText(c, "ES FEHLEN NOCH", 54, 384, 12, "#9fc2d9", 500);
+      m.res.forEach((q, i) => {
+        shText(c, q.name, 54, 408 + i * 22, 14, "#eaf4fb", 400);
+        shText(c, q.val, 514, 408 + i * 22, 14, q.val === "✓" ? "#7aeab0" : "#eaf4fb", 700, "right");
+      });
+    }
+    if (m.timeline) shTimeline(c, m.timeline, 474);
+  }
+  shFooter(c, m);
+  c.restore();
+}
+
+// ---------------------------------------------------------------- Dialog
+function shareReadForm() {
+  const o = {
+    plan: $("shPlan").value,
+    exact: $("shExact").checked,
+    inc: {},
+    name: $("shName").checked,
+    playerName: $("shPlayer").value,
+  };
+  document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (o.inc[i.dataset.inc] = i.checked));
+  return o;
+}
+function shareFillForm() {
+  const o = shareOpts(),
+    plans = shareActivePlans();
+  $("shPlan").innerHTML =
+    '<option value="all">Alle Ziele</option>' + plans.map((p) => `<option value="${escAttr(p.id)}">${escAttr(p.name)}</option>`).join("");
+  $("shPlan").value = plans.some((p) => p.id === o.plan) ? o.plan : "all";
+  $("shExact").checked = o.exact;
+  $("shCoarse").checked = !o.exact;
+  document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.checked = !!o.inc[i.dataset.inc]));
+  $("shName").checked = o.name;
+  $("shPlayer").value = o.playerName;
+}
+function shareRefresh() {
+  const o = shareReadForm();
+  s.share = o;
+  persist();
+  $("shInc").style.display = o.plan === "all" ? "none" : "";
+  $("shAllNote").style.display = o.plan === "all" ? "" : "none";
+  $("shPlayer").disabled = !o.name;
+  const run = () => drawShare($("shCanvas").getContext("2d"), buildShareModel(o));
+  if (document.fonts && document.fonts.load)
+    Promise.all([document.fonts.load('700 20px "IBM Plex Sans"'), document.fonts.load('400 20px "IBM Plex Sans"'), document.fonts.load('500 20px "IBM Plex Sans"')]).then(run, run);
+  else run();
+}
+function openShare() {
+  shareFillForm();
+  $("shareModal").classList.add("on");
+  shareRefresh();
+}
+function shareFileName() {
+  const o = shareOpts(),
+    p = s.plans.find((x) => x.id === o.plan),
+    z = (n) => String(n).padStart(2, "0"),
+    d = new Date();
+  return (
+    "STFC_" + (p && o.plan !== "all" ? p.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : "Ziele") + "_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".png"
+  );
+}
+function shareSave() {
+  $("shCanvas").toBlob((b) => {
+    if (!b) return toast("Das Bild konnte nicht erzeugt werden.");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = shareFileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Bild gespeichert: " + a.download);
+  }, "image/png");
+}
+function shareCopy() {
+  if (!navigator.clipboard || typeof ClipboardItem === "undefined") return toast("Kopieren geht in diesem Browser nicht – bitte „Bild speichern“.");
+  $("shCanvas").toBlob((b) => {
+    navigator.clipboard.write([new ClipboardItem({ "image/png": b })]).then(
+      () => toast("Bild in die Zwischenablage kopiert."),
+      () => toast("Kopieren wurde blockiert – bitte „Bild speichern“."),
+    );
+  }, "image/png");
 }
 
 </script></body></html>

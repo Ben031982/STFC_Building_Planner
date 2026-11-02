@@ -483,8 +483,8 @@ function render() {
   renderCare();
   renderEvents();
   renderGoals();
+  logForecast(); // zuerst protokollieren, damit der Verlauf den heutigen Eintrag schon enthält
   renderVerlauf();
-  logForecast();
   renderImportPage();
   flashChanged(p);
 }

@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] – in Arbeit
+## [4.0.0] – 2026-11-01
 
 ### Neu (Teil 1: Verlauf)
 - **Zeitleiste aller Ziele** (Tab „Verlauf“, über „Erreichte Ziele“): jeder aktive Plan eine Reihe, einzeln gerechnet (nicht nacheinander); Achse höchstens 3 Jahre. Erreichte Ziele mit ✓ und Datum, aktive Pläne mit Fortschritt, Fertigdatum und Band konservativ bis optimistisch, noch nicht aktive Pläne gestrichelt („wartet auf …“).
@@ -12,7 +12,9 @@
 - Fertigdatum mit Vergleich zur Vorwoche („1 Tag früher als vor einer Woche“), sobald das Prognose-Protokoll genug Tage hat.
 
 ### Technik
-- Neue Dateien src/js/28-verlauf.js, src/js/29-share.js, src/css/18-verlauf.css. Tests: Zeitleiste/Prognoseband, Einkommen je Woche mit Nebengebäuden (insgesamt 70).
+- Neue Dateien src/js/28-verlauf.js, src/js/29-share.js, src/css/18-verlauf.css, src/css/19-share.css.
+- Zeitleiste und Prognose-Protokoll berechnen den Plan-Status je Plan selbst (render() tut das nur für den gewählten Plan). Das Protokoll wird vor dem Zeichnen des Verlaufs geschrieben, damit der Verlauf den heutigen Eintrag schon enthält.
+- Tests: Zeitleiste und Prognoseband, Zeitleiste mit mehreren aktiven Plänen, Einkommen je Woche mit Nebengebäuden, Teilen (Modell, Dialog, Speichern der Auswahl) – insgesamt 71.
 
 ## [3.4.0] – 2026-10-27
 

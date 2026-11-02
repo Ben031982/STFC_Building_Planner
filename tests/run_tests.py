@@ -1904,6 +1904,19 @@ def teilen_als_bild_modell_und_dialog(b, html, tmp):
     a.done()
 
 
+@test
+def verlauf_der_prognose_enthaelt_den_heutigen_eintrag(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    # nur ein älterer Eintrag im Protokoll: nach einem Render muss der Verlauf mit „heute“ schon zwei Einträge zeigen
+    a.js("()=>{const id=s.plans[0].id;s.fcLog={};s.fcLog[id]=[{d:'2026-10-20',eta:Date.now()+50*864e5,cons:null,opt:null,driver:null,packs:null}];save();render()}")
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#fhBody svg polyline')"), "Verlauf der Prognose zeichnet beim ersten Öffnen keine Linie")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")
