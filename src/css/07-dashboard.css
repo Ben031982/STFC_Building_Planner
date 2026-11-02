@@ -308,3 +308,52 @@
   border: 1px dashed #2e5670;
   border-radius: 7px;
 }
+
+/* Schmale Kopfzeile auf Unterseiten (5.0) */
+.hero.slim {
+  padding: 10px 16px;
+}
+.hero.slim .heroCards,
+.hero.slim .heroNote,
+.hero.slim .heroLvl,
+.hero.slim .heroBar,
+.hero.slim .heroBadges,
+.hero.slim .heroId img,
+.hero.slim .heroEta #etaDetail,
+.hero.slim .heroEta .qBadge,
+.hero.slim .heroEta .qLine {
+  display: none;
+}
+.hero.slim .heroTop {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+}
+.hero.slim h2 {
+  font-size: 18px;
+}
+.hero.slim .heroProgRow {
+  gap: 12px;
+}
+.hero.slim .heroEta {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+  padding-left: 0;
+  border-left: 0;
+}
+.hero.slim .heroEta strong {
+  font-size: 20px;
+}
+.packSum {
+  margin: 8px 0 10px;
+  font-size: 13px;
+}
+.packSum b {
+  color: #eaf4ff;
+}
+.fcNote summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #9ab2c4;
+  margin-top: 8px;
+}

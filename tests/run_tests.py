@@ -1917,6 +1917,47 @@ def verlauf_der_prognose_enthaelt_den_heutigen_eintrag(b, html, tmp):
     a.done()
 
 
+@test
+def prognose_tab_reihenfolge_und_schmaler_kopf(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    order = a.js("()=>[...document.querySelectorAll('#pane-fc > section')].map(e=>e.id||'x')")
+    check(order == ["x", "fhPanel", "packPanel", "x"], f"Reihenfolge im Prognose-Tab: {order}")
+    check(a.js("()=>document.querySelector('.hero').classList.contains('slim')"), "Kopfbereich ist im Prognose-Tab nicht schmal")
+    check(not a.js("()=>!!document.querySelector('.hero .heroCards').offsetParent"), "Engpass/Packs/Bauzeit-Karten sind im Prognose-Tab noch sichtbar")
+    check(a.js("()=>!!document.querySelector('#pane-fc > section:first-child #packSum')"), "Pack-Zusammenfassung fehlt oben")
+    check(a.js("()=>!!document.querySelector('#packPanel #packCard')"), "Pack-Tabelle ist nicht im unteren Panel")
+    a.click("#nd")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!document.querySelector('.hero').classList.contains('slim')"), "Übersicht zeigt nicht den vollen Kopfbereich")
+    check(a.js("()=>!!document.querySelector('.hero .heroCards').offsetParent"), "Karten fehlen in der Übersicht")
+    a.done()
+
+
+@test
+def effizienzrechner_rechnet_und_speichert_nichts(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navRes")
+    a.wait_for_timeout(200)
+    n = a.js("()=>document.querySelectorAll('#effSimBody .esIn').length")
+    check(n > 0, "Effizienzrechner zeigt keine Eingabefelder")
+    before = a.js("()=>JSON.stringify(s)")
+    a.js("()=>{const i=document.querySelector('#effSimBody .esIn');i.value='40';i.dispatchEvent(new Event('input',{bubbles:true}))}")
+    a.wait_for_timeout(150)
+    check(a.js("()=>document.querySelector('#effSimBody .esCost').textContent.includes('→')"), "Kosten zeigen keinen Vorher/Nachher-Wert")
+    check(a.js("()=>!!document.getElementById('esSum').textContent.trim()"), "Zusammenfassung leer")
+    check(a.js("()=>JSON.stringify(s)") == before, "Der Rechner hat den gespeicherten Zustand verändert")
+    a.click("#esReset")
+    a.wait_for_timeout(150)
+    check(a.js("()=>document.querySelector('#effSimBody .esIn').value===''"), "Zurücksetzen leert die Felder nicht")
+    a.done()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("html", nargs="?")

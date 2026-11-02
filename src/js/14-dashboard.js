@@ -6,6 +6,7 @@ function setTab(t) {
     .forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
   ["ov", "bld", "res", "fc", "hist"].forEach((k) => $("pane-" + k).classList.toggle("on", k === t));
   if (typeof navSync === "function") setTimeout(navSync, 0);
+  document.querySelector(".hero").classList.toggle("slim", t !== "ov");
   const cp = $("chartPanel");
   if (t === "hist") {
     if (cp.parentElement !== $("pane-hist")) $("pane-hist").prepend(cp);
@@ -448,6 +449,7 @@ function render() {
   }
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
+  if (typeof renderEffSim === "function") renderEffSim(p);
   if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);
@@ -476,6 +478,9 @@ function render() {
         (packInclText(p) ? " · " + packInclText(p) : "");
     }
   }
+  $("packSum").innerHTML = $("packsValue").textContent === "–"
+    ? ""
+    : "Packs bis zum Ziel: <b>" + escAttr($("packsValue").textContent) + "</b> · " + escAttr($("packsDetail").textContent) + " – Details weiter unten";
   renderSnaps();
   renderChart();
   renderBackup();
