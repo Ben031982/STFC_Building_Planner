@@ -128,7 +128,7 @@ function buildShareModel(o) {
     pctValue: pc,
     etaLabel: o.inc.eta ? (e.blocked ? "Wartet auf" : "Voraussichtlich fertig") : null,
     eta: o.inc.eta ? (e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t)) : null,
-    etaSub: diff == null ? null : diff > 0 ? "▲ " + diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor einer Woche" : diff < 0 ? "▼ " + -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor einer Woche" : "unverändert zur Vorwoche",
+    etaSub: diff == null ? null : diff > 0 ? "▲ " + diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor 7 Tagen" : diff < 0 ? "▼ " + -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor 7 Tagen" : "unverändert gegenüber vor 7 Tagen",
     etaSubUp: diff != null && diff >= 0,
     chips,
     res:

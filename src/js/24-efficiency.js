@@ -123,11 +123,14 @@ function renderResMerged(p, planRows, bn) {
   $("esToggle").textContent = on ? "Rechner an ✓" : "Rechner";
   $("esToggle").disabled = !p.hasPlanData;
   $("esReset").hidden = !on;
-  $("esHint").textContent = on
-    ? "Zusatz in %-Punkten – es wird nichts gespeichert"
-    : p.hasPlanData
-      ? "Was wäre, wenn bei einem Material Effizienz dazukommt?"
-      : "Braucht einen aktiven Plan mit bestätigten Plandaten";
+  $("esHint").innerHTML =
+    (on
+      ? "Zusatz in %-Punkten – es wird nichts gespeichert."
+      : p.hasPlanData
+        ? "Was wäre, wenn bei einem Material Effizienz dazukommt?"
+        : "Braucht einen aktiven Plan mit bestätigten Plandaten.") +
+    ' Für Packs, Zuwachs und Wunschtermin: <button class="linkBtn" id="esWifLink">Was-wäre-wenn</button>';
+  $("esWifLink").onclick = () => $("nw").click();
   $("esSum").hidden = !on;
   $("esToggle").onclick = () => {
     effSimOn = !effSimOn;

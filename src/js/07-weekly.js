@@ -168,8 +168,8 @@ function renderWeekly() {
       g === 0
         ? "unverändert zur Vorwoche"
         : g > 0
-          ? `<span class="wifGain">${g} Tage früher als Ende Vorwoche</span>`
-          : `<span class="wifLoss">${-g} Tage später als Ende Vorwoche</span>`;
+          ? `<span class="wifGain">${g} Tage früher als zum Wochenbeginn (${dl(W.a)})</span>`
+          : `<span class="wifLoss">${-g} Tage später als zum Wochenbeginn (${dl(W.a)})</span>`;
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
   let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : shipPackMissingText(p) ? (p.ship && p.ship.key === "other" ? "kein Pack für „Anderes Schiff“" : "Schiffs-Pack nicht gepflegt") : packEmptyFor(p) ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;

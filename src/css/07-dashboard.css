@@ -326,6 +326,8 @@
 .hero.slim {
   padding: 10px 16px;
 }
+.hero.slim h2,
+.hero.slim .heroProgRow > span:first-child,
 .hero.slim .heroCards,
 .hero.slim .heroNote,
 .hero.slim .heroLvl,

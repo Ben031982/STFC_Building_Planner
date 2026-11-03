@@ -8,15 +8,14 @@
 }
 /* Plan-Karten (ab 2.1): je Plan ein eigenes „Fertig bis“, Klick zeigt die Details */
 .tdCards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
   gap: 10px;
-  overflow-x: auto;
   padding: 4px 2px 10px;
   margin: 8px 0 4px;
 }
 .tdCards .plan {
-  flex: 0 0 235px;
-  min-width: 235px;
+  min-width: 0;
   cursor: pointer;
 }
 .tdCards .plan .pt {

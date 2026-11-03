@@ -193,12 +193,12 @@ function renderFcHistory() {
     diff = wk ? Math.round((wk.eta - last.eta) / D) : null,
     sub =
       diff == null
-        ? "noch keine Vorwoche"
+        ? "noch kein Wert von vor 7 Tagen"
         : diff > 0
-          ? diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor einer Woche"
+          ? diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor 7 Tagen"
           : diff < 0
-            ? -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor einer Woche"
-            : "unverändert zur Vorwoche";
+            ? -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor 7 Tagen"
+            : "unverändert gegenüber vor 7 Tagen";
   g += `<circle cx="${X(tOf(last))}" cy="${Y(last.eta)}" r="5" class="vzDot"/>`;
   el.innerHTML =
     vzSvgOpen(W, H) +

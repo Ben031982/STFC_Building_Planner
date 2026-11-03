@@ -238,3 +238,5 @@ $("shareModal").onclick = (e) => {
 document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.onchange = shareRefresh));
 $("shSave").onclick = shareSave;
 $("shCopy").onclick = shareCopy;
+
+$("wifEffLink").onclick = () => $("navRes").click();
