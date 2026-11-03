@@ -180,8 +180,8 @@ function renderCareStrip() {
         .replace(",", "");
   st.className = "careState " + (w ? "warn" : "ok");
   st.textContent = w
-    ? "⚠ Datenpflege: " + w + " Hinweis" + (w === 1 ? "" : "e")
-    : "✓ Datenpflege: alles aktuell";
+    ? "⚠ " + w + " Hinweis" + (w === 1 ? "" : "e")
+    : "✓ alles aktuell";
   const imp = p && p.planData && p.planData.importedAt;
   $("careMeta").innerHTML =
     (ls ? "Neuester Export <b>" + dm(snapTime(ls)) + "</b>" : "Noch kein Export") +

@@ -281,10 +281,6 @@ function render() {
             " passen nicht mehr zum Ziel. Bitte den Upgrade-Plan für das aktuelle Ziel neu importieren.",
         }[p.status] || "") +
         " Ressourcenbedarf, Engpass, Bauzeit, Meilensteine und Bedarfslinie werden deshalb erst nach Import und Bestätigung berechnet.";
-  $("resSource").textContent = resourceSourceNote(p, planRows);
-  $("resRows").innerHTML =
-    resTableHtml(p, planRows, bottleneck, false) ||
-    '<tr><td colspan="6" class="muted">Keine planabhängige Kostengrundlage – der Plan ist nicht aktiv.</td></tr>';
   renderNextCard(p);
   const seq = orderedSequence(p);
   const openN = seq.filter((x) => !x.done).length;

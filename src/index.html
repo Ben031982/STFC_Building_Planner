@@ -81,9 +81,13 @@
                   ><div class="stat"
                     ><span class="muted"><svg class="cIco" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="11" r="6"/><path d="M10 8v3l2 1.5M8 2.5h4"/></svg>Bauzeit</span><strong id="buildTimeValue">–</strong
                     ><span id="buildTimeDetail"></span></div></div
-                ><div class="heroNote"
-                  >ⓘ Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine
-                  Effizienz nicht abgezogen wird oder der letzte Sync alt ist.</div
+                ><div class="heroNote heroData" id="carePanel"
+                  ><div class="careStrip"
+                    ><span class="careLbl">DATENSTAND</span><span id="careState" class="careState"></span><span id="careMeta" class="careMeta"></span
+                    ><button id="careBackupLink" class="linkBtn"></button
+                    ><button id="careJsonBtn" class="btn">Neue Exporte einlesen</button
+                    ><span class="termInfo" tabindex="0" data-term="datenquelle">i</span><span id="careCount" hidden></span></div
+                  ><div id="careList" class="careList"></div></div
                 ></section
               ><div id="nextCard" class="nextCard" style="display: none"
                 ><div class="nextHead"
@@ -94,24 +98,12 @@
                 ><div id="nextSteps" class="nextSteps"></div></div
               ><div id="pane-ov" class="tabPane on"
                 ><section class="panel" id="chainPanel" hidden></section
-                ><section class="panel" id="carePanel" style="margin-bottom: 12px; padding: 10px 14px"
-                  ><div class="careStrip"
-                    ><span id="careState" class="careState"></span><span id="careMeta" class="careMeta"></span
-                    ><button id="careBackupLink" class="linkBtn"></button
-                    ><button id="careJsonBtn" class="btn primary">Neue Exporte einlesen</button
-                    ><span id="careCount" hidden></span></div
-                  ><div id="careList" class="careList"></div></section
                 ><div class="bottom"
                   ><section class="panel"
-                    ><h3>Ressourcen, aktueller Stand</h3
-                    ><table
-                      ><thead
-                        ><tr
-                          ><th>Ressource</th><th>Aktuell</th><th>Benötigt</th><th>Fehlt</th><th>Ø / Tag</th
-                          ><th>Fortschritt</th></tr
-                        ></thead
-                      ><tbody id="resRows"></tbody></table
-                    ><div id="resSource" class="muted" style="margin-top: 7px; font-size: 11px"></div></section
+                    ><div class="chartHead"
+                      ><h3>Nächste Bauschritte</h3
+                      ><button id="allStepsBtn" class="miniBtn">Alle anzeigen</button></div
+                    ><table><tbody id="mileRows"></tbody></table></section
                   ><div
                     ><section class="panel" id="chartPanel"
                       ><div class="chartHead"
@@ -121,12 +113,7 @@
                         ><div><span class="muted">Letzte Änderung</span><b id="lastDelta">–</b></div
                         ><div><span class="muted">Ø pro Tag</span><b id="daily">–</b></div
                         ><div><span class="muted">Ø pro Woche</span><b id="weekly">–</b></div></div
-                      ><div id="chartBox" class="chartBox"></div><div id="chartNote" class="chartNote"></div></section
-                    ><section class="panel"
-                      ><div class="chartHead"
-                        ><h3>Nächste Bauschritte</h3
-                        ><button id="allStepsBtn" class="miniBtn">Alle anzeigen</button></div
-                      ><table><tbody id="mileRows"></tbody></table></section></div></div></div
+                      ><div id="chartBox" class="chartBox"></div><div id="chartNote" class="chartNote"></div></section></div></div></div
               ><div id="pane-bld" class="tabPane"
                 ><section class="panel"
                   ><div class="chartHead"

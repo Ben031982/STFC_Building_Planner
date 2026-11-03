@@ -236,6 +236,19 @@
   margin-left: auto;
   padding: 6px 12px;
 }
+.heroData {
+  border-top: 1px solid #23485f;
+  margin-top: 12px;
+  padding-top: 12px;
+  font-size: 13px;
+  color: inherit;
+}
+.careLbl {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #9ab2c4;
+}
 #careList {
   margin-top: 10px;
 }

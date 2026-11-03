@@ -517,7 +517,8 @@ def engpass_karte_zeigt_die_drei_langsamsten_materialien(b, html, tmp):
     check("Stationspack ein" in a.text("#bottleneckList"), "Hinweis zum leeren Stationspack fehlt")
     a.click("#bnPackBtn")
     check(a.has_class("#packModal", "on"), "Knopf öffnet den Stationspack nicht")
-    check("können vom Spiel abweichen" in a.text(".heroNote"), "Abweichungshinweis fehlt in der Übersicht")
+    check(a.js("()=>!!document.querySelector('.heroNote .termInfo[data-term=datenquelle]') && TERMS.datenquelle.includes('können vom Spiel abweichen')"),
+          "Abweichungshinweis (ⓘ beim Datenstand) fehlt in der Übersicht")
     a.close_modals()
     a.click("#navRes")
     check("können vom Spiel abweichen" in a.text("#pane-res"), "Abweichungshinweis fehlt auf der Seite Ressourcen")
