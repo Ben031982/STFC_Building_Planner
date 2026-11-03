@@ -366,9 +366,7 @@ function render() {
     s.logs.push("Bau-Reihenfolge zurückgesetzt: " + p.name);
     save();
   };
-  $("resRows2").innerHTML =
-    resTableHtml(p, planRows, bottleneck, true) ||
-    '<tr><td colspan="6" class="muted">Keine planabhängige Kostengrundlage – der Plan ist nicht aktiv.</td></tr>';
+  renderResMerged(p, planRows, bottleneck);
   $("resSource2").textContent = resourceSourceNote(p, planRows);
   const ce = ((p.planData || {}).efficiencies || {})["Σ-Construction Time"],
     cc = p.hasPlanData ? (p.planData || {}).construction : null;
@@ -449,7 +447,6 @@ function render() {
   }
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
-  if (typeof renderEffSim === "function") renderEffSim(p);
   if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);

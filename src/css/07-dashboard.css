@@ -357,3 +357,24 @@
   color: #9ab2c4;
   margin-top: 8px;
 }
+.esBar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+.esBar .esOn {
+  border-color: #40a6ff;
+  color: #cfe8ff;
+}
+.resMerged .esIn {
+  width: 84px;
+}
+.resMerged td,
+.resMerged th {
+  white-space: nowrap;
+}
+.resMerged tr.esChg {
+  background: rgba(64, 166, 255, 0.08);
+}

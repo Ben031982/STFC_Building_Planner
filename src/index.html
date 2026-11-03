@@ -156,21 +156,22 @@
               ><div id="pane-res" class="tabPane"
                 ><section class="panel"
                   ><h3>Ressourcen und Effizienzen</h3
-                  ><table
-                    ><thead
-                      ><tr
-                        ><th>Ressource</th><th>Aktuell</th><th>Benötigt</th><th>Fehlt</th><th>Effizienz</th
-                        ><th>Fortschritt</th></tr
-                      ></thead
-                    ><tbody id="resRows2"></tbody></table
+                  ><div class="esBar"
+                    ><button id="esToggle" class="btn" aria-pressed="false">Rechner</button
+                    ><span id="esHint" class="muted">Was wäre, wenn bei einem Material Effizienz dazukommt?</span
+                    ><span style="flex: 1"></span><button id="esReset" class="btn" hidden>Zurücksetzen</button></div
+                  ><div id="esSum" class="wifSum effSum" hidden></div
+                  ><div class="histWrap"
+                    ><table id="resTbl" class="histTable resMerged" style="width: 100%"
+                      ><thead id="resHead"></thead
+                      ><tbody id="effPanelRows"></tbody></table></div
                   ><div id="resSource2" class="muted" style="margin-top: 7px; font-size: 11px"></div
                   ><div id="effConstr" class="muted" style="margin-top: 4px; font-size: 11px"></div
                   ><div class="muted" style="margin-top: 4px; font-size: 11px"
                     >ⓘ Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine
                     Effizienz nicht abgezogen wird oder der letzte Sync alt ist.</div
                   ></section
-                ><section id="effPanel" class="panel"><h3>Effizienzen: Wirkung und Verlauf</h3><div id="effBody"></div></section
-                ><section id="effSimPanel" class="panel"><h3>Effizienzrechner</h3><div id="effSimBody"></div></section></div
+                ><section id="effPanel" class="panel"><h3>Effizienzen: Wirkung</h3><div id="effBody"></div></section></div
               ><div id="pane-fc" class="tabPane"
                 ><section class="panel"
                   ><h3>Fertigstellungsprognose</h3><div id="fcSummary"></div><div id="packSum" class="packSum muted"></div
