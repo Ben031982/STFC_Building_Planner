@@ -9,7 +9,7 @@ function setTab(t) {
   document.querySelector(".hero").classList.toggle("slim", t !== "ov");
   const cp = $("chartPanel");
   if (t === "hist") {
-    if (cp.parentElement !== $("pane-hist")) $("pane-hist").prepend(cp);
+    if (cp.parentElement !== $("pane-hist")) $("iwPanel").after(cp);
   } else if (cp.parentElement === $("pane-hist")) $("pane-ov").querySelector(".bottom > div").prepend(cp);
   document.querySelectorAll(".nav [data-tab]").forEach((b) => b.classList.remove("on"));
   if (t !== "ov") {
@@ -379,32 +379,6 @@ function render() {
           })
           .join("")
       : '<tr><td colspan="6" class="muted">Noch keine Messpunkte. Der erste entsteht beim nächsten Import des Upgrade-Plans.</td></tr>';
-    const inc = planIncome(p),
-      sg = (v) => (v > 0 ? "+" : "") + fmt(v);
-    $("incomeRows").innerHTML = inc.rows.length
-      ? inc.rows
-          .map((r) =>
-            r.missing
-              ? `<tr><td>${r.name}</td><td colspan="5" class="muted">keine Werte in beiden Messpunkten</td></tr>`
-              : r.costUp
-                ? `<tr><td>${r.name}</td><td>${sg(r.dStock)}</td><td colspan="4" class="red">Cost gestiegen – Plan geändert? Einkommen nicht berechenbar</td></tr>`
-                : `<tr><td>${r.name}</td><td>${sg(r.dStock)}</td><td>${fmt(r.built)}</td><td class="${r.inc >= 0 ? "green" : "red"}">${sg(r.inc)}</td><td>${r.day === null ? "–" : sg(r.day)}</td><td>${r.day === null ? "–" : sg(r.day * 7)}</td></tr>`,
-          )
-          .join("")
-      : '<tr><td colspan="6" class="muted">Mindestens zwei Messpunkte mit „Total resources“ nötig.</td></tr>';
-    $("incomeNote").textContent = inc.rows.length
-      ? "Zeitraum: " +
-        fdt(inc.from) +
-        " bis " +
-        fdt(inc.to) +
-        " (" +
-        inc.days.toFixed(1).replace(".", ",") +
-        " Tage)." +
-        (inc.days < FC_GAP_DAYS ? " Weniger als " + FC_GAP_H + " Stunden – deshalb keine Tages- oder Wochenraten." : "") +
-        " Zeitpunkt = Importzeit; bitte direkt nach dem Synchronisieren in Spock's Club importieren."
-      : inc.points === 1
-        ? "Ein Messpunkt mit Ressourcen ist vorhanden. Ab dem zweiten Import von „Total resources“ wird das Einkommen berechnet."
-        : "Noch kein Messpunkt mit Ressourcen.";
   })();
   $("effConstr").textContent = cc
     ? "Bauzeit: " +
