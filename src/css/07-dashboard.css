@@ -393,3 +393,9 @@
 .resMerged tr.esChg {
   background: rgba(64, 166, 255, 0.08);
 }
+#goalPanel.goalEmpty > p {
+  display: none;
+}
+#impCare:has(.careOk) {
+  display: none;
+}

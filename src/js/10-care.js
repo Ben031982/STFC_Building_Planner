@@ -201,7 +201,7 @@ function renderCareInto(lid, cid) {
   const el = $(lid);
   if (!el) return;
   const hs = careHints();
-  $(cid).textContent = hs.length ? hs.length + " Hinweis" + (hs.length === 1 ? "" : "e") : "";
+  $(cid).textContent = hs.length ? hs.length + " Hinweis" + (hs.length === 1 ? "" : "e") : cid === "impCareCount" ? "✓ Alles aktuell. Nichts zu pflegen." : "";
   el.innerHTML = hs.length
     ? hs
         .map(

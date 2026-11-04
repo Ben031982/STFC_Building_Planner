@@ -182,6 +182,7 @@ function renderGoals() {
   if (!el) return;
   const gs = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at)),
     d = (x) => (x ? new Date(x).toLocaleDateString("de-DE") : "–");
+  $("goalPanel").classList.toggle("goalEmpty", !gs.length);
   $("goalCount").textContent = gs.length ? gs.length + (gs.length === 1 ? " Ziel" : " Ziele") : "";
   el.innerHTML = gs.length
     ? `<table class="histTable" style="width:100%"><thead><tr><th>Erreicht am</th><th>Ziel</th><th>Geplant seit</th><th>Letzte Prognose</th><th></th></tr></thead><tbody id="goalRows">${gs

@@ -575,7 +575,7 @@ def prognose_qualitaet_vorlaeufig_brauchbar_stabil(b, html, tmp):
         check("Abschnitte über" in line, f"Zeile zur Qualität fehlt: {line!r}")
         check(("ab 10 Abschnitten" in line) == (want == "BRAUCHBAR"), f"Nächste Stufe falsch: {line!r}")
         a.click("#navFc")
-        check(want in a.text("#fcSummary") and "Längere Abschnitte zählen mehr" in a.text("#fcSummary"),
+        check(want in a.text("#fcSummary") and "Längere Abschnitte zählen mehr" in a.js("()=>document.getElementById('fcSummary').textContent"),
               "Erklärung auf der Seite Prognose & Packs fehlt")
         a.done()
     a = App(b, html, tmp, state=dict(load_v10_state(), snapshots=load_v10_state()["snapshots"][-2:]))
