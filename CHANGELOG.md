@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] – 2026-11-01
+## [4.0.0] – 2026-11-06
 
 ### Neu (Teil 1: Verlauf)
 - **Zeitleiste aller Ziele** (Tab „Verlauf“, über „Erreichte Ziele“): jeder aktive Plan eine Reihe, einzeln gerechnet (nicht nacheinander); Achse höchstens 3 Jahre. Erreichte Ziele mit ✓ und Datum, aktive Pläne mit Fortschritt, Fertigdatum und Band konservativ bis optimistisch, noch nicht aktive Pläne gestrichelt („wartet auf …“).
