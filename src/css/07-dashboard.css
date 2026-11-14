@@ -399,3 +399,6 @@
 #impCare:has(.careOk) {
   display: none;
 }
+.panel:has(> #impCare .careOk) {
+  padding-bottom: 8px;
+}

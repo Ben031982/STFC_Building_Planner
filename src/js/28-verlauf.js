@@ -290,7 +290,7 @@ function renderIncomeWeeks() {
     H = 280,
     Lm = 78,
     Rm = 20,
-    T = 20,
+    T = 36,
     B = 40,
     mx = Math.max(...W6.map((w) => w.rate), 1) * 1.15,
     X = (i) => Lm + ((i + 0.5) * (W - Lm - Rm)) / W6.length,
@@ -309,7 +309,7 @@ function renderIncomeWeeks() {
     if (w.unsure)
       g += `<text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 18}" class="vzAx" text-anchor="middle">Nebengebäude</text><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 31}" class="vzAx" text-anchor="middle">Wert unsicher</text>`;
     if (w.rel)
-      g += `<line x1="${X(i) - bw / 2 - 8}" x2="${X(i) - bw / 2 - 8}" y1="${T}" y2="${H - B}" class="vzMarkG"/><text x="${X(i) - bw / 2 - 4}" y="${T + 12}" class="vzMarkGT">${escAttr(bldChangeText(w.rel))}</text>`;
+      g += `<line x1="${X(i) - bw / 2 - 8}" x2="${X(i) - bw / 2 - 8}" y1="${T - 20}" y2="${H - B}" class="vzMarkG"/><text x="${X(i) - bw / 2 - 4}" y="${T - 10}" class="vzMarkGT">${escAttr(bldChangeText(w.rel))}</text>`;
     g += `<text x="${X(i)}" y="${H - 12}" class="vzAx" text-anchor="middle">KW ${isoWeek(w.t)}</text>`;
   });
   const ok = W6.filter((w) => !w.unsure),

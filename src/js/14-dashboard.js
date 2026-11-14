@@ -507,7 +507,8 @@ function renderChart() {
     $("chartBigSelect").innerHTML = o;
     $("resourceSelect").value = keep && trackedMats().includes(keep) ? keep : "7★ Rare Ore";
   }
-  drawChart("chartBox", 600, 224, false);
+  const cw = $("chartBox").clientWidth;
+  drawChart("chartBox", cw >= 600 ? Math.round(cw) : 600, 224, false);
   if ($("chartModal").classList.contains("on")) {
     $("chartBigSelect").value = $("resourceSelect").value;
     drawChart("chartBigBox", 1100, 470, true);

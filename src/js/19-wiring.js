@@ -240,3 +240,11 @@ $("shSave").onclick = shareSave;
 $("shCopy").onclick = shareCopy;
 
 $("wifEffLink").onclick = () => $("navRes").click();
+
+var chartResizeT;
+window.addEventListener("resize", () => {
+  clearTimeout(chartResizeT);
+  chartResizeT = setTimeout(() => {
+    if ($("chartBox") && $("chartBox").offsetParent) renderChart();
+  }, 150);
+});
