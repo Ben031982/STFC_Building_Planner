@@ -176,21 +176,64 @@ function goalEvents() {
       (g.eta ? (g.since ? ", " : " – ") + "letzte Prognose " + d(g.eta) : ""),
   }));
 }
-// ab 3.3: Liste „Erreichte Ziele“ unter Verlauf, Einträge mit Rückfrage löschbar
+// ab 5.0: Treffsicherheit – Abweichung in Tagen (+ = später erreicht als prognostiziert)
+function goalDev(g, eta) {
+  const t = eta == null ? NaN : typeof eta === "number" ? eta : new Date(eta).getTime();
+  return Number.isFinite(t) ? Math.round((new Date(g.at).getTime() - t) / 864e5) : null;
+}
+function goalAccuracy(gs) {
+  const col = (f) => gs.map(f).filter((x) => x != null),
+    mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null),
+    abs = (a) => (a.length >= 2 ? mean(a.map(Math.abs)) : null),
+    start = col((g) => goalDev(g, g.fc && g.fc.start)),
+    mid = col((g) => goalDev(g, g.fc && g.fc.mid));
+  return { start, mid, startAbs: abs(start), midAbs: abs(mid), midMean: mid.length >= 2 ? mean(mid) : null };
+}
+// ab 3.3: Liste „Erreichte Ziele“ unter Verlauf, Einträge mit Rückfrage löschbar; ab 5.0 mit Treffsicherheit
 function renderGoals() {
   const el = $("goalList");
   if (!el) return;
   const gs = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at)),
-    d = (x) => (x ? new Date(x).toLocaleDateString("de-DE") : "–");
+    d = (x) => (x ? new Date(x).toLocaleDateString("de-DE") : "–"),
+    day = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n) + (Math.abs(n) === 1 ? " Tag" : " Tage"),
+    cell = (g, eta) => {
+      const dv = goalDev(g, eta);
+      return dv == null
+        ? "<td>–</td>"
+        : `<td>${d(eta)}<br><span class="tsDev ${Math.abs(dv) <= 3 ? "ok" : Math.abs(dv) <= 7 ? "mid" : "bad"}">${day(dv)}</span></td>`;
+    },
+    A = goalAccuracy(gs),
+    card = (t, v, n) => `<div class="tsCard"><div class="muted">${t}</div><div class="tsVal">${v}</div><div class="muted">${n}</div></div>`;
   $("goalPanel").classList.toggle("goalEmpty", !gs.length);
   $("goalCount").textContent = gs.length ? gs.length + (gs.length === 1 ? " Ziel" : " Ziele") : "";
+  const few = "zu wenig Daten",
+    fewN = "Aussagekräftig ab 2 Zielen mit gespeicherter Prognose",
+    tend = A.midMean == null ? few : A.midMean > 1 ? "meist zu optimistisch" : A.midMean < -1 ? "meist zu vorsichtig" : "ausgewogen";
   el.innerHTML = gs.length
-    ? `<table class="histTable" style="width:100%"><thead><tr><th>Erreicht am</th><th>Ziel</th><th>Geplant seit</th><th>Letzte Prognose</th><th></th></tr></thead><tbody id="goalRows">${gs
+    ? `<div class="tsCards">${card(
+        "Treffsicherheit bei 50 % der Bauzeit",
+        A.midAbs == null ? few : "Ø ± " + Math.round(A.midAbs) + " Tage",
+        A.midAbs == null ? fewN : A.mid.length + " Ziele · Prognose, als die Hälfte der Zeit um war",
+      )}${card(
+        "Tendenz",
+        tend,
+        A.midMean == null
+          ? fewN
+          : Math.abs(A.midMean) > 1
+            ? `Ziele wurden im Schnitt ${Math.round(Math.abs(A.midMean))} Tage ${A.midMean > 0 ? "später" : "früher"} erreicht als bei 50 % prognostiziert`
+            : "Im Schnitt keine Vorzugsrichtung der Abweichung",
+      )}${card(
+        "Prognose bei Planstart",
+        A.startAbs == null ? few : "Ø ± " + Math.round(A.startAbs) + " Tage",
+        A.startAbs == null ? fewN : "Je früher, desto ungenauer – das ist normal",
+      )}</div>
+      <table class="histTable" style="width:100%"><thead><tr><th>Ziel</th><th>Erreicht am</th><th>Prognose bei Planstart</th><th>Prognose bei 50 %</th><th>Prognose kurz vor Ende</th><th></th></tr></thead><tbody id="goalRows">${gs
         .map(
           (g) =>
-            `<tr><td>${d(g.at)}</td><td>${escAttr(g.name)}</td><td>${d(g.since)}</td><td>${d(g.eta)}</td><td><button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
+            `<tr><td>${escAttr(g.name)}<br><span class="muted">geplant seit ${d(g.since)}</span></td><td>${d(g.at)}</td>${cell(g, g.fc && g.fc.start)}${cell(g, g.fc && g.fc.mid)}${cell(g, g.eta)}<td><button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
         )
-        .join("")}</tbody></table>`
+        .join("")}</tbody></table>
+      <p class="muted" style="margin-top:10px">Abweichung = tatsächliches Erreichen − damalige Prognose (+ = später als prognostiziert). Prognosen zu Planstart und 50 % werden erst bei neu abgeschlossenen Zielen gespeichert.</p>`
     : '<p class="muted">Noch kein Ziel abgeschlossen.</p>';
   el.querySelectorAll("[data-goal]").forEach(
     (b) =>

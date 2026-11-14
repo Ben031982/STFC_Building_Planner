@@ -220,6 +220,19 @@ function planSince(p) {
   return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
 }
 $("completePlanBtn").onclick = () => completePlan(s.plans.find((x) => x.id === managingPlanId));
+function goalForecastSnap(p, since) {
+  const L = ((s.fcLog || {})[p.id] || []).filter((x) => x.eta > 0 && x.d),
+    t0 = since ? new Date(since).getTime() : NaN,
+    now = Date.now();
+  if (!L.length || !Number.isFinite(t0) || now - t0 < 864e5) return null;
+  const at = (f) => dayKey(t0 + (now - t0) * f),
+    first = L[0],
+    mid = [...L].reverse().find((x) => x.d <= at(0.5));
+  return {
+    start: first.d <= at(0.25) ? first.eta : null,
+    mid: mid ? mid.eta : null,
+  };
+}
 function completePlan(p) {
   if (!p) return;
   const fc = p.hasPlanData ? planForecast(p) : null,
@@ -242,7 +255,8 @@ function completePlan(p) {
   )
     return;
   s.goals = Array.isArray(s.goals) ? s.goals : [];
-  s.goals.push({ id: "goal-" + Date.now(), at: new Date().toISOString(), name: p.name, since, eta });
+  // ab 5.0: Prognosen zu Planstart und zur Hälfte der Bauzeit mitspeichern (Treffsicherheit), der fcLog des Plans wird gleich gelöscht
+  s.goals.push({ id: "goal-" + Date.now(), at: new Date().toISOString(), name: p.name, since, eta, fc: goalForecastSnap(p, since) });
   const wasMain = !!p.isMain;
   s.plans = s.plans.filter((x) => x.id !== p.id);
   for (const q of s.plans) if (q.after === p.id) delete q.after;

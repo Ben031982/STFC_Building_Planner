@@ -402,3 +402,12 @@
 .panel:has(> #impCare .careOk) {
   padding-bottom: 8px;
 }
+
+.tsCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.tsCard { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 14px; }
+.tsCard .muted { font-size: 0.85rem; }
+.tsVal { font-size: 1.35rem; font-weight: 700; margin: 2px 0; }
+.tsDev { font-variant-numeric: tabular-nums; }
+.tsDev.ok { color: #5ad19a; }
+.tsDev.mid { color: #e8b04a; }
+.tsDev.bad { color: #ef7a6a; }

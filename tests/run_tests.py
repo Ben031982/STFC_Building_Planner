@@ -1588,6 +1588,38 @@ def ziel_erreicht_plan_abschliessen(b, html, tmp):
 
 
 @test
+def treffsicherheit_ziele_speichern_prognosen(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    # Plan "begann" vor 40 Tagen; Prognose-Log mit Einträgen bei Start, Mitte, Ende
+    a.js("""()=>{const p=s.plans[0],D=n=>Date.now()-n*864e5;s.active=p.id;p.planData.history[0].at=new Date(D(40)).toISOString();
+      s.fcLog={};s.fcLog[p.id]=[{d:dayKey(D(39)),eta:Math.round(D(-10))},{d:dayKey(D(21)),eta:Math.round(D(-8))},{d:dayKey(D(1)),eta:Math.round(D(-2))}];
+      s.goals=[{id:'g-old',at:new Date(D(60)).toISOString(),name:'Altziel',since:new Date(D(90)).toISOString(),eta:new Date(D(62)).toISOString()}];
+      save();render();}""")
+    a.js("()=>{managingPlanId=s.plans[0].id}")
+    a.js("()=>{window.confirm=()=>true;completePlan(s.plans.find(x=>x.id===managingPlanId))}")
+    a.wait_for_timeout(300)
+    g = a.js("()=>s.goals.find(x=>x.name!=='Altziel')")
+    check(g and g.get("fc") and g["fc"]["start"] and g["fc"]["mid"], f"Prognosen bei Start/50 % nicht gespeichert: {g}")
+    check(g["fc"]["start"] > g["fc"]["mid"], "Start-/50-%-Prognose vertauscht")
+    a.click("#nd")
+    a.click("#navHist")
+    a.wait_for_timeout(300)
+    t = a.text("#goalList")
+    check("zu wenig Daten" in t, f"Bei nur einem Ziel mit Prognose sollte „zu wenig Daten“ stehen: {t!r}")
+    check(a.js("()=>document.querySelectorAll('#goalRows tr').length") == 2, "Tabelle zeigt nicht beide Ziele")
+    check(a.js("()=>document.querySelectorAll('#goalRows .tsDev').length") >= 3, "Abweichungen nicht angezeigt")
+    # zweites Ziel mit Prognosen -> Kennzahlen erscheinen
+    a.js("""()=>{const D=n=>Date.now()-n*864e5;s.goals.push({id:'g2',at:new Date(D(5)).toISOString(),name:'Zweit',since:new Date(D(50)).toISOString(),eta:new Date(D(4)).toISOString(),fc:{start:D(-3),mid:D(10)}});save();render()}""")
+    a.wait_for_timeout(200)
+    t = a.text("#goalList")
+    check("zu wenig Daten" not in t.split("Prognose bei Planstart")[0] and "Ø ±" in t, f"Kennzahlen fehlen bei 2 Zielen: {t[:300]!r}")
+    a.done()
+
+
+@test
 def hinweis_aufs_abschliessen_bei_gedeckt(b, html, tmp):
     a = App(b, html, tmp)
     a.import_exports(a.make_exports())
