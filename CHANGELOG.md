@@ -1,5 +1,24 @@
 # Changelog
 
+## [5.0.0] – in Arbeit
+
+### Neu
+- **Treffsicherheit der Prognose** (Tab „Verlauf“ › „Erreichte Ziele“): Beim Abschluss eines Plans mit „Ziel erreicht“ werden jetzt die Prognosen zu Planstart und zur Hälfte der Bauzeit mitgespeichert. Drei Kennzahlen (Treffsicherheit bei 50 %, Tendenz, Treffsicherheit bei Planstart) und eine Tabelle zeigen, wie weit das tatsächliche Datum von der damaligen Prognose abwich (+ = später). Die Kennzahlen erscheinen ab zwei Zielen mit gespeicherter Prognose; ältere Ziele zeigen nur die letzte Prognose.
+- **Effizienzrechner:** In „Ressourcen und Effizienzen“ lassen sich zusätzliche Effizienzen in %-Punkten eintragen (addieren sich auf die bisherigen, wie im Spiel). Der Rechner zeigt je Material Fehlt und Effizienz vorher/nachher, den Einfluss auf den Termin, die Ersparnis und was danach bremst. Es wird nichts gespeichert.
+
+### Geändert (Aufräumen)
+- **Schmaler Kopf** auf allen Unterseiten: Engpass, Packs, Bauzeit und Fortschrittsring stehen nur noch in der Übersicht.
+- **Ressourcen und Effizienzen** sind eine gemeinsame Tabelle (Rechner eingebaut); die Ressourcentabelle der Übersicht entfällt.
+- **Prognose & Packs:** neu geordnet, „Packs bis zum Ziel“ stehen unten, Prognose-Qualität ist eingeklappt.
+- **Datenstand** steht in der Übersicht im Kopfbereich („✓ alles aktuell“ / „⚠ n Hinweise“), „Neue Exporte einlesen“ neben dem Datenstand.
+- **Verlauf** gekürzt und neu geordnet; die Tabelle „Einkommen zwischen Messpunkten“ entfällt (der Wochenverlauf zeigt dasselbe). Ressourcenentwicklung nutzt die volle Breite, das Bau-Label im Wochendiagramm überdeckt keine Werte mehr.
+- Fertigdatum-Vergleiche nennen ihren Bezugspunkt („vor 7 Tagen“, „zum Wochenbeginn (Datum)“), damit Wochenbericht und Prognose nicht widersprüchlich wirken.
+- Leere Panels und der „Was ist fällig“-Kasten sind kompakter.
+
+### Technik
+- Neue Tests: Tab-Reihenfolge und schmaler Kopf, Effizienzrechner, Treffsicherheit (insgesamt 74).
+- Hinweis: Ändern sich Grundkosten (z. B. durch ein Spiel-Update), sind gespeicherte Prognosen und die Treffsicherheit betroffener Ziele nicht mehr vergleichbar. Betroffene Einträge unter „Erreichte Ziele“ lassen sich löschen.
+
 ## [4.0.0] – 2026-11-06
 
 ### Neu (Teil 1: Verlauf)
