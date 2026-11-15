@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.0.0] – in Arbeit
+## [5.0.0] – 2026-11-15
 
 ### Neu
 - **Treffsicherheit der Prognose** (Tab „Verlauf“ › „Erreichte Ziele“): Beim Abschluss eines Plans mit „Ziel erreicht“ werden jetzt die Prognosen zu Planstart und zur Hälfte der Bauzeit mitgespeichert. Drei Kennzahlen (Treffsicherheit bei 50 %, Tendenz, Treffsicherheit bei Planstart) und eine Tabelle zeigen, wie weit das tatsächliche Datum von der damaligen Prognose abwich (+ = später). Die Kennzahlen erscheinen ab zwei Zielen mit gespeicherter Prognose; ältere Ziele zeigen nur die letzte Prognose.

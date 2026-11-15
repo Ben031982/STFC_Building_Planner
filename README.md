@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-4.0.0-46C2EE?style=flat-square" alt="Version 4.0.0">
+  <img src="https://img.shields.io/badge/Version-5.0.0-46C2EE?style=flat-square" alt="Version 5.0.0">
   <img src="https://img.shields.io/badge/l%C3%A4uft-offline%20im%20Browser-5BD2A0?style=flat-square" alt="läuft offline im Browser">
   <img src="https://img.shields.io/badge/Browser-Chrome%20%7C%20Edge-F4A53A?style=flat-square" alt="Chrome oder Edge">
   <img src="https://img.shields.io/badge/Sprache-Deutsch-93A7B9?style=flat-square" alt="Deutsch">
@@ -16,6 +16,12 @@ Der Planner ist **eine einzige HTML-Datei**. Kein Server, keine Anmeldung, kein 
 <p align="center">
   <img src="docs/images/overview.jpg" alt="Übersicht des Planners" width="100%">
 </p>
+
+## Neu in Version 5.0
+
+- **Treffsicherheit der Prognose** (Tab „Verlauf“ › „Erreichte Ziele“): Beim Abschließen eines Ziels werden die Prognosen zu Planstart und zur Hälfte der Bauzeit mitgespeichert. Kennzahlen und Tabelle zeigen, wie viele Tage das tatsächliche Datum von der Prognose abwich und ob sie eher zu optimistisch oder zu vorsichtig war (ab zwei Zielen).
+- **Effizienzrechner:** In „Ressourcen & Effizienzen“ zusätzliche Effizienz in %-Punkten eintragen – Fehlt, Effizienz und Termin ändern sich sofort, gespeichert wird nichts.
+- **Aufgeräumte Oberfläche:** schmaler Kopf auf den Unterseiten, Ressourcen und Effizienzen in einer Tabelle, Datenstand als Zeile im Kopf der Übersicht, „Packs bis zum Ziel“ am Ende von „Prognose & Packs“, kürzerer Verlauf-Tab.
 
 ## Neu in Version 4.0
 
@@ -114,7 +120,8 @@ Deine Daten aus früheren Versionen übernimmt 3.0 automatisch. Alle Änderungen
 | 🗂️ **Mehrere Zielpläne** | Beliebig viele Ziele parallel; erledigte Schritte setzen betroffene Pläne auf „Veraltet“, und ein Update-Assistent führt nacheinander durch sie. |
 | 📅 **Wochenbericht** | Fortschritt, Fertigstellung und Einkommen im Vergleich zur Vorwoche, Effizienzänderungen, Ereignisse und ein Ausblick auf die kommende Woche. |
 | 🔮 **Was-wäre-wenn** | Packs sofort oder pro Woche, anderer Packinhalt, einmalige Zuwächse – und ein Zieltermin je Plan: reicht dein Einkommen bis zum Wunschdatum? |
-| ⚙️ **Effizienzen** | Was deine Effizienzen sparen und wie sich Änderungen auf den Termin auswirken. |
+| ⚙️ **Effizienzen** | Was deine Effizienzen sparen, wie sich Änderungen auf den Termin auswirken – und ein Rechner für zusätzliche Effizienz. |
+| 🎯 **Treffsicherheit** | Wie weit lagen deine Prognosen bei Planstart, zur Hälfte der Bauzeit und kurz vor Ende neben dem tatsächlichen Datum? |
 | 💾 **Backups** | Automatisch nach jedem Import in einen Ordner deiner Wahl, Wiederherstellen mit einem Klick; Anzeige der Speicherbelegung und Warnung, bevor der Browser-Speicher voll ist. |
 | 🧭 **Einrichtung & Erklärungen** | Fünf Schritte bis zur ersten Prognose, die der Planner selbst abhakt, und kurze Erklärungen zu jedem Fachbegriff. |
 
@@ -127,7 +134,7 @@ Deine Daten aus früheren Versionen übernimmt 3.0 automatisch. Alle Änderungen
 ## Schnellstart
 
 1. **Spock's Club einrichten** – Konto auf [next.spocks.club](https://next.spocks.club) anlegen und dein Spielkonto synchronisieren: am PC über den [STFC Community Mod](https://github.com/netniv/stfc-mod/releases) (Sync-Token unter *Syncing › Community Mod*) oder mit der Spock's-Club-App.
-2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v4.0.0.html`](Bens_G7_STFC_Progress_Planner_v4.0.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
+2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v5.0.0.html`](Bens_G7_STFC_Progress_Planner_v5.0.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
 3. **Account-Snapshot einlesen** – in Spock's Club unter *Syncing › Export Data* mindestens *Buildings* und *Resources* als **JSON** herunterladen und im Planner mit **„Neue Exporte einlesen“** übernehmen.
 4. **Zielplan anlegen** – im Spock's-Upgrade-Planer genau **ein** Ziel anlegen, die drei Texte *Included upgrades*, *Total resources* und *Item costs & efficiencies* kopieren und im Planner unter **„Plandaten verwalten › Upgrade-Plan importieren“** einfügen. Prüfen, bestätigen – fertig. Für ein Schiff wählst du beim Anlegen *Schiff* und brauchst nur *Total resources* und *Item costs & efficiencies*.
 
