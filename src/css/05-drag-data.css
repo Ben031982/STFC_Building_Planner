@@ -210,3 +210,9 @@ tr.sqAfter td {
   color: #8fcfff;
   margin-top: 2px;
 }
+
+.careBtns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

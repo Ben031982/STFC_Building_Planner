@@ -23,7 +23,7 @@ const TUT_KEY = "bens-stfc-tutorial",
     [
       "Schritt 3 von 3",
       "Daten sichern – und los",
-      '<p>Klicke einmal auf <b>„Backup jetzt speichern“</b> und wähle einen Ordner. Danach sichert der Planner nach jedem Import automatisch.</p><p>Der Kasten <b>Datenpflege</b> in der Übersicht sagt dir, wenn etwas fällig ist – etwa ein neuer Export oder ein veralteter Plan.</p><div class="tip">Diese Einführung findest du jederzeit wieder im Menü unter <b>„? Einführung“</b>.</div>',
+      '<p>Klicke einmal auf <b>„Backup jetzt speichern“</b> und wähle einen Ordner. Danach sichert der Planner nach jedem Import automatisch.</p><p>Die Zeile <b>Datenstand</b> im Kopfbereich der Übersicht sagt dir, wenn etwas fällig ist – etwa ein neuer Export oder ein veralteter Plan.</p><div class="tip">Diese Einführung findest du jederzeit wieder im Menü unter <b>„? Einführung“</b>.</div>',
     ],
   ];
 let tutI = 0;

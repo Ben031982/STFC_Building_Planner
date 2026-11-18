@@ -1,5 +1,124 @@
 # Changelog
 
+## [5.0.0] – 2026-11-15
+
+### Neu
+- **Treffsicherheit der Prognose** (Tab „Verlauf“ › „Erreichte Ziele“): Beim Abschluss eines Plans mit „Ziel erreicht“ werden jetzt die Prognosen zu Planstart und zur Hälfte der Bauzeit mitgespeichert. Drei Kennzahlen (Treffsicherheit bei 50 %, Tendenz, Treffsicherheit bei Planstart) und eine Tabelle zeigen, wie weit das tatsächliche Datum von der damaligen Prognose abwich (+ = später). Die Kennzahlen erscheinen ab zwei Zielen mit gespeicherter Prognose; ältere Ziele zeigen nur die letzte Prognose.
+- **Effizienzrechner:** In „Ressourcen und Effizienzen“ lassen sich zusätzliche Effizienzen in %-Punkten eintragen (addieren sich auf die bisherigen, wie im Spiel). Der Rechner zeigt je Material Fehlt und Effizienz vorher/nachher, den Einfluss auf den Termin, die Ersparnis und was danach bremst. Es wird nichts gespeichert.
+
+### Geändert (Aufräumen)
+- **Schmaler Kopf** auf allen Unterseiten: Engpass, Packs, Bauzeit und Fortschrittsring stehen nur noch in der Übersicht.
+- **Ressourcen und Effizienzen** sind eine gemeinsame Tabelle (Rechner eingebaut); die Ressourcentabelle der Übersicht entfällt.
+- **Prognose & Packs:** neu geordnet, „Packs bis zum Ziel“ stehen unten, Prognose-Qualität ist eingeklappt.
+- **Datenstand** steht in der Übersicht im Kopfbereich („✓ alles aktuell“ / „⚠ n Hinweise“), „Neue Exporte einlesen“ neben dem Datenstand.
+- **Verlauf** gekürzt und neu geordnet; die Tabelle „Einkommen zwischen Messpunkten“ entfällt (der Wochenverlauf zeigt dasselbe). Ressourcenentwicklung nutzt die volle Breite, das Bau-Label im Wochendiagramm überdeckt keine Werte mehr.
+- Fertigdatum-Vergleiche nennen ihren Bezugspunkt („vor 7 Tagen“, „zum Wochenbeginn (Datum)“), damit Wochenbericht und Prognose nicht widersprüchlich wirken.
+- Leere Panels und der „Was ist fällig“-Kasten sind kompakter.
+
+### Technik
+- Neue Tests: Tab-Reihenfolge und schmaler Kopf, Effizienzrechner, Treffsicherheit (insgesamt 74).
+- Hinweis: Ändern sich Grundkosten (z. B. durch ein Spiel-Update), sind gespeicherte Prognosen und die Treffsicherheit betroffener Ziele nicht mehr vergleichbar. Betroffene Einträge unter „Erreichte Ziele“ lassen sich löschen.
+
+## [4.0.0] – 2026-11-06
+
+### Neu (Teil 1: Verlauf)
+- **Zeitleiste aller Ziele** (Tab „Verlauf“, über „Erreichte Ziele“): jeder aktive Plan eine Reihe, einzeln gerechnet (nicht nacheinander); Achse höchstens 3 Jahre. Erreichte Ziele mit ✓ und Datum, aktive Pläne mit Fortschritt, Fertigdatum und Band konservativ bis optimistisch, noch nicht aktive Pläne gestrichelt („wartet auf …“).
+- **Einkommen je Woche** (Tab „Verlauf“): Tageseinkommen je Kalenderwoche für Σ-Tritanium, Σ-Parsteel, Σ-Dilithium und 7★ Rare/Uncommon. Linien nur für Ausbauten, die das Material betreffen. Wochen mit Nebengebäuden sind blass („Wert unsicher“) und zählen nicht in Ø und Trend; ein Klick zählt sie trotzdem mit.
+- **Verlauf der Prognose** (Tab „Prognose & Packs“): Fertigdatum je Tag mit Band, Markern für Plan-Importe und geänderte Packs und Vergleich zur Vorwoche. Das Band (konservativ/optimistisch) wird ab jetzt täglich mitgespeichert, und zwar für jeden aktiven Plan (bisher nur Hauptplan).
+
+### Neu (Teil 2: Teilen)
+- **Als Bild teilen** (Übersicht, neben „Plandaten verwalten“): quadratische Karte (PNG, 1080 × 1080) für den Allianz-Chat, komplett im Browser gezeichnet. Wählbar: ein Plan oder „Alle Ziele“ (eine Zeile je aktivem Plan), Detailgrad „Genaue Zahlen“ oder „Nur Prozent & Datum“ (grobes Datum wie „Mitte Dez.“, ab einem Jahr „später als Q4 27“) und der Inhalt per Häkchen: Ziel & Fortschritt, Fertigdatum, Engpass, Fehlmengen, Packs bis zum Ziel, Mini-Zeitleiste. Spielername ist standardmäßig an. Bild speichern oder in die Zwischenablage kopieren (wo der Browser es erlaubt). Die Auswahl wird gemerkt.
+- Fertigdatum mit Vergleich zur Vorwoche („1 Tag früher als vor einer Woche“), sobald das Prognose-Protokoll genug Tage hat.
+
+### Technik
+- Neue Dateien src/js/28-verlauf.js, src/js/29-share.js, src/css/18-verlauf.css, src/css/19-share.css.
+- Zeitleiste und Prognose-Protokoll berechnen den Plan-Status je Plan selbst (render() tut das nur für den gewählten Plan). Das Protokoll wird vor dem Zeichnen des Verlaufs geschrieben, damit der Verlauf den heutigen Eintrag schon enthält.
+- Tests: Zeitleiste und Prognoseband, Zeitleiste mit mehreren aktiven Plänen, Einkommen je Woche mit Nebengebäuden, Teilen (Modell, Dialog, Speichern der Auswahl) – insgesamt 71.
+
+## [3.4.0] – 2026-10-27
+
+### Neu
+- **Gebäude beim Namen:** Der Planner kennt die Gebäudenummern im Spock's-Export (Liste von Ben, gegen seine Daten geprüft). Der Datenpflege-Hinweis nennt das gestiegene Gebäude und kommt nur noch, wenn es in einem Plan steht („Shipyard 73 → 74 – gehört zu Operations 76“). „Gehört nicht zum Plan“ bleibt nur für unbekannte Nummern.
+- **Ereignisse mit Namen:** Statt „+2 Gebäudestufen“ steht dort etwa „Drydock G 65 → 66, Tritanium Generator E 56 → 57“.
+- **Ziel erreicht laut Export:** Zeigt der Export das Zielgebäude eines Gebäudeplans auf der Zielstufe, erscheint in der Übersicht ein grüner Kasten mit „Plan abschließen“ (bei Schiffen nicht möglich).
+- **Fortschritt aus dem Export:** „N von M Stufen“ und die Bau-Reihenfolge laufen mit jedem Export mit, nicht erst beim nächsten Plan-Import.
+
+### Technik
+- Tests: Gebäude-Hinweis mit Namen und unbekannten Nummern, Ziel laut Export erreicht samt Fortschritt (insgesamt 66).
+
+## [3.3.0] – 2026-10-27
+
+### Neu
+- **Erreichte Ziele unter Verlauf:** Alle mit „Ziel erreicht“ abgeschlossenen Pläne stehen dauerhaft in einer Liste (erreicht am, geplant seit, letzte Prognose). Ein Eintrag lässt sich nach Rückfrage löschen; der Plan kommt dadurch nicht zurück.
+- **Hinweis bei „Gedeckt“:** Sind alle Ressourcen da, zeigt die Übersicht „Sobald gebaut: Plandaten verwalten › Ziel erreicht“ – ein Klick öffnet die Plandaten.
+
+### Technik
+- Tests: Liste „Erreichte Ziele“ samt Löschen, Hinweis bei „Gedeckt“ (insgesamt 65).
+- Test „Backup und Wiederherstellen“ stabil: Er prüft jetzt den Stand, den der Planner beim Wiederherstellen in den Speicher schreibt (mitgeschnitten beim Schreiben), statt ihn nach dem Neuladen auszulesen. Das Neuladen war die wahrscheinliche Ursache der seltenen Ausfälle (etwa jeder achte Lauf): Headless-Chromium verliert dabei bei file://-Seiten gelegentlich den localStorage, wie schon bei einem früheren Test belegt. Im echten Browser tritt das nicht auf. Zusätzlich prüft der Test, dass nach dem Wiederherstellen nichts den Speicher noch einmal überschreibt.
+
+## [3.2.0] – 2026-10-27
+
+### Neu
+- **Schiffs-Packs:** ein Pack je Klasse (Kampfschiff, Abfangjäger, Forschungsschiff, Miner), gepflegt unter „Daten & Import“ › „Schiffs-Packs“ mit Σ-Tritanium, 7★ Materialien und den 7★ Teilen der Klasse. Der Inhalt hängt von der OPS-Stufe ab und wird von Hand aktualisiert. Schiffspläne rechnen damit wie Gebäudepläne mit dem Stationspack: „Packs bis zum Ziel“, Effekt von 1 Pack in der Engpass-Karte, „1 Pack pro Woche“, Pack-Stellschrauben in Was-wäre-wenn und Wochenbericht. Ein Schiffswerft-Plan zählt mit („inkl. Schiffswerft 76“). „Anderes Schiff“ hat bewusst keinen Pack.
+
+### Technik
+- Neue Quelldatei `27-ship-packs.js`. `tools/build.py --seed <json>` baut eine eigene Datei mit Startwerten für die Schiffs-Packs; sie greifen nur, solange noch kein Schiffs-Pack gepflegt ist. Die veröffentlichte Datei startet leer.
+- Tests: Schiffs-Pack je Klasse, Startwerte nur im eigenen Build (insgesamt 64).
+
+## [3.1.0] – 2026-10-27
+
+### Geändert
+- **Ketten nur noch für Schiffe:** Statt „Startet nach“ mit beliebigen Plänen hat ein Schiff jetzt das Feld „Schiffswerft-Plan“. Zur Wahl stehen nur Pläne, die die nötige Schiffswerft-Stufe erreichen, oder keiner. Reicht deine Schiffswerft schon, erscheint das Feld nicht. Gebäudepläne haben kein Vorgänger-Feld mehr – verkettete Gebäudepläne zählten gemeinsame Vorstufen doppelt. Bestehende Ketten, die nicht mehr erlaubt sind, löst der Planner beim Öffnen auf.
+
+### Neu
+- **Ziel erreicht:** Unter „Plandaten verwalten“ schließt „Ziel erreicht – Plan abschließen“ einen Plan nach einer Rückfrage ab. Er verschwindet aus den Zielplänen, unter „Ereignisse der Woche“ im Wochenbericht steht „Ziel erreicht“ mit „geplant seit“ und letzter Prognose. War es der Hauptplan, rückt der nächste nach. Snapshots und Einkommen bleiben erhalten.
+
+### Technik
+- Tests: Schiff → Schiffswerft-Plan, Auflösen alter Gebäudeketten, Ziel erreicht (insgesamt 62).
+
+## [3.0.0] – 2026-10-27
+
+### Neue Funktionen: Schiffe
+
+**Schiffsplan anlegen**
+- „Neuer Plan“ unterscheidet Gebäude und Schiff. Zur Auswahl stehen die zehn G7-Schiffe (gruppiert nach Schiffswerft) und „Anderes Schiff“ mit Name, Schiffswerft-Stufe und Klasse.
+- Klasse mit eigenen Grafiken: Kampfschiff, Abfangjäger, Forschungsschiff, Miner. Sie bestimmt, welche Schiffsteile zählen.
+- Ziel: Tier-Aufstieg (Tier von → bis) oder Neubau eines Schiffs (Bau → Tier).
+- Voraussetzung Schiffswerft: Der Planner liest deine Stufe aus dem Export und zeigt „erfüllt“ oder „noch nicht erfüllt“ – im Dialog und in der Übersicht.
+- Ist die Schiffswerft zu niedrig und kein bestätigter Schiffswerft-Plan als Vorgänger eingetragen, gibt es kein Fertigdatum: Die Übersicht zeigt „Schiffswerft 76 fehlt“ und wann die Ressourcen gedeckt wären, Zieltermin und Wochenbericht „nicht bewertbar“, der Dialog einen Hinweis. Mit aktivem Schiffswerft-Plan unter „Startet nach“ kommt das Datum zurück.
+
+**Schiffsteile**
+- Die zwölf Schiffsteile (Common, Uncommon, Rare je Klasse) kommen aus dem Spock's-Export und fließen in Prognose, Engpass, Zieltermin, Effizienzen und Wochenbericht ein. Common-Teile zählen voll; nur 7★ Common Ore, Gas und Crystal bleiben wie bisher außen vor (per Latinum kaufbar).
+- Ältere Snapshots erhalten die Schiffsteile beim nächsten „Neue Exporte einlesen“ automatisch aus den Original-Exportdateien – so hat ein neuer Schiffsplan sofort eine Prognose.
+
+**Import für Schiffe**
+- Der Import-Assistent startet bei Schiffen direkt mit „Total resources“; „Included upgrades“ entfällt. Tier-Up-Zeit und Schiffsbauzeit werden bewusst nicht berücksichtigt, die Spalte „Hypothetical“ beim Neubau stört nicht.
+
+**Startet nach**
+- Ein Plan kann auf einen anderen folgen („Plandaten verwalten“ › „Startet nach“, auch beim Anlegen). Was die Vorgänger kosten, wird zuerst vom Bestand abgezogen; „fehlt“ heißt dann Kosten der Vorgänger + eigene Kosten − Bestand.
+- Braucht ein Schiff eine höhere Schiffswerft, schlägt der Planner den passenden Schiffswerft-Plan als Vorgänger vor.
+- In der Übersicht zeigt eine Tabelle Bestand, Vorgemerktes, Verfügbares und was fehlt; die Plankarte trägt den Hinweis „⛓ nach …“. Pläne ohne Vorgänger rechnen wie bisher jeder für sich.
+
+### Verbesserungen
+- Datenpflege: Der Hinweis „Gebäudestufen seit dem letzten Plan-Import dazugekommen“ hat einen Knopf „Gehört nicht zum Plan“. Er blendet den Hinweis aus, bis wieder eine Stufe dazukommt; gemeldet werden dann nur die neuen Stufen. Der Text sagt jetzt, dass neu importieren nur nötig ist, falls eines der Gebäude zum Plan gehört (der Export nennt Gebäude nur als Nummern).
+- Fehlen für ein Material noch Abschnitte, zeigen Prognose-Karten, Zieltermin und Wochenbericht „zu wenig Daten“ statt „nicht absehbar“ (das bleibt Terminen über 100 Jahre vorbehalten). In der Materialtabelle stehen konservativ und optimistisch dann auf „–“.
+
+### Hinweise
+- Packs werden für Schiffe nicht berechnet – der Stationspack gilt nur für Gebäude. Schiffsspezifische Packs folgen später.
+- Kompatibilität: Daten aus 2.x übernimmt 3.0 automatisch. Öffnest du nach Schiffsplänen wieder eine 2.x-Datei, kennt diese die Schiffsangaben nicht – vorher ein Backup speichern.
+
+### Technik
+- Neue Quelldateien `25-ships.js` (Schiffe), `26-chain.js` (Startet nach), `17-ships.css`; Schiffsteil-Nummern und die Gebäudenummer der Schiffswerft (15) mit Bens Daten bestätigt.
+- 12 neue Tests (Schiffe, Schiffsteile, Nachtragen, Packs, Startet nach, Schiffswerft fehlt, Gebäude-Hinweis), insgesamt 60.
+
+## [2.1.1] – 2026-10-27
+
+### Fehlerbehebungen
+- Im Import-Assistenten blieb die Liste der erkannten Effizienzen (Schritt 3) leer, sobald die Seite „Ressourcen & Effizienzen“ einmal angezeigt worden war. Ursache: Die neue Effizienz-Tabelle hatte dieselbe interne Kennung wie diese Liste. Die Effizienzen wurden trotzdem richtig übernommen, nur nicht angezeigt.
+
+### Technik
+- Neuer Test: keine doppelten Element-Kennungen auf allen Seiten, Effizienzen im Import-Assistenten sichtbar (51 Tests).
+
 ## [2.1.0] – 2026-10-27
 
 ### Neuer Name

@@ -4,11 +4,34 @@ function effNeeded(d, k) {
   const r = (d.resources || {})[k];
   return !(r && r.cost === 0);
 }
+// ab 3.0: Effizienzen, die ein Plan braucht – Schiffe ohne Bauzeit, dafür mit ihren Teilen
+function planEffKeys(p) {
+  return isShip(p) ? planMaterials(p) : EFF_ALL;
+}
 function planChecks(p) {
   const d = p.planData || {},
     t = d.target,
     res = d.resources || {},
     eff = d.efficiencies || {};
+  if (isShip(p)) {
+    // Schiffe: Ziel und Tiers kommen aus dem Plan selbst, es gibt keine Pflichtgebäude und keine Bauzeit
+    return {
+      hasData: !!(Object.keys(res).length || Object.keys(eff).length),
+      target: true,
+      targetMismatch: false,
+      requiredBuildings: true,
+      resourceCosts: planMaterials(p).every(
+        (k) => res[k] && isNum(res[k].cost) && isNum(res[k].onHand) && isNum(res[k].needed),
+      ),
+      buildTime: true,
+      efficiencies: planEffKeys(p).every((k) => isNum(eff[k]) || !effNeeded(d, k)),
+      confirmationValid:
+        !!p.confirmation &&
+        p.confirmation.dataHash === planHash(p) &&
+        p.confirmation.start === p.start &&
+        p.confirmation.target === p.target,
+    };
+  }
   return {
     hasData: !!(
       t ||

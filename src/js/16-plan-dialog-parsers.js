@@ -7,6 +7,9 @@ function openDraft() {
   $("draftName").value = "";
   $("draftStart").value = "";
   $("draftTarget").value = "";
+  if (typeof shipDraftReset === "function") shipDraftReset();
+  delete $("draftAfter").dataset.touched;
+  if (typeof chainDraftRender === "function") chainDraftRender();
   $("newPlanModal").classList.add("on");
 }
 function closeDraft() {
@@ -15,6 +18,7 @@ function closeDraft() {
 $("newPlanBtn").onclick = openDraft;
 $("cancelDraft").onclick = closeDraft;
 $("saveDraft").onclick = () => {
+  if (typeof shipDraftSave === "function" && shipDraftSave()) return;
   let name = $("draftName").value.trim(),
     start = +$("draftStart").value,
     target = +$("draftTarget").value;
@@ -60,6 +64,7 @@ function fillManage(p) {
   $("editPlanStart").value = p.start;
   $("editPlanTarget").value = p.target;
   $("editMainPlan").checked = !!p.isMain;
+  if (typeof chainManageFill === "function") chainManageFill(p);
   $("deletePlanBtn").disabled = !!p.isMain;
   $("deletePlanBtn").title = p.isMain ? "Hauptplan kann nicht gelöscht werden" : "";
   $("manageStatus").textContent = statusLabel(p.status);
@@ -148,6 +153,14 @@ $("savePlanData").onclick = () => {
   }
   p.name = newName;
   p.kind = newKind;
+  // ab 3.1: Schiffswerft-Plan nur bei Schiffen (keine neue Bestätigung nötig)
+  {
+    const af = isShip(p) ? $("editAfter").value : "";
+    if ((af || "") !== (p.after || ""))
+      s.logs.push("Schiffswerft-Plan: " + p.name + " → " + (af ? planById(af).name : "keiner"));
+    if (af) p.after = af;
+    else delete p.after;
+  }
   p.art = $("editPlanArt").value || "auto";
   p.start = newStart;
   p.target = newTarget;
@@ -194,11 +207,67 @@ $("deletePlanBtn").onclick = () => {
   )
     return;
   s.plans = s.plans.filter((x) => x.id !== p.id);
+  for (const q of s.plans) if (q.after === p.id) delete q.after; // ab 3.0: Verkettung lösen
   s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
   s.logs.push("Zielplan gelöscht: " + p.name);
   $("planDataModal").classList.remove("on");
   save();
 };
+// ab 3.1: „Ziel erreicht“ – Plan abschließen (entfernen + Eintrag im Wochenbericht)
+function planSince(p) {
+  const h = ((p.planData || {}).history || [])[0],
+    m = /^plan-(\d{12,})$/.exec(p.id || "");
+  return (h && h.at) || (m ? new Date(+m[1]).toISOString() : null);
+}
+$("completePlanBtn").onclick = () => completePlan(s.plans.find((x) => x.id === managingPlanId));
+function goalForecastSnap(p, since) {
+  const L = ((s.fcLog || {})[p.id] || []).filter((x) => x.eta > 0 && x.d),
+    t0 = since ? new Date(since).getTime() : NaN,
+    now = Date.now();
+  if (!L.length || !Number.isFinite(t0) || now - t0 < 864e5) return null;
+  const at = (f) => dayKey(t0 + (now - t0) * f),
+    first = L[0],
+    mid = [...L].reverse().find((x) => x.d <= at(0.5));
+  return {
+    start: first.d <= at(0.25) ? first.eta : null,
+    mid: mid ? mid.eta : null,
+  };
+}
+function completePlan(p) {
+  if (!p) return;
+  const fc = p.hasPlanData ? planForecast(p) : null,
+    o = fc && fc.overall,
+    eta = o && o.real != null && !shipYardBlock(p) ? new Date(fc.base + o.real * 864e5).toISOString() : null,
+    since = planSince(p),
+    d = (x) => new Date(x).toLocaleDateString("de-DE");
+  if (
+    !confirm(
+      "„" +
+        p.name +
+        "“ abschließen?\n\nDer Plan wird aus den Zielplänen entfernt. Im Wochenbericht steht danach:\nZiel erreicht: " +
+        p.name +
+        " – am " +
+        d(Date.now()) +
+        (since ? " · geplant seit " + d(since) : "") +
+        (eta ? " · letzte Prognose " + d(eta) : "") +
+        "\n\nSnapshots und Einkommen bleiben erhalten. Rückgängig machen geht nur über ein Backup.",
+    )
+  )
+    return;
+  s.goals = Array.isArray(s.goals) ? s.goals : [];
+  // ab 5.0: Prognosen zu Planstart und zur Hälfte der Bauzeit mitspeichern (Treffsicherheit), der fcLog des Plans wird gleich gelöscht
+  s.goals.push({ id: "goal-" + Date.now(), at: new Date().toISOString(), name: p.name, since, eta, fc: goalForecastSnap(p, since) });
+  const wasMain = !!p.isMain;
+  s.plans = s.plans.filter((x) => x.id !== p.id);
+  for (const q of s.plans) if (q.after === p.id) delete q.after;
+  if (wasMain && s.plans.length) s.plans.forEach((q, i) => (q.isMain = i === 0));
+  if (s.fcLog) delete s.fcLog[p.id];
+  s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
+  s.logs.push("Ziel erreicht: " + p.name);
+  $("planDataModal").classList.remove("on");
+  save();
+  toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
+}
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();
 };
@@ -206,7 +275,11 @@ $("planDataModal").onclick = (e) => {
   if (e.target === $("planDataModal")) $("planDataModal").classList.remove("on");
 };
 let ocrState = { buildings: [], resources: {}, construction: null, efficiencies: {} };
-const OCR_MATERIALS = MATERIALS;
+// Materialien des gerade bearbeiteten Plans (ab 3.0: Schiffe mit ihren Teilen)
+function ocrMats() {
+  const p = typeof managingPlanId !== "undefined" ? s.plans.find((x) => x.id === managingPlanId) : null;
+  return planMaterials(p);
+}
 const escAttr = (s) =>
     String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -226,6 +299,10 @@ function mapResourceName(n) {
   if (k === "tritanium") return "Σ-Tritanium";
   if (k === "dilithium") return "Σ-Dilithium";
   if (k === "construction time") return "CONSTRUCTION";
+  // ab 3.0: Schiffe – Tier-Up- und Schiffsbauzeit werden bewusst nicht berücksichtigt
+  if (k === "tier up time" || k === "ship construction time") return "IGNORE";
+  const sp = k.match(/^7 (common|uncommon|rare) (battleship|interceptor|explorer|survey) parts$/);
+  if (sp) return "7★ " + sp[1][0].toUpperCase() + sp[1].slice(1) + " " + sp[2][0].toUpperCase() + sp[2].slice(1) + " Parts";
   const m = k.match(/^7 (common|uncommon|rare) refined (ore|gas|crystal)$/);
   return m
     ? "7★ " + m[1][0].toUpperCase() + m[1].slice(1) + " " + m[2][0].toUpperCase() + m[2].slice(1)
@@ -278,6 +355,7 @@ function parseResourceTable(text) {
       out.warnings.push("Unbekannte Zeile ignoriert: " + String(l).slice(0, 40));
       continue;
     }
+    if (key === "IGNORE") continue;
     const nums = {};
     let bad = false;
     for (const f of ["base", "cost", "onHand", "needed"]) {
@@ -309,7 +387,7 @@ function parseResourceTable(text) {
           ") ab. Wert aus Spock's Club wird übernommen.",
       );
   }
-  const absent = OCR_MATERIALS.filter((n) => !out.rows[n]);
+  const absent = ocrMats().filter((n) => !out.rows[n]);
   out.absent = Object.keys(out.rows).length ? absent : [];
   if (!Object.keys(out.rows).length && !out.errors.length) out.errors.push("Keine Materialzeilen erkannt.");
   return out;
@@ -431,7 +509,7 @@ function renderOcrTables() {
           renderImpSummary();
         }),
     );
-  $("ocrResources").innerHTML = OCR_MATERIALS.map((n) => {
+  $("ocrResources").innerHTML = ocrMats().map((n) => {
     let r = ocrState.resources[n] || { value: "", confidence: 0 };
     return `<tr><td>${n}${r.cost !== undefined ? `<br><span class="muted">Cost ${fx(r.cost)} − OnHand ${fx(r.onHand)}</span>` : ""}</td><td><input data-rn="${n}" value="${r.value}"></td><td><div class="confidence"><i style="width:${r.confidence}%"></i></div>${r.confidence || 0}%</td></tr>`;
   }).join("");
@@ -599,10 +677,18 @@ function parseEfficiencyTable(text) {
   for (const l of lines) {
     const c = split(l);
     const key0 = mapResourceName(dedupeDouble(c[0]));
+    if (key0 === "IGNORE") {
+      cur = "IGNORE"; // folgende Prozentzeile gehört zur Tier-Up-/Bauzeit und wird still übergangen
+      continue;
+    }
     if (key0) {
       cur = key0 === "CONSTRUCTION" ? "Σ-Construction Time" : key0;
       const pc = c.slice(1).find((x) => /%/.test(x));
       if (pc) set(cur, pc);
+      continue;
+    }
+    if (/^[\d.,\s]+%$/.test(l.trim()) && cur === "IGNORE") {
+      cur = null;
       continue;
     }
     if (/^[\d.,\s]+%$/.test(l.trim()) && cur) {
@@ -624,6 +710,11 @@ function parseEfficiencyTable(text) {
   return out;
 }
 const EFF_KEYS = EFF_ALL;
+// Effizienzen des gerade bearbeiteten Plans (ab 3.0: Schiffe ohne Bauzeit, mit Teilen)
+function ocrEffKeys() {
+  const p = s.plans.find((x) => x.id === managingPlanId);
+  return p ? planEffKeys(p) : EFF_KEYS;
+}
 function applyEffPaste() {
   const raw = $("effText").value;
   if (!raw.trim()) {
@@ -636,7 +727,7 @@ function applyEffPaste() {
     msg = [],
     n = Object.keys(r.rows).length;
   ocrState.efficiencies = r.errors.length ? {} : { ...r.rows };
-  const missing = EFF_KEYS.filter((k) => r.rows[k] === undefined);
+  const missing = ocrEffKeys().filter((k) => r.rows[k] === undefined);
   if (!r.errors.length && n) {
     msg.push("✔ " + n + " Effizienz" + (n === 1 ? "" : "en") + " erkannt.");
     if (missing.length) {
@@ -659,7 +750,7 @@ function applyEffPaste() {
   renderEffTable();
 }
 function renderEffTable() {
-  $("effRows").innerHTML = EFF_KEYS.map((k) => {
+  $("effRows").innerHTML = ocrEffKeys().map((k) => {
     const v = ocrState.efficiencies[k];
     return `<tr><td>${k}</td><td>${v === undefined ? '<span class="muted">–</span>' : fx(v) + " %"}</td></tr>`;
   }).join("");

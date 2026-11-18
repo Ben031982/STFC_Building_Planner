@@ -236,6 +236,19 @@
   margin-left: auto;
   padding: 6px 12px;
 }
+.heroData {
+  border-top: 1px solid #23485f;
+  margin-top: 12px;
+  padding-top: 12px;
+  font-size: 13px;
+  color: inherit;
+}
+.careLbl {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #9ab2c4;
+}
 #careList {
   margin-top: 10px;
 }
@@ -308,3 +321,93 @@
   border: 1px dashed #2e5670;
   border-radius: 7px;
 }
+
+/* Schmale Kopfzeile auf Unterseiten (5.0) */
+.hero.slim {
+  padding: 10px 16px;
+}
+.hero.slim h2,
+.hero.slim .heroProgRow > span:first-child,
+.hero.slim .heroCards,
+.hero.slim .heroNote,
+.hero.slim .heroLvl,
+.hero.slim .heroBar,
+.hero.slim .heroBadges,
+.hero.slim .heroId img,
+.hero.slim .heroEta #etaDetail,
+.hero.slim .heroEta .qBadge,
+.hero.slim .heroEta .qLine {
+  display: none;
+}
+.hero.slim .heroTop {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+}
+.hero.slim h2 {
+  font-size: 18px;
+}
+.hero.slim .heroProgRow {
+  gap: 12px;
+}
+.hero.slim .heroEta {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+  padding-left: 0;
+  border-left: 0;
+}
+.hero.slim .heroEta strong {
+  font-size: 20px;
+}
+.packSum {
+  margin: 8px 0 10px;
+  font-size: 13px;
+}
+.packSum b {
+  color: #eaf4ff;
+}
+.fcNote summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #9ab2c4;
+  margin-top: 8px;
+}
+.esBar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+.esBar .esOn {
+  border-color: #40a6ff;
+  color: #cfe8ff;
+}
+.resMerged .esIn {
+  width: 84px;
+}
+.resMerged td,
+.resMerged th {
+  white-space: nowrap;
+}
+.resMerged tr.esChg {
+  background: rgba(64, 166, 255, 0.08);
+}
+#goalPanel.goalEmpty > p {
+  display: none;
+}
+#impCare:has(.careOk) {
+  display: none;
+}
+.panel:has(> #impCare .careOk) {
+  padding-bottom: 8px;
+}
+
+.tsCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.tsCard { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 14px; }
+.tsCard .muted { font-size: 0.85rem; }
+.tsVal { font-size: 1.35rem; font-weight: 700; margin: 2px 0; }
+.tsDev { font-variant-numeric: tabular-nums; }
+.tsDev.ok { color: #5ad19a; }
+.tsDev.mid { color: #e8b04a; }
+.tsDev.bad { color: #ef7a6a; }

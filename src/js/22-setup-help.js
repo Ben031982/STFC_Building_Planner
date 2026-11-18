@@ -152,6 +152,8 @@ const TERMS = {
     "<b>Prognose-Qualität</b> sagt, wie belastbar das Datum ist. Gezählt werden die Abschnitte der letzten 6 Wochen. Vorläufig: unter 6 Abschnitten oder 14 Tagen. Brauchbar: ab 6 Abschnitten über 14 Tage. Stabil: ab 10 Abschnitten über 28 Tage.",
   abschnitt:
     "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 20 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
+  datenquelle:
+    "<b>Datenstand</b>: Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine Effizienz nicht abgezogen wird oder der letzte Sync alt ist.",
   snapshot:
     "<b>Snapshot</b> ist ein eingelesener Spock's-Export: dein Ressourcenstand und deine Gebäudestufen zu einem Zeitpunkt. Aus mehreren Snapshots berechnet der Planner dein Einkommen.",
   hauptplan:

@@ -91,17 +91,20 @@ class App:
     def text(self, sel):
         return self.p.inner_text(sel)
 
-    def make_exports(self, days=(10, 8, 6, 4, 2, 0)):
-        """Erfundene Spock's-Exporte mit gleichmäßigem Einkommen erzeugen."""
-        r = self.js("()=>({ids:IDS, sigma:Object.fromEntries(Object.entries(SIGMA).map(([k,v])=>[k,v.raw]))})")
-        ids, sigma = r["ids"], r["sigma"]
+    def make_exports(self, days=(10, 8, 6, 4, 2, 0), yard=None):
+        """Erfundene Spock's-Exporte mit gleichmäßigem Einkommen erzeugen (ab 3.0 mit Schiffsteilen)."""
+        r = self.js("()=>({ids:IDS, sigma:Object.fromEntries(Object.entries(SIGMA).map(([k,v])=>[k,v.raw])),"
+                    " parts:typeof SHIP_PART_IDS!=='undefined'?SHIP_PART_IDS:{}})")
+        ids, sigma, parts = r["ids"], r["sigma"], r["parts"]
         files = []
         for i, d in enumerate(sorted(days, reverse=True)):
             t = NOW - dt.timedelta(days=d, hours=1)
             age = days[0] - d  # Tage seit dem ersten Export
             res = [{"id": v, "amount": 20000 + 1500 * age + 37 * j} for j, v in enumerate(ids.values())]
             res += [{"id": v, "amount": 400_000_000 + 60_000_000 * age} for v in sigma.values()]
-            data = {"buildings": [{"id": 0, "level": 75}, {"id": 1, "level": 74}], "resources": res}
+            res += [{"id": v, "amount": 300_000 + 4_000 * age + 11 * j} for j, v in enumerate(parts.values())]
+            blds = [{"id": 0, "level": 75}, {"id": 1, "level": 74}] + ([{"id": 15, "level": yard}] if yard else [])
+            data = {"buildings": blds, "resources": res}
             name = "spocksclub-data-export_" + t.strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json"
             f = self.tmp / name
             f.write_text(json.dumps(data), encoding="utf-8")
@@ -240,14 +243,31 @@ def backup_und_wiederherstellen(b, html, tmp):
     a.click("#ni")
     a.set_input_files("#restoreFile", str(f))
     a.wait_for_selector("#restoreModal.on", timeout=5000)
-    with a.p.expect_navigation(timeout=5000):  # die Seite lädt nach dem Wiederherstellen neu
+    # Der Planner schreibt das Backup in den Speicher, schließt den Dialog und lädt 0,7 s später neu.
+    # Geprüft wird der geschriebene Stand direkt vor dem Neuladen: Headless-Chromium verliert beim Neuladen
+    # einer file://-Seite gelegentlich den localStorage (Ursache des früher wackeligen Tests, im echten Browser nicht).
+    # Jeden Schreibvorgang auf den Planner-Speicher mitschneiden – unabhängig davon, wann neu geladen wird.
+    writes = []
+    a.p.expose_function("__captureStore", lambda v: writes.append(v))
+    a.js("""()=>{const o=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){
+      if(this===localStorage&&k==='bens-stfc')window.__captureStore(String(v));return o.call(this,k,v)}}""")
+    with a.p.expect_navigation(timeout=15000):  # die Seite lädt nach dem Wiederherstellen neu
         a.click("#restoreOk")
-    a.wait_for_load_state()
-    after = a.stored()
+    a.wait_for_timeout(300)
+    after = json.loads(writes[-1]) if writes else None
+    check(after is not None, "Wiederherstellen hat nichts in den Speicher geschrieben")
+    check(str(after["logs"][-1]).startswith("Backup wiederhergestellt"), "Nach dem Wiederherstellen wurde der Speicher noch einmal überschrieben")
     check(len(after["plans"]) == len(before["plans"]) == 1, "Plan nach Wiederherstellen nicht da")
     check(len(after["snapshots"]) == len(before["snapshots"]), "Snapshots nach Wiederherstellen unvollständig")
+    # Neu öffnen mit dem geschriebenen Stand (wie die Datei erneut öffnen)
+    a = _reopen_with(a, b, html, tmp, after)
     check(a.js("()=>calcPlanStatus(s.plans[0])") == "active", "Plan nach Wiederherstellen nicht aktiv")
     a.done()
+
+
+def _reopen_with(a, b, html, tmp, state):
+    a.done()
+    return App(b, html, tmp, state=state)
 
 
 @test
@@ -497,7 +517,8 @@ def engpass_karte_zeigt_die_drei_langsamsten_materialien(b, html, tmp):
     check("Stationspack ein" in a.text("#bottleneckList"), "Hinweis zum leeren Stationspack fehlt")
     a.click("#bnPackBtn")
     check(a.has_class("#packModal", "on"), "Knopf öffnet den Stationspack nicht")
-    check("können vom Spiel abweichen" in a.text(".heroNote"), "Abweichungshinweis fehlt in der Übersicht")
+    check(a.js("()=>!!document.querySelector('.heroNote .termInfo[data-term=datenquelle]') && TERMS.datenquelle.includes('können vom Spiel abweichen')"),
+          "Abweichungshinweis (ⓘ beim Datenstand) fehlt in der Übersicht")
     a.close_modals()
     a.click("#navRes")
     check("können vom Spiel abweichen" in a.text("#pane-res"), "Abweichungshinweis fehlt auf der Seite Ressourcen")
@@ -554,7 +575,7 @@ def prognose_qualitaet_vorlaeufig_brauchbar_stabil(b, html, tmp):
         check("Abschnitte über" in line, f"Zeile zur Qualität fehlt: {line!r}")
         check(("ab 10 Abschnitten" in line) == (want == "BRAUCHBAR"), f"Nächste Stufe falsch: {line!r}")
         a.click("#navFc")
-        check(want in a.text("#fcSummary") and "Längere Abschnitte zählen mehr" in a.text("#fcSummary"),
+        check(want in a.text("#fcSummary") and "Längere Abschnitte zählen mehr" in a.js("()=>document.getElementById('fcSummary').textContent"),
               "Erklärung auf der Seite Prognose & Packs fehlt")
         a.done()
     a = App(b, html, tmp, state=dict(load_v10_state(), snapshots=load_v10_state()["snapshots"][-2:]))
@@ -1105,6 +1126,11 @@ def zieltermin_ohne_aktiven_plan_und_ohne_daten(b, html, tmp):
     a.click("#nw")
     txt = a.text("#tdResult")
     check("NICHT BEWERTBAR" in txt.upper() and "zu wenig Daten" in txt, f"Zu wenig Daten nicht gekennzeichnet: {txt[:160]!r}")
+    check("Prognose heute: zu wenig Daten" in a.text("#tdSel"), f"Zieltermin nennt fehlende Daten nicht: {a.text('#tdSel')!r}")
+    a.click("#navFc")
+    cards = a.text("#fcSummary .fcCard")
+    check(cards.count("zu wenig Daten") == 3 and "nicht absehbar" not in cards, f"Prognosekarten bei fehlenden Daten: {cards!r}")
+    check("nicht absehbar" not in a.text("#fcRows"), "Tabelle zeigt „nicht absehbar“ statt fehlender Daten")
     a.done()
 
 
@@ -1189,13 +1215,13 @@ def effizienzen_wirkung_und_verlauf(b, html, tmp):
     check(a.is_visible("#effPanel"), "Panel Effizienzen fehlt")
     body = a.text("#effBody")
     check("Noch kein Vergleich" in body, f"Ohne zweiten Import kein Hinweis: {body[:120]!r}")
-    rows = a.locator("#effRows tr").count()
+    rows = a.locator("#effPanelRows tr").count()
     check(rows >= 3, f"Zu wenige Zeilen: {rows}")
     hist = a.js("()=>s.plans[0].planData.history.map(h=>!!h.efficiencies)")
     check(hist and all(hist), f"Effizienzen nicht in der Planhistorie: {hist}")
     # Kosten = Grundkosten ÷ (1 + Effizienz): Ersparnis-Spalte = Grundkosten − Kosten
     r = a.js("()=>{const r=s.plans[0].planData.resources['Σ-Parsteel'];return [r.base,r.cost]}")
-    check(f"−{a.js('(v)=>fmt(v)', r[0] - r[1])}" in a.text("#effRows"), "Ersparnis falsch")
+    check(f"−{a.js('(v)=>fmt(v)', r[0] - r[1])}" in a.text("#effPanelRows"), "Ersparnis falsch")
     # Zweiter Import mit höherer Parsteel-Effizienz
     a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=2)).isoformat())
     a.close_modals()
@@ -1210,7 +1236,7 @@ def effizienzen_wirkung_und_verlauf(b, html, tmp):
     a.click("#navRes")
     body = a.text("#effBody")
     check("1 Effizienz gestiegen" in body, f"Änderung nicht erkannt: {body[:200]!r}")
-    check("+500 %-P." in a.text("#effRows"), f"Änderung in der Tabelle fehlt: {a.text('#effRows')[:200]!r}")
+    check("+500 %-P." in a.text("#effPanelRows"), f"Änderung in der Tabelle fehlt: {a.text('#effPanelRows')[:200]!r}")
     check(any(w in body for w in ("früher", "später", "kein ganzer Tag", "nicht berechenbar")),
           "Einfluss auf den Termin fehlt")
     check(not [w for w in BAD_TEXT if w in body], "Ungültige Werte im Panel")
@@ -1242,6 +1268,732 @@ def wochenbericht_zeigt_effizienzaenderungen(b, html, tmp):
     a.click("#nwk")
     a.wait_for_timeout(150)
     check("noch kein Verlauf" in a.text(".wkEff"), "Hinweis ohne Verlauf fehlt")
+    a.done()
+
+
+@test
+def keine_doppelten_element_ids(b, html, tmp):
+    """Fund nach 2.1.0: Die Effizienz-Tabelle hatte dieselbe ID wie die Liste im Import-Assistenten."""
+    a = App(b, html, tmp, state=load_v10_state())
+    for sel in ("#navRes", "#navFc", "#nw", "#nwk", "#ni", "#nd"):
+        a.close_modals()
+        a.click(sel)
+        a.wait_for_timeout(150)
+        dup = a.js("()=>{const c={};document.querySelectorAll('[id]').forEach(e=>c[e.id]=(c[e.id]||0)+1);return Object.keys(c).filter(k=>c[k]>1)}")
+        check(not dup, f"Doppelte IDs nach {sel}: {dup}")
+    # Import-Assistent zeigt die erkannten Effizienzen in seiner eigenen Tabelle
+    a.click("#navRes")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    a.click('.impStepBtn[data-step="3"]')
+    a.fill("#effText", fixture("plan_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(200)
+    check("%" in a.text("#ocrModal #effRows"), "Effizienzen erscheinen nicht im Import-Assistenten")
+    a.done()
+
+
+# ---------------------------------------------------------------- 3.0: Schiffe
+
+
+def new_ship_plan(a, ship="praefortis", tier_from="7", tier_to="9", name=None, build=False, cls=None, yard=None):
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", ship)
+    if cls:
+        a.click(f'#draftCls [data-cls="{cls}"]')
+    if name:
+        a.fill("#draftShipName", name)
+    if yard:
+        a.fill("#draftYard", str(yard))
+        a.dispatch_event("#draftYard", "input")
+    if build:
+        a.check("#draftBuild")
+    else:
+        a.fill("#draftTierFrom", tier_from)
+    a.fill("#draftTierTo", tier_to)
+    a.click("#saveDraft")
+    a.wait_for_timeout(200)
+
+
+@test
+def schiffsteile_kommen_aus_dem_export(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports((4, 2, 0)))
+    v = a.js("()=>latestSnapshot().values")
+    for m in ("7★ Common Explorer Parts", "7★ Rare Survey Parts", "7★ Uncommon Battleship Parts"):
+        check(isinstance(v.get(m), (int, float)), f"{m} fehlt im Snapshot")
+    # Export ohne Schiffsteile wird weiter angenommen
+    f = edited_export(a, tmp, lambda d: d.update(resources=[r for r in d["resources"] if r["id"] not in
+                      a.js("()=>Object.values(SHIP_PART_IDS)")]), "spocksclub-data-export_2026-10-25T08-45-00-000Z.json")
+    a.set_input_files("#file", [str(f)])
+    a.wait_for_selector("#modal.on", timeout=5000)
+    a.click("#confirm")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.snapshots.length") == 4, "Export ohne Schiffsteile abgelehnt")
+    a.done()
+
+
+@test
+def schiffsplan_anlegen_importieren_und_prognose(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    check(a.is_visible("#draftShipBox") and not a.is_visible("#draftBuildingBox"), "Schiffsfelder erscheinen nicht")
+    check("Voraussetzung erfüllt" in a.text("#draftReq"), f"Schiffswerft-Prüfung fehlt: {a.text('#draftReq')!r}")
+    check(a.locator("#draftShip option").count() == 11, "Schiffsliste unvollständig")
+    a.close_modals()
+    new_ship_plan(a)
+    p = a.js("()=>{const p=s.plans.at(-1);return {type:p.type,ship:p.ship,start:p.start,target:p.target,name:p.name}}")
+    check(p["type"] == "ship" and p["ship"]["cls"] == "explorer" and p["start"] == 7 and p["target"] == 9, f"Plan falsch: {p}")
+    check("Tier 7 → 9 · Forschungsschiff" in a.text("#plans"), "Plankarte ohne Tier/Klasse")
+    check("ship-explorer" in a.js("()=>ART.ship_explorer.slice(0,40)") or a.js("()=>$('pImg').src===ART.ship_explorer"),
+          "Schiffsgrafik fehlt")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    check(not a.is_visible('.impStepBtn[data-step="1"]'), "Schritt „Included upgrades“ bei Schiffen sichtbar")
+    check(a.text("#impPane2 .impSmall") == "SCHRITT 1 VON 2" and a.text("#ocrModal .impRail .impSmall").startswith("2 SCHRITTE"),
+          f"Schritte bei Schiffen falsch nummeriert: {a.text('#impPane2 .impSmall')!r}")
+    check(a.has_class("#impPane2", "on"), "Assistent startet nicht bei den Ressourcen")
+    a.fill("#resPasteText", fixture("ship_resources.txt"))
+    a.dispatch_event("#resPasteText", "input")
+    a.click("#impNext")
+    a.fill("#effText", fixture("ship_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(150)
+    check("Unbekannte Zeile" not in a.text("#ocrModal"), "Tier-Up-Zeile als unbekannt gemeldet")
+    a.click("#applyOcr")
+    a.wait_for_timeout(300)
+    a.confirm_plan()
+    st = a.js("()=>calcPlanStatus(s.plans.at(-1))")
+    check(st == "active", f"Schiffsplan nicht aktiv: {st} {a.js('()=>JSON.stringify(planChecks(s.plans.at(-1)))')}")
+    fc = a.js("""()=>{const fc=planForecast(s.plans.at(-1));return {ms:fc.res.map(x=>[x.m,x.common,x.miss]),real:fc.overall.real}}""")
+    ms = {m: (c, miss) for m, c, miss in fc["ms"]}
+    check("7★ Rare Explorer Parts" in ms and ms["7★ Rare Explorer Parts"][1] == 10000, f"Teile fehlen in der Prognose: {list(ms)}")
+    check(ms["7★ Common Explorer Parts"][0] is False, "Common-Teile werden wie Latinum-Material behandelt")
+    check(ms["7★ Common Ore"][0] is True, "7★ Common Ore nicht mehr als Latinum-Material erkannt")
+    check(fc["real"] and fc["real"] > 0, "Keine Prognose für das Schiff")
+    a.click("#nd")
+    check("Tier 7 → 9 · Forschungsschiff" in a.text("#pLevel"), "Übersicht ohne Tier")
+    check("nicht berücksichtigt" in a.text("#buildTimeDetail"), "Bauzeit-Karte bei Schiffen falsch")
+    a.click("#navBld")
+    check("keine Bau-Reihenfolge" in a.text("#pane-bld"), "Hinweis in der Bau-Reihenfolge fehlt")
+    a.click("#navRes")
+    check("7★ Common Explorer Parts" in a.text("#effPanelRows"), "Teile fehlen im Effizienz-Panel")
+    a.click("#nw")
+    a.wait_for_timeout(150)
+    check("Pack für Forschungsschiff ist noch nicht gepflegt" in a.text("#wifNote"), f"Hinweis bei Was-wäre-wenn fehlt: {a.text('#wifNote')!r}")
+    check("Schiffs-Pack" in a.text("#packsDetail"), f"Pack-Karte beim aktiven Schiff falsch: {a.text('#packsDetail')!r}")
+    a.click("#nwk")
+    check("7★ Rare Explorer Parts" in a.text("#wkBody"), "Schiffsteile fehlen im Wochenbericht")
+    txt = page_texts(a)
+    check(not [w for w in BAD_TEXT if w in txt], "Ungültige Werte auf den Seiten")
+    a = reopen(a, b, html, tmp)
+    check(a.js("()=>s.plans.at(-1).type") == "ship" and a.js("()=>s.plans.at(-1).ship.cls") == "explorer",
+          "Schiffsdaten nach erneutem Öffnen verloren")
+    a.done()
+
+
+@test
+def anderes_schiff_und_neubau(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", "other")
+    check(a.is_visible("#draftYardLab"), "Feld Schiffswerft fehlt bei „Anderes Schiff“")
+    a.fill("#draftYard", "76")
+    a.dispatch_event("#draftYard", "input")
+    check("noch nicht erfüllt" in a.text("#draftReq"), f"Voraussetzung nicht als offen erkannt: {a.text('#draftReq')!r}")
+    a.close_modals()
+    new_ship_plan(a, ship="other", name="Neues Schiff", build=True, tier_to="3", cls="interceptor", yard=76)
+    p = a.js("()=>{const p=s.plans.at(-1);return {ship:p.ship,start:p.start,target:p.target,name:p.name}}")
+    check(p["ship"]["key"] == "other" and p["ship"]["cls"] == "interceptor" and p["ship"]["build"] and p["start"] == 0
+          and p["target"] == 3 and p["ship"]["yard"] == 76, f"Plan falsch: {p}")
+    check("Bau → Tier 3 · Abfangjäger" in a.text("#plans"), "Neubau nicht beschriftet")
+    check("Schiffswerft 76 noch nicht erreicht" in a.text("#pDone"), "Hinweis zur Schiffswerft fehlt in der Übersicht")
+    a.done()
+
+
+@test
+def schiffe_ohne_packs_und_teile_nachtragen(b, html, tmp):
+    a = App(b, html, tmp)
+    # alte Snapshots (vor 3.0) ohne Schiffsteile; dieselben Dateien noch einmal einlesen -> Teile nachgetragen
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()
+    a.js("(c)=>{s.packs=s.packs||[];s.packs[0]=Object.assign(s.packs[0]||{name:'Stationspack',priceEUR:100},{contents:c});save()}", PACK)
+    a.js("()=>{for(const sn of s.snapshots) for(const k of Object.keys(SHIP_PART_IDS)) delete sn.values[k]; save();}")
+    check(a.js("()=>s.snapshots.filter(snapNeedsParts).length") >= 3, "Testaufbau: Teile nicht entfernt")
+    a.set_input_files("#file", files)
+    a.wait_for_timeout(600)
+    a.close_modals()
+    n = a.js("()=>s.snapshots.filter(x=>x.fileName&&x.fileName.startsWith('spocksclub')&&snapNeedsParts(x)).length")
+    check(n == 0, f"Schiffsteile nicht nachgetragen ({n} Snapshots ohne Teile)")
+    check(a.js("()=>s.snapshots.length") == len(files), "Nachtragen hat Snapshots doppelt angelegt")
+    check(a.js("()=>s.logs.at(-1)").startswith("Schiffsteile aus"), "Kein Protokolleintrag")
+    # Schiffsplan: der Stationspack gilt nicht – ohne gepflegten Schiffs-Pack keine Pack-Rechnung
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=3)).isoformat())
+    new_ship_plan(a)
+    a.js("()=>{s.active=s.plans.at(-1).id;render()}")
+    check(a.js("()=>packCalc(s.plans.at(-1))") is None, "Pack-Rechnung für Schiff mit Stationspack")
+    check(a.js("()=>planPack(s.plans.at(-1))!==s.packs[0]"), "Schiff rechnet mit dem Stationspack")
+    # Gebäudeplan rechnet Packs weiter
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    check(a.js("()=>!!packCalc(s.plans[0])"), "Gebäudeplan rechnet keine Packs mehr")
+    a.done()
+
+
+@test
+def schiffsteile_aus_dem_exportordner_nachtragen(b, html, tmp):
+    a = App(b, html, tmp)
+    f = a.make_exports(days=(0,))[0]
+    name, data = pathlib.Path(f).name, pathlib.Path(f).read_text(encoding="utf-8")
+    single_import(a, f)
+    a.js("()=>{for(const sn of s.snapshots) for(const k of Object.keys(SHIP_PART_IDS)) delete sn.values[k]; save();}")
+    a.evaluate("""async ([name, data]) => {
+      window.showDirectoryPicker = window.showDirectoryPicker || (() => {});
+      s.exportScan = { folder: 'Downloads' };
+      expDir = { queryPermission: async () => 'granted',
+        entries: async function* () { yield [name, { kind: 'file', getFile: async () => ({ text: async () => data }) }]; } };
+      await autoScanOnOpen(); }""", [name, data])
+    a.wait_for_timeout(400)
+    check(not a.js("()=>snapNeedsParts(s.snapshots[0])"), "Schiffsteile aus dem Ordner nicht nachgetragen")
+    check("Schiffsteile aus 1 älterem Export" in a.text("#toast"), f"Meldung fehlt: {a.text('#toast')!r}")
+    check(a.js("()=>s.snapshots.length") == 1, "Snapshot doppelt angelegt")
+    a.done()
+
+
+def ship_with_yard_plan(a):
+    """Aktiver „Schiffswerft 76“-Plan (Testaufbau aus dem Operations-Fixture) + aktiver Snakehead-Plan (yard 76)."""
+    a.import_exports(a.make_exports(yard=73))
+    a.create_active_plan()
+    a.js("()=>{const q=s.plans[0];q.name='Schiffswerft 76';q.planData.target.building='Shipyard';q.confirmation.dataHash=planHash(q);save();render()}")
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=1)).isoformat())
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", "snakehead")
+    a.click('#draftCls [data-cls="explorer"]')
+    a.fill("#draftTierFrom", "1")
+    a.fill("#draftTierTo", "3")
+    a.select_option("#draftAfter", "")
+    a.dispatch_event("#draftAfter", "change")
+    a.click("#saveDraft")
+    a.wait_for_timeout(200)
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    a.fill("#resPasteText", fixture("ship_resources.txt"))
+    a.dispatch_event("#resPasteText", "input")
+    a.click("#impNext")
+    a.fill("#effText", fixture("ship_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(150)
+    a.click("#applyOcr")
+    a.wait_for_timeout(300)
+    a.confirm_plan()
+    return a.js("()=>s.plans.map(p=>p.id)")
+
+
+@test
+def schiff_nach_schiffswerft_plan_zieht_ihn_zuerst_ab(b, html, tmp):
+    a = App(b, html, tmp)
+    ids = ship_with_yard_plan(a)
+    check(a.js("()=>calcPlanStatus(s.plans[1])") == "active", "Testaufbau: Schiffsplan nicht aktiv")
+    alone = a.js("()=>{const r=getPlanResources(s.plans[1]).find(x=>x[0]==='Σ-Tritanium');return r[3]}")
+    a.js("()=>{s.active=s.plans[1].id;render()}")
+    a.click("#managePlanBtn")
+    check(a.is_visible("#editAfterLab") and "Schiffswerft-Plan" in a.text("#editAfterLab"), "Feld „Schiffswerft-Plan“ fehlt beim Schiff")
+    check(a.locator(f'#editAfter option[value="{ids[0]}"]').count() == 1, "Schiffswerft-Plan nicht wählbar")
+    a.select_option("#editAfter", ids[0])
+    check("zuerst vom Bestand abgezogen" in a.text("#editAfterHint"), "Hinweis zur Verkettung fehlt")
+    a.click("#savePlanData")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.plans[1].after") == ids[0], "Schiffswerft-Plan nicht gespeichert")
+    check(a.js("()=>calcPlanStatus(s.plans[1])") == "active", "Verkettung hat die Bestätigung zurückgesetzt")
+    r = a.js("()=>{const r=getPlanResources(s.plans[1]).find(x=>x[0]==='Σ-Tritanium'),c=s.plans[0].planData.resources['Σ-Tritanium'].cost;return {miss:r[3],cur:r[1],cost:r[2],pc:c}}")
+    check(r["miss"] == max(0, r["cost"] + r["pc"] - r["cur"]) and r["miss"] > alone, f"Fehlt rechnet den Schiffswerft-Plan nicht ein: {r} (allein {alone})")
+    sh = a.js("()=>{const rs=getPlanResources(s.plans[1]),b=getBottleneck(rs),c=planBottleneck(s.plans[1],rs);return [b?b.share:0,c?c.share:0]}")
+    check(all(0 <= x <= 1 for x in sh), f"Engpass-Anteil über 100 % bei Verkettung: {sh}")
+    a.click("#nd")
+    bars = a.js("()=>[...document.querySelectorAll('.prog i')].map(i=>parseFloat(i.style.width))")
+    check(bars and all(0 <= x <= 100 for x in bars), f"Fortschrittsbalken außerhalb 0–100 %: {bars}")
+    check(a.is_visible("#chainPanel") and "nach Schiffswerft 76" in a.text("#chainPanel"), "Kasten „nach Schiffswerft 76“ fehlt")
+    check("⛓ nach Schiffswerft 76" in a.text("#plans"), "Hinweis auf der Plankarte fehlt")
+    check("nach Schiffswerft 76" in a.text("#etaDetail"), "Prognose nennt den Schiffswerft-Plan nicht")
+    # Gebäudeplan: kein Vorgänger-Feld mehr, auch nicht im Neuanlage-Dialog
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    a.click("#managePlanBtn")
+    check(not a.is_visible("#editAfterLab"), "Gebäudeplan zeigt noch ein Vorgänger-Feld")
+    a.close_modals()
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="building"]')
+    check(not a.is_visible("#draftAfterLab"), "Neuer Gebäudeplan zeigt noch ein Vorgänger-Feld")
+    a.close_modals()
+    # Schiffswerft-Plan löschen -> Verknüpfung gelöst
+    a.js("()=>{const p=s.plans.splice(0,1)[0];s.plans.push(p);s.plans.forEach((x,i)=>x.isMain=i===0);s.active=p.id;save()}")
+    a.click("#managePlanBtn")
+    a.click("#planDataModal details.dangerZone summary")
+    a.click("#deletePlanBtn")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.plans.length") == 1 and not a.js("()=>s.plans[0].after"), "Verknüpfung nach dem Löschen nicht gelöst")
+    check(not a.is_visible("#chainPanel"), "Kasten bleibt nach dem Löschen sichtbar")
+    a.done()
+
+
+@test
+def alte_gebaeudeketten_werden_beim_oeffnen_geloest(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    a.js("()=>{s.plans[1].after=s.plans[0].id;save()}")
+    a = reopen(a, b, html, tmp)
+    check(not a.js("()=>s.plans[1].after"), "Gebäude → Gebäude-Kette nach dem Öffnen noch da")
+    check(a.js("()=>chainAncestors(s.plans[1]).length") == 0, "Gebäudekette rechnet noch")
+    a.done()
+
+
+@test
+def ziel_erreicht_plan_abschliessen(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    main_name, other = a.js("()=>[s.plans[0].name,s.plans[1].id]")
+    a.js("()=>{s.active=s.plans[0].id;render()}")
+    a.click("#managePlanBtn")
+    check(a.is_visible("#completePlanBtn"), "Knopf „Ziel erreicht – Plan abschließen“ fehlt")
+    a.click("#completePlanBtn")
+    a.wait_for_timeout(300)
+    check(a.js("()=>s.plans.length") == 1 and a.js("()=>s.plans[0].id") == other, "Plan nicht entfernt")
+    check(a.js("()=>s.plans[0].isMain") is True, "Nächster Plan ist nicht Hauptplan geworden")
+    g = a.js("()=>s.goals")
+    check(len(g) == 1 and g[0]["name"] == main_name and g[0]["since"], f"Eintrag „Ziel erreicht“ fehlt oder unvollständig: {g}")
+    a = reopen(a, b, html, tmp)
+    check(len(a.js("()=>s.goals")) == 1, "„Ziel erreicht“ nach erneutem Öffnen verloren")
+    a.click("#nwk")
+    a.wait_for_timeout(300)
+    check("Ziel erreicht" in a.text("#wkEv") and main_name + " abgeschlossen" in a.text("#wkEv"), "Wochenbericht zeigt „Ziel erreicht“ nicht")
+    # ab 3.3: Liste „Erreichte Ziele“ unter Verlauf, Eintrag löschbar
+    a.click("#nd")
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    check(main_name in a.text("#goalRows") and a.text("#goalCount") == "1 Ziel", f"Liste „Erreichte Ziele“ falsch: {a.text('#goalList')!r}")
+    a.click("#goalRows [data-goal]")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.goals.length") == 0 and "Noch kein Ziel abgeschlossen" in a.text("#goalList"), "Eintrag nicht gelöscht")
+    check(a.js("()=>s.plans.length") == 1, "Löschen des Eintrags hat Pläne verändert")
+    a.done()
+
+
+@test
+def treffsicherheit_ziele_speichern_prognosen(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    # Plan "begann" vor 40 Tagen; Prognose-Log mit Einträgen bei Start, Mitte, Ende
+    a.js("""()=>{const p=s.plans[0],D=n=>Date.now()-n*864e5;s.active=p.id;p.planData.history[0].at=new Date(D(40)).toISOString();
+      s.fcLog={};s.fcLog[p.id]=[{d:dayKey(D(39)),eta:Math.round(D(-10))},{d:dayKey(D(21)),eta:Math.round(D(-8))},{d:dayKey(D(1)),eta:Math.round(D(-2))}];
+      s.goals=[{id:'g-old',at:new Date(D(60)).toISOString(),name:'Altziel',since:new Date(D(90)).toISOString(),eta:new Date(D(62)).toISOString()}];
+      save();render();}""")
+    a.js("()=>{managingPlanId=s.plans[0].id}")
+    a.js("()=>{window.confirm=()=>true;completePlan(s.plans.find(x=>x.id===managingPlanId))}")
+    a.wait_for_timeout(300)
+    g = a.js("()=>s.goals.find(x=>x.name!=='Altziel')")
+    check(g and g.get("fc") and g["fc"]["start"] and g["fc"]["mid"], f"Prognosen bei Start/50 % nicht gespeichert: {g}")
+    check(g["fc"]["start"] > g["fc"]["mid"], "Start-/50-%-Prognose vertauscht")
+    a.click("#nd")
+    a.click("#navHist")
+    a.wait_for_timeout(300)
+    t = a.text("#goalList")
+    check("zu wenig Daten" in t, f"Bei nur einem Ziel mit Prognose sollte „zu wenig Daten“ stehen: {t!r}")
+    check(a.js("()=>document.querySelectorAll('#goalRows tr').length") == 2, "Tabelle zeigt nicht beide Ziele")
+    check(a.js("()=>document.querySelectorAll('#goalRows .tsDev').length") >= 3, "Abweichungen nicht angezeigt")
+    # zweites Ziel mit Prognosen -> Kennzahlen erscheinen
+    a.js("""()=>{const D=n=>Date.now()-n*864e5;s.goals.push({id:'g2',at:new Date(D(5)).toISOString(),name:'Zweit',since:new Date(D(50)).toISOString(),eta:new Date(D(4)).toISOString(),fc:{start:D(-3),mid:D(10)}});save();render()}""")
+    a.wait_for_timeout(200)
+    t = a.text("#goalList")
+    check("zu wenig Daten" not in t.split("Prognose bei Planstart")[0] and "Ø ±" in t, f"Kennzahlen fehlen bei 2 Zielen: {t[:300]!r}")
+    a.done()
+
+
+@test
+def hinweis_aufs_abschliessen_bei_gedeckt(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.js("()=>{const q=s.plans[0];for(const r of Object.values(q.planData.resources))if(r.cost>0){r.cost=1;r.needed=0}q.confirmation.dataHash=planHash(q);save();render()}")
+    check(a.js("()=>planForecast(s.plans[0]).overall.real") == 0, "Testaufbau: Plan nicht gedeckt")
+    a.click("#nd")
+    check(a.text("#etaValue") == "Gedeckt" and "Sobald gebaut" in a.text("#etaDetail"), f"Hinweis bei „Gedeckt“ fehlt: {a.text('#etaDetail')!r}")
+    a.click("#etaGoalLink")
+    a.wait_for_timeout(200)
+    check(a.has_class("#planDataModal", "on") and a.is_visible("#completePlanBtn"), "Link öffnet die Plandaten nicht")
+    a.done()
+
+
+@test
+def schiff_schlaegt_schiffswerft_plan_als_vorgaenger_vor(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.create_plan("Schiffswerft 76", "73", "76")
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=1)).isoformat())
+    yard_plan = a.js("()=>s.plans[0].id")
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", "snakehead")
+    a.wait_for_timeout(100)
+    check(a.input_value("#draftAfter") == yard_plan, f"Schiffswerft-Plan nicht vorgeschlagen: {a.input_value('#draftAfter')!r}")
+    check("(vorgeschlagen)" in a.text("#draftAfter") and "höhere Schiffswerft" in a.text("#draftAfterHint"),
+          "Vorschlag nicht gekennzeichnet")
+    check("noch nicht aktiv" in a.text("#draftAfterHint"), "Hinweis auf inaktiven Vorgänger fehlt")
+    a.select_option("#draftShip", "praefortis")
+    a.wait_for_timeout(100)
+    check(a.input_value("#draftAfter") == "", "Vorschlag bleibt, obwohl die Schiffswerft reicht")
+    a.select_option("#draftShip", "snakehead")
+    a.check("#draftBuild")
+    a.fill("#draftTierTo", "3")
+    a.click("#saveDraft")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.plans.at(-1).after") == yard_plan, "Vorgänger beim Schiff nicht gespeichert")
+    a = reopen(a, b, html, tmp)
+    check(a.js("()=>s.plans.at(-1).after") == yard_plan, "Vorgänger nach erneutem Öffnen verloren")
+    a.done()
+
+
+@test
+def schiff_ohne_schiffswerft_hat_kein_fertigdatum(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(yard=73))
+    a.create_active_plan()
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(minutes=1)).isoformat())
+    a.click("#newPlanBtn")
+    a.click('#draftType [data-dt="ship"]')
+    a.select_option("#draftShip", "snakehead")
+    a.wait_for_timeout(100)
+    check(a.is_visible("#draftYardHint") and "kein Fertigdatum" in a.text("#draftYardHint"), "Dialog-Hinweis „kein Fertigdatum“ fehlt")
+    a.select_option("#draftShip", "praefortis")
+    a.wait_for_timeout(100)
+    check(not a.is_visible("#draftYardHint"), "Hinweis erscheint, obwohl die Schiffswerft reicht")
+    a.close_modals()
+    new_ship_plan(a, "snakehead", "1", "3", cls="explorer")
+    a.click("#managePlanBtn")
+    a.click("#openOcrBtn")
+    a.fill("#resPasteText", fixture("ship_resources.txt"))
+    a.dispatch_event("#resPasteText", "input")
+    a.click("#impNext")
+    a.fill("#effText", fixture("ship_efficiencies.txt"))
+    a.dispatch_event("#effText", "input")
+    a.wait_for_timeout(150)
+    a.click("#applyOcr")
+    a.wait_for_timeout(300)
+    a.confirm_plan()
+    a.js("()=>{s.active=s.plans.at(-1).id;s.plans.at(-1).targetDate='2027-06-30';save();render()}")
+    a.click("#nd")
+    check(a.text("#etaValue") == "Schiffswerft 76 fehlt" and a.has_class("#etaValue", "etaBlock"), f"Fertigdatum trotz fehlender Schiffswerft: {a.text('#etaValue')!r}")
+    det = a.text("#etaDetail")
+    check("Ressourcen" in det and "Schiffswerft-Plan" in det, f"Hinweis unter dem Datum fehlt: {det!r}")
+    check(not a.is_visible("#fcQBadge"), "Prognose-Qualität wird trotzdem angezeigt")
+    v = a.js("()=>{const p=s.plans.at(-1);return [tdVerdict(targetCheck(p,p.targetDate)),fcRealTxt(planForecast(p),p)]}")
+    check(v[0][0] == "Nicht bewertbar" and "Schiffswerft 76 fehlt" in v[0][1] and v[1] == "Schiffswerft 76 fehlt", f"Zieltermin bewertet trotzdem: {v}")
+    a.click("#navFc")
+    check("Schiffswerft 76 fehlt" in a.text("#fcSummary"), "Prognose-Seite ohne Hinweis")
+    # Schiffswerft-Plan als Vorgänger: erst inaktiv -> weiter kein Datum, aktiv -> Datum
+    a.js("()=>{const q=s.plans[0];q.name='Schiffswerft 76';q.planData.target.building='Shipyard';q.confirmation.dataHash=planHash(q);s.plans.at(-1).after=q.id;save();render()}")
+    check(a.js("()=>calcPlanStatus(s.plans[0])") == "active", "Testaufbau: Schiffswerft-Plan nicht aktiv")
+    a.click("#nd")
+    check(a.text("#etaValue") != "Schiffswerft 76 fehlt" and not a.has_class("#etaValue", "etaBlock"),
+          f"Mit aktivem Schiffswerft-Plan als Vorgänger kein Datum: {a.text('#etaValue')!r}")
+    check("nach Schiffswerft 76" in a.text("#etaDetail"), "Prognose nennt die Schiffswerft nicht als Vorgänger")
+    a.js("()=>{s.plans[0].confirmation=null;save();render()}")
+    check(a.js("()=>calcPlanStatus(s.plans[0])") != "active", "Testaufbau: Schiffswerft-Plan noch aktiv")
+    check("sobald „Schiffswerft 76“ bestätigt" in a.text("#etaDetail"), f"Hinweis auf inaktiven Schiffswerft-Plan fehlt: {a.text('#etaDetail')!r}")
+    a.done()
+
+
+@test
+def gebaeude_hinweis_gehoert_nicht_zum_plan(b, html, tmp):
+    a = App(b, html, tmp)
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()
+    base = json.loads(pathlib.Path(files[-1]).read_text(encoding="utf-8"))
+
+    def later_export(hours, blds):
+        a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=hours, minutes=5)).isoformat())
+        d = dict(base, buildings=blds, resources=[dict(r, amount=r["amount"] + 500 * hours) for r in base["resources"]])
+        t = NOW + dt.timedelta(hours=hours)
+        f = tmp / ("spocksclub-data-export_" + t.strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json")
+        f.write_text(json.dumps(d), encoding="utf-8")
+        single_import(a, f)
+        a.click("#nd")
+
+    # ab 3.4: bekanntes Gebäude des Plans → Hinweis mit Namen, ohne „Gehört nicht zum Plan“
+    later_export(1, [{"id": 0, "level": 76}, {"id": 1, "level": 74}])
+    txt = a.text("#carePanel")
+    check("Operations 75 → 76" in txt and "gehört zu" in txt, f"Hinweis mit Gebäudenamen fehlt: {txt[:400]!r}")
+    check(a.locator('#carePanel [data-care^="bldack:"]').count() == 0, "„Gehört nicht zum Plan“ bei bekanntem Gebäude")
+    check("Operations 75 → 76" in a.js("()=>bldEvents().map(e=>e.text).join(' | ')"), "Ereignis nennt das Gebäude nicht")
+    # bekanntes Gebäude außerhalb des Plans → kein Hinweis; unbekannte Nummer → Hinweis mit Knopf
+    later_export(2, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 61}, {"id": 999, "level": 3}])
+    later_export(3, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 62}, {"id": 999, "level": 4}])
+    txt = a.text("#carePanel")
+    check("Exocomp Factory" not in txt, "Hinweis für ein Gebäude außerhalb des Plans")
+    check("Nr. 999" in txt, f"Unbekannte Nummer nicht gemeldet: {txt[:400]!r}")
+    btn = a.locator('#carePanel [data-care^="bldack:"]')
+    check(btn.count() == 1 and btn.text_content() == "Gehört nicht zum Plan", "Knopf „Gehört nicht zum Plan“ fehlt")
+    btn.click()
+    a.wait_for_timeout(200)
+    check("Nr. 999" not in a.text("#carePanel"), "Hinweis nach „Gehört nicht zum Plan“ noch da")
+    a = reopen(a, b, html, tmp)
+    a.click("#nd")
+    check("Nr. 999" not in a.text("#carePanel"), "Bestätigung nach erneutem Öffnen verloren")
+    later_export(4, [{"id": 0, "level": 76}, {"id": 1, "level": 74}, {"id": 40, "level": 62}, {"id": 999, "level": 5}])
+    check("Nr. 999" in a.text("#carePanel") and "letzten Bestätigung" in a.text("#carePanel"), "Neue Stufe nach Bestätigung nicht gemeldet")
+    a.done()
+
+
+@test
+def ziel_laut_export_erreicht_und_fortschritt(b, html, tmp):
+    a = App(b, html, tmp)
+    files = a.make_exports()
+    a.import_exports(files)
+    a.create_active_plan()  # Operations 75 → 76, Pflichtgebäude u. a. Parsteel Generator A 74 → 75
+    base = json.loads(pathlib.Path(files[-1]).read_text(encoding="utf-8"))
+    check(not a.is_visible("#goalBox"), "Kasten „Ziel erreicht“ ohne Grund")
+    pr0 = a.js("()=>planProgress(s.plans[0]).done")
+    a.p.clock.set_fixed_time((NOW + dt.timedelta(hours=2)).isoformat())
+    d = dict(base, buildings=[{"id": 0, "level": 76}, {"id": 1, "level": 75}],
+             resources=[dict(r, amount=r["amount"] + 500) for r in base["resources"]])
+    f = tmp / ("spocksclub-data-export_" + (NOW + dt.timedelta(hours=1)).strftime("%Y-%m-%dT%H-%M-%S") + "-000Z.json")
+    f.write_text(json.dumps(d), encoding="utf-8")
+    single_import(a, f)
+    a.click("#nd")
+    check(a.js("()=>planProgress(s.plans[0]).done") == pr0 + 2, "Fortschritt läuft nicht mit dem Export mit")
+    check(a.is_visible("#goalBox") and "Operations auf Stufe 76" in a.text("#goalBox"), f"Kasten „Ziel erreicht“ fehlt: {a.text('#goalBox')!r}")
+    a.click("#goalBoxBtn")
+    a.wait_for_timeout(300)
+    check(a.js("()=>s.plans.length") == 0 and a.js("()=>s.goals.length") == 1, "Abschließen aus dem Kasten funktioniert nicht")
+    a.done()
+
+
+@test
+def schiffs_pack_rechnet_mit_dem_pack_der_klasse(b, html, tmp):
+    a = App(b, html, tmp)
+    ids = ship_with_yard_plan(a)  # Schiffsplan Klasse Forschungsschiff
+    a.js(f"()=>{{s.plans[1].after='{ids[0]}';s.active=s.plans[1].id;save();render()}}")  # nach „Schiffswerft 76“
+    a.click("#nd")
+    check("Schiffs-Pack" in a.text("#packsDetail") and a.js("()=>packCalc(s.plans[1])") is None, f"Ohne Schiffs-Pack falsche Anzeige: {a.text('#packsDetail')!r}")
+    # Schiffs-Pack über Daten & Import pflegen
+    a.click("#ni")
+    a.wait_for_timeout(200)
+    check(a.locator("#shipPackRows tr").count() == 4, "Daten & Import zeigt nicht vier Schiffs-Packs")
+    a.click('#shipPackRows [data-shippack="explorer"]')
+    check(a.text("#packTitle") == "Schiffs-Pack pflegen: Forschungsschiff" and a.is_visible("#packNameLab"), "Editor für den Schiffs-Pack falsch")
+    check(a.locator('[data-pm="7★ Rare Explorer Parts"]').count() == 1 and a.locator('[data-pm="Σ-Parsteel"]').count() == 0, "Editor zeigt falsche Materialien")
+    for m, v in {"Σ-Tritanium": 8650000, "7★ Rare Gas": 1700, "7★ Rare Ore": 965, "7★ Uncommon Gas": 7900, "7★ Uncommon Ore": 4470, "7★ Rare Explorer Parts": 770, "7★ Uncommon Explorer Parts": 14300, "7★ Common Explorer Parts": 36500}.items():
+        a.fill(f'[data-pm="{m}"]', str(v))
+    a.click("#savePack")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.shipPacks.explorer.contents['7★ Rare Explorer Parts'].amount") == 770, "Schiffs-Pack nicht gespeichert")
+    check(not a.js("()=>((s.packs||[])[0]||{contents:{}}).contents['7★ Rare Explorer Parts']"), "Stationspack durch Schiffs-Pack verändert")
+    pc = a.js("()=>{const pc=packCalc(s.plans[1]);return pc&&{total:pc.total,driver:pc.driver,name:pc.pack.name}}")
+    check(pc and pc["total"] > 0 and pc["name"] == "Ultra-Forschungsschiff-Machtpaket", f"Pack-Rechnung für das Schiff falsch: {pc}")
+    a.js("()=>{s.active=s.plans[1].id;render()}")
+    a.click("#nd")
+    det = a.text("#packsDetail")
+    check("Ultra-Forschungsschiff-Machtpaket" in det and "inkl. Schiffswerft 76" in det, f"Pack-Karte nennt Pack oder Schiffswerft nicht: {det!r}")
+    check("Mit 1 Ultra-Forschungsschiff-Machtpaket" in a.text("#bottleneckList") or "Pack" in a.text("#bottleneckList"), "Engpass-Karte ohne Pack-Effekt")
+    a.click("#navFc")
+    check("Ultra-Forschungsschiff-Machtpakete" in a.text("#packCard") or "Ultra-Forschungsschiff-Machtpaket" in a.text("#packCard"), "Prognose-Seite ohne Schiffs-Pack")
+    # „Anderes Schiff“ hat keinen Pack
+    a.js("()=>{s.plans[1].ship.key='other';render()}")
+    check(a.js("()=>planPack(s.plans[1])") is None and "Anderes Schiff" in a.text("#packCard"), "„Anderes Schiff“ rechnet mit einem Pack")
+    a = reopen(a, b, html, tmp)
+    check(a.js("()=>s.shipPacks.explorer.contents['7★ Rare Explorer Parts'].amount") == 770, "Schiffs-Pack nach erneutem Öffnen verloren")
+    check(a.js("()=>packEmptyOf(s.shipPacks.interceptor)") is True, "Andere Klassen nicht leer")
+    a.done()
+
+
+@test
+def startwerte_fuer_schiffs_packs_nur_im_eigenen_build(b, html, tmp):
+    # veröffentlichte Datei: leer
+    a = App(b, html, tmp)
+    check(a.js("()=>Object.values(s.shipPacks).every(packEmptyOf)"), "Veröffentlichte Datei hat Startwerte")
+    a.done()
+    # eigener Build mit --seed: Startwerte nur, solange nichts gepflegt ist
+    seed = tmp / "seed.json"
+    seed.write_text(json.dumps({"interceptor": {"name": "Testpaket", "priceEUR": 100, "contents": {"7★ Rare Interceptor Parts": {"amount": 770}}}}), encoding="utf-8")
+    out = tmp / "seeded.html"
+    subprocess.run([sys.executable, str(ROOT / "tools" / "build.py"), "--seed", str(seed), "--out", str(out)], check=True, capture_output=True)
+    a = App(b, out, tmp)
+    check(a.js("()=>s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount") == 770 and a.js("()=>s.shipPacks.interceptor.name") == "Testpaket",
+          "Startwerte im eigenen Build nicht übernommen")
+    a.js("()=>{s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount=999;save()}")
+    a = reopen(a, b, out, tmp)
+    check(a.js("()=>s.shipPacks.interceptor.contents['7★ Rare Interceptor Parts'].amount") == 999, "Startwerte überschreiben gepflegte Werte")
+    a.done()
+
+
+@test
+def verlauf_zeitleiste_und_prognoseband(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    t = a.text("#tlBody")
+    check("Operations" in t and "voraussichtlich" in t, f"Zeitleiste zeigt den aktiven Plan nicht: {t!r}")
+    # Prognoseband wird mitgespeichert (Zahl oder null, aber das Feld existiert)
+    a.js("()=>{logForecast()}")
+    e = a.js("()=>{const L=s.fcLog[s.plans[0].id];return L[L.length-1]}")
+    check("cons" in e and "opt" in e, f"fcLog ohne Band: {e}")
+    # Verlauf der Prognose: ab zwei Einträgen ein Diagramm
+    a.js("()=>{const L=s.fcLog[s.plans[0].id];const e=L[L.length-1];L.unshift(Object.assign({},e,{d:'2026-10-18',eta:e.eta+3*864e5}));save()}")
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#fhBody svg polyline')"), "Verlauf der Prognose zeichnet keine Linie")
+    # Ziel erreicht → ✓ in der Zeitleiste
+    a.js("()=>{s.goals=s.goals||[];s.goals.push({id:'g1',at:'2026-10-20T10:00:00Z',name:'Alt-Ziel',since:'2026-10-01T10:00:00Z',eta:null});save()}")
+    a.click("#navHist")
+    check("erreicht" in a.text("#tlBody") and "Alt-Ziel" in a.text("#tlBody"), "Erreichtes Ziel fehlt in der Zeitleiste")
+    a.done()
+
+
+@test
+def einkommen_je_woche_nebengebaeude_zaehlen_nicht(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports(days=(40, 33, 26, 19, 12, 5, 0)))
+    a.create_active_plan()
+    n = a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').length")
+    check(n >= 3, f"zu wenige Wochen: {n}")
+    check(a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').every(w=>Number.isFinite(w.rate)&&!w.unsure)"), "Wochen ohne Bau dürfen nicht unsicher sein")
+    # unbekanntes Nebengebäude in zwei Exporten → Woche unsicher
+    a.js("()=>{const sn=s.snapshots.slice().sort((x,y)=>new Date(snapTime(x))-new Date(snapTime(y)));sn[2].bld={99:1};sn[3].bld={99:2};save()}")
+    u = a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').filter(w=>w.unsure).length")
+    check(u == 1, f"Nebengebäude-Woche nicht erkannt: {u}")
+    a.click("#navHist")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#iwBody rect.vzBarX')"), "unsichere Woche nicht blass gezeichnet")
+    a.js("()=>{document.querySelector('#iwBody rect.vzBarX').dispatchEvent(new MouseEvent('click'))}")
+    check(a.js("()=>weeklyIncome(s.plans[0],'Σ-Tritanium').filter(w=>w.unsure).length") == 0, "Klick zählt die Woche nicht mit")
+    a.done()
+
+
+@test
+def verlauf_zeitleiste_zeigt_alle_aktiven_plaene(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    second_plan(a)
+    # render() berechnet hasPlanData nur für den gewählten Plan – die Zeitleiste darf davon nicht abhängen
+    a.js("()=>{s.plans.forEach(p=>{p.hasPlanData=false});renderTimeline();renderFcHistory()}")
+    n = a.js("()=>(document.getElementById('tlBody').textContent.match(/voraussichtlich/g)||[]).length")
+    check(n == 2, f"Zeitleiste zeigt nicht alle aktiven Pläne ({n} von 2)")
+    # Prognose-Protokoll gilt für jeden aktiven Plan, nicht nur den Hauptplan
+    a.js("()=>{s.fcLog={};s.plans.forEach(p=>{p.hasPlanData=false});logForecast()}")
+    k = a.js("()=>Object.keys(s.fcLog).length")
+    check(k == 2, f"Prognose-Protokoll nur für {k} von 2 aktiven Plänen")
+    # weit entfernte Termine sprengen die Achse nicht (höchstens 3 Jahre)
+    a.js("()=>{const p=s.plans[0];p.planData.resources[Object.keys(p.planData.resources)[0]].onHand=0;renderTimeline()}")
+    ticks = a.js("()=>document.querySelectorAll('#tlBody .vzGrid').length")
+    check(ticks <= 20, f"zu viele Achsenmarken: {ticks}")
+    a.done()
+
+
+@test
+def teilen_als_bild_modell_und_dialog(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    pid = a.js("()=>s.plans[0].id")
+    # Einzelkarte, genaue Zahlen
+    m = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.playerName='Ben';o.inc.packs=true;return buildShareModel(o)}", pid)
+    check(m["kind"] == "single" and "Ben" in m["stand"], f"Modell Einzelkarte: {m}")
+    check(m["res"] and all(any(ch.isdigit() for ch in r["val"]) for r in m["res"]), "genaue Mengen fehlen")
+    check(m["eta"] and m["pct"].endswith("%"), "Datum/Prozent fehlen")
+    # grob: keine Mengen, kein Packpreis, kein Wochenvergleich, Datum ohne Tag
+    g = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.exact=false;o.inc.packs=true;return buildShareModel(o)}", pid)
+    check(g["res"] is None, "grobe Karte zeigt Mengen")
+    check(not any("€" in c["text"] or "Packs" in c["text"] for c in g["chips"]), "grobe Karte zeigt Packs/Preis")
+    check(not any(ch.isdigit() for ch in g["eta"].split(" ")[0]), f"grobes Datum nennt einen Tag: {g['eta']!r}")
+    # ohne Namen
+    n = a.js("(id)=>{const o=shareDefaults();o.plan=id;o.name=false;o.playerName='Ben';return buildShareModel(o)}", pid)
+    check("Ben" not in n["stand"], "Name trotz abgeschaltetem Häkchen")
+    # Übersichtskarte, Datum nur mit einem Punkt am Ende
+    al = a.js("()=>{const o=shareDefaults();o.plan='all';return buildShareModel(o)}")
+    check(al["kind"] == "all" and al["rows"] and not al["rows"][0]["date"].endswith(".."), f"Übersichtskarte: {al}")
+    # Dialog: öffnet, zeichnet, merkt sich die Auswahl über ein Neuladen
+    a.click("#nd")
+    a.click("#shareBtn")
+    a.wait_for_timeout(400)
+    check(a.is_visible("#shareModal"), "Dialog öffnet nicht")
+    check(a.js("()=>{const d=document.getElementById('shCanvas').getContext('2d').getImageData(300,300,1,1).data;return d[3]>0}"), "Canvas bleibt leer")
+    check(a.js("()=>document.getElementById('shCanvas').toDataURL('image/png').startsWith('data:image/png')"), "PNG-Export fehlt")
+    a.js("()=>{document.getElementById('shCoarse').checked=true;shareRefresh()}")
+    check(a.js("()=>s.share.exact===false"), "Auswahl wird nicht gespeichert")
+    a.done()
+
+
+@test
+def verlauf_der_prognose_enthaelt_den_heutigen_eintrag(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    # nur ein älterer Eintrag im Protokoll: nach einem Render muss der Verlauf mit „heute“ schon zwei Einträge zeigen
+    a.js("()=>{const id=s.plans[0].id;s.fcLog={};s.fcLog[id]=[{d:'2026-10-20',eta:Date.now()+50*864e5,cons:null,opt:null,driver:null,packs:null}];save();render()}")
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!!document.querySelector('#fhBody svg polyline')"), "Verlauf der Prognose zeichnet beim ersten Öffnen keine Linie")
+    a.done()
+
+
+@test
+def prognose_tab_reihenfolge_und_schmaler_kopf(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navFc")
+    a.wait_for_timeout(200)
+    order = a.js("()=>[...document.querySelectorAll('#pane-fc > section')].map(e=>e.id||'x')")
+    check(order == ["x", "fhPanel", "packPanel", "x"], f"Reihenfolge im Prognose-Tab: {order}")
+    check(a.js("()=>document.querySelector('.hero').classList.contains('slim')"), "Kopfbereich ist im Prognose-Tab nicht schmal")
+    check(not a.js("()=>!!document.querySelector('.hero .heroCards').offsetParent"), "Engpass/Packs/Bauzeit-Karten sind im Prognose-Tab noch sichtbar")
+    check(a.js("()=>!!document.querySelector('#pane-fc > section:first-child #packSum')"), "Pack-Zusammenfassung fehlt oben")
+    check(a.js("()=>!!document.querySelector('#packPanel #packCard')"), "Pack-Tabelle ist nicht im unteren Panel")
+    a.click("#nd")
+    a.wait_for_timeout(200)
+    check(a.js("()=>!document.querySelector('.hero').classList.contains('slim')"), "Übersicht zeigt nicht den vollen Kopfbereich")
+    check(a.js("()=>!!document.querySelector('.hero .heroCards').offsetParent"), "Karten fehlen in der Übersicht")
+    a.done()
+
+
+@test
+def effizienzrechner_rechnet_und_speichert_nichts(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navRes")
+    a.wait_for_timeout(200)
+    check(a.js("()=>document.querySelectorAll('#effPanelRows .esIn').length") == 0, "Eingabefelder sichtbar, obwohl der Rechner aus ist")
+    a.click("#esToggle")
+    a.wait_for_timeout(200)
+    n = a.js("()=>document.querySelectorAll('#effPanelRows .esIn').length")
+    check(n > 0, "Rechner zeigt keine Eingabefelder")
+    before = a.js("()=>JSON.stringify(s)")
+    a.js("()=>{const i=document.querySelector('#effPanelRows .esIn');i.value='400';i.dispatchEvent(new Event('input',{bubbles:true}))}")
+    a.wait_for_timeout(150)
+    check(a.js("()=>document.querySelector('#effPanelRows tr.esChg .esEff').textContent.includes('→')"), "Effizienz zeigt keinen Vorher/Nachher-Wert")
+    check(a.js("()=>!!document.getElementById('esSum').textContent.trim() && !document.getElementById('esSum').hidden"), "Zusammenfassung leer")
+    check(a.js("()=>JSON.stringify(s)") == before, "Der Rechner hat den gespeicherten Zustand verändert")
+    a.click("#esReset")
+    a.wait_for_timeout(150)
+    check(a.js("()=>document.querySelector('#effPanelRows .esIn').value===''"), "Zurücksetzen leert die Felder nicht")
+    a.click("#esToggle")
+    a.wait_for_timeout(150)
+    check(a.js("()=>document.querySelectorAll('#effPanelRows .esIn').length")==0, "Rechner lässt sich nicht ausschalten")
     a.done()
 
 

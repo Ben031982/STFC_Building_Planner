@@ -55,7 +55,9 @@ $("packModal").onclick = (e) => {
   if (e.target === $("packModal")) $("packModal").classList.remove("on");
 };
 $("savePack").onclick = () => {
-  const pk = s.packs[0],
+  // ab 3.2: Stationspack oder Schiffs-Pack der gerade bearbeiteten Klasse
+  const ship = typeof packEditCls === "string" && packEditCls,
+    pk = ship ? s.shipPacks[ship] : s.packs[0],
     c = {};
   let bad = false;
   document.querySelectorAll("[data-pm]").forEach((i) => {
@@ -86,7 +88,8 @@ $("savePack").onclick = () => {
     }
   }
   pk.validFrom = $("packValid").value || pk.validFrom;
-  s.logs.push("Stationspack aktualisiert");
+  if (ship && $("packName").value.trim()) pk.name = $("packName").value.trim();
+  s.logs.push(ship ? "Schiffs-Pack aktualisiert: " + SHIP_CLASSES[ship].label : "Stationspack aktualisiert");
   $("packModal").classList.remove("on");
   save();
 };
@@ -106,7 +109,7 @@ $("compare").onclick = () => {
     " (" +
     Math.abs(days).toFixed(1).replace(".", ",") +
     ' Tage)</p><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Stand A</th><th>Stand B</th><th>Veränderung</th></tr></thead><tbody>' +
-    ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)]
+    trackedMats()
       .map((n) => {
         const ok = Number.isFinite(b.values[n]) && Number.isFinite(a.values[n]),
           d = ok ? b.values[n] - a.values[n] : null;
@@ -220,3 +223,28 @@ $("restoreOk").onclick = async () => {
 };
 if (!s.backup || typeof s.backup !== "object") s.backup = { since: new Date().toISOString() };
 render();
+
+$("iwSel").onchange = () => {
+  incomeSel = $("iwSel").value;
+  renderIncomeWeeks();
+};
+
+$("shareBtn").onclick = openShare;
+$("shClose").onclick = () => $("shareModal").classList.remove("on");
+$("shareModal").onclick = (e) => {
+  if (e.target === $("shareModal")) $("shareModal").classList.remove("on");
+};
+["shPlan", "shExact", "shCoarse", "shName", "shPlayer"].forEach((i) => ($(i).oninput = $(i).onchange = shareRefresh));
+document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.onchange = shareRefresh));
+$("shSave").onclick = shareSave;
+$("shCopy").onclick = shareCopy;
+
+$("wifEffLink").onclick = () => $("navRes").click();
+
+var chartResizeT;
+window.addEventListener("resize", () => {
+  clearTimeout(chartResizeT);
+  chartResizeT = setTimeout(() => {
+    if ($("chartBox") && $("chartBox").offsetParent) renderChart();
+  }, 150);
+});

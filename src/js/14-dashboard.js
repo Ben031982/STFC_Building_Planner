@@ -6,9 +6,10 @@ function setTab(t) {
     .forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
   ["ov", "bld", "res", "fc", "hist"].forEach((k) => $("pane-" + k).classList.toggle("on", k === t));
   if (typeof navSync === "function") setTimeout(navSync, 0);
+  document.querySelector(".hero").classList.toggle("slim", t !== "ov");
   const cp = $("chartPanel");
   if (t === "hist") {
-    if (cp.parentElement !== $("pane-hist")) $("pane-hist").prepend(cp);
+    if (cp.parentElement !== $("pane-hist")) $("iwPanel").after(cp);
   } else if (cp.parentElement === $("pane-hist")) $("pane-ov").querySelector(".bottom > div").prepend(cp);
   document.querySelectorAll(".nav [data-tab]").forEach((b) => b.classList.remove("on"));
   if (t !== "ov") {
@@ -54,6 +55,7 @@ function renderNextCard(p) {
     if (p.status !== "review") openImport();
   };
   $("nextSteps").innerHTML = parts
+    .filter(([k]) => !isShip(p) || !["requiredBuildings", "buildTime"].includes(k))
     .map(([k, l, sub]) => {
       const done =
         k === "confirm" ? false : k === "requiredBuildings" ? c.requiredBuildings && !c.targetMismatch : c[k];
@@ -100,7 +102,7 @@ function resTableHtml(p, rows, bn, eff) {
     h += `<tr class="resGrp"><td colspan="6">${g}</td></tr>`;
     for (const r of rs) {
       const m = r[3],
-        pc = r[2] > 0 ? Math.min(100, Math.round((100 * r[1]) / r[2])) : 100,
+        pc = (r[5] || r[2]) > 0 ? Math.min(100, Math.round((100 * r[1]) / (r[5] || r[2]))) : 100,
         com = /Common/.test(r[0]),
         isB = !!(bn && !bn.none && bn.name === r[0]),
         e = eff ? ((p.planData || {}).efficiencies || {})[r[0]] : null;
@@ -141,7 +143,8 @@ function render() {
     s.plans
       .map(
         (x, xi) =>
-          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">Level ${x.start} → ${x.target}</span></div></div>${(() => {
+          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span>${validAfter(x) ? `<br><span class="chain">⛓ nach ${escAttr(validAfter(x).name)}</span>` : ""}</div></div>${(() => {
+            if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>Schiff</span><b></b></div>`;
             const pr = planProgress(x),
               d = pr ? pr.done : x.done,
               t = pr ? pr.total : x.total,
@@ -224,16 +227,18 @@ function render() {
   $("pStatusDot").textContent = "● " + statusLabel(p.status);
   $("pStatusDot").className = "sd-" + p.status;
   $("pImg").src = ART[artKey(p)];
-  $("pName").textContent = p.name.replace(/\s\d+$/, "");
-  $("pLevel").textContent = `Level ${p.start} → ${p.target}`;
+  $("pName").textContent = isShip(p) ? p.name : p.name.replace(/\s\d+$/, "");
+  $("pLevel").textContent = isShip(p) ? shipLabel(p) : `Level ${p.start} → ${p.target}`;
   const pr = planProgress(p);
   $("pProg").textContent = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + " %";
   $("pBar").style.width = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + "%";
   $("heroMain").style.display = p.isMain ? "" : "none";
-  $("pDone").textContent = pr
-    ? `${pr.done} von ${pr.total} Stufen` +
-      (pr.since ? " seit " + new Date(pr.since).toLocaleDateString("de-DE") : "")
-    : `${p.done} von ${p.total}`;
+  $("pDone").textContent = isShip(p)
+    ? (shipReqHtml(p.ship.yard).cls === "no" ? "Schiffswerft " + p.ship.yard + " noch nicht erreicht" : p.ship.name)
+    : pr
+      ? `${pr.done} von ${pr.total} Stufen` +
+        (pr.since ? " seit " + new Date(pr.since).toLocaleDateString("de-DE") : "")
+      : `${p.done} von ${p.total}`;
   $("bottleneckValue").textContent = bottleneck ? bottleneck.name : "Nicht berechenbar";
   $("bottleneckValue").className = bottleneck ? (bottleneck.none ? "green" : "amber") : "";
   $("bottleneckDetail").textContent = bottleneck
@@ -247,13 +252,15 @@ function render() {
     : "Keine Kostengrundlage für diesen Zielplan";
   renderBottleneckCard(p);
   const ct = p.hasPlanData ? (p.planData || {}).construction : null;
-  $("buildTimeValue").textContent = ct ? fmtDuration(ct.cost) : "Nicht berechenbar";
-  $("buildTimeDetail").textContent = ct
+  $("buildTimeValue").textContent = isShip(p) ? "–" : ct ? fmtDuration(ct.cost) : "Nicht berechenbar";
+  $("buildTimeDetail").textContent = isShip(p)
+    ? "Bei Schiffen nicht berücksichtigt"
+    : ct
     ? ct.needed > 0
       ? "Speedups fehlen: " + fmtDuration(ct.needed)
       : "Speedups ausreichend (laut Spock's Club)"
     : "Keine Bauzeitdaten vorhanden";
-  $("buildTimeDetail").className = ct ? (ct.needed > 0 ? "amber" : "green") : "muted";
+  $("buildTimeDetail").className = isShip(p) ? "muted" : ct ? (ct.needed > 0 ? "amber" : "green") : "muted";
   $("planDataNotice").textContent = p.hasPlanData
     ? ""
     : isOutdated(p)
@@ -274,10 +281,6 @@ function render() {
             " passen nicht mehr zum Ziel. Bitte den Upgrade-Plan für das aktuelle Ziel neu importieren.",
         }[p.status] || "") +
         " Ressourcenbedarf, Engpass, Bauzeit, Meilensteine und Bedarfslinie werden deshalb erst nach Import und Bestätigung berechnet.";
-  $("resSource").textContent = resourceSourceNote(p, planRows);
-  $("resRows").innerHTML =
-    resTableHtml(p, planRows, bottleneck, false) ||
-    '<tr><td colspan="6" class="muted">Keine planabhängige Kostengrundlage – der Plan ist nicht aktiv.</td></tr>';
   renderNextCard(p);
   const seq = orderedSequence(p);
   const openN = seq.filter((x) => !x.done).length;
@@ -286,7 +289,9 @@ function render() {
   $("seqReset").style.display = ((p.planData || {}).customOrder || []).length ? "" : "none";
   $("seqRows").innerHTML = seq.length
     ? seqRowsHtml(seq, 0, false, true, (x) => sharedPlans(p, x))
-    : '<tr><td colspan="4" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
+    : isShip(p)
+      ? '<tr><td colspan="4" class="muted">Schiffe haben keine Bau-Reihenfolge – hier zählt nur der Tier-Aufstieg bzw. der Bau des Schiffs.</td></tr>'
+      : '<tr><td colspan="4" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
   $("seqCount").textContent = seq.length
     ? seq.length -
       openN +
@@ -357,9 +362,7 @@ function render() {
     s.logs.push("Bau-Reihenfolge zurückgesetzt: " + p.name);
     save();
   };
-  $("resRows2").innerHTML =
-    resTableHtml(p, planRows, bottleneck, true) ||
-    '<tr><td colspan="6" class="muted">Keine planabhängige Kostengrundlage – der Plan ist nicht aktiv.</td></tr>';
+  renderResMerged(p, planRows, bottleneck);
   $("resSource2").textContent = resourceSourceNote(p, planRows);
   const ce = ((p.planData || {}).efficiencies || {})["Σ-Construction Time"],
     cc = p.hasPlanData ? (p.planData || {}).construction : null;
@@ -376,32 +379,6 @@ function render() {
           })
           .join("")
       : '<tr><td colspan="6" class="muted">Noch keine Messpunkte. Der erste entsteht beim nächsten Import des Upgrade-Plans.</td></tr>';
-    const inc = planIncome(p),
-      sg = (v) => (v > 0 ? "+" : "") + fmt(v);
-    $("incomeRows").innerHTML = inc.rows.length
-      ? inc.rows
-          .map((r) =>
-            r.missing
-              ? `<tr><td>${r.name}</td><td colspan="5" class="muted">keine Werte in beiden Messpunkten</td></tr>`
-              : r.costUp
-                ? `<tr><td>${r.name}</td><td>${sg(r.dStock)}</td><td colspan="4" class="red">Cost gestiegen – Plan geändert? Einkommen nicht berechenbar</td></tr>`
-                : `<tr><td>${r.name}</td><td>${sg(r.dStock)}</td><td>${fmt(r.built)}</td><td class="${r.inc >= 0 ? "green" : "red"}">${sg(r.inc)}</td><td>${r.day === null ? "–" : sg(r.day)}</td><td>${r.day === null ? "–" : sg(r.day * 7)}</td></tr>`,
-          )
-          .join("")
-      : '<tr><td colspan="6" class="muted">Mindestens zwei Messpunkte mit „Total resources“ nötig.</td></tr>';
-    $("incomeNote").textContent = inc.rows.length
-      ? "Zeitraum: " +
-        fdt(inc.from) +
-        " bis " +
-        fdt(inc.to) +
-        " (" +
-        inc.days.toFixed(1).replace(".", ",") +
-        " Tage)." +
-        (inc.days < FC_GAP_DAYS ? " Weniger als " + FC_GAP_H + " Stunden – deshalb keine Tages- oder Wochenraten." : "") +
-        " Zeitpunkt = Importzeit; bitte direkt nach dem Synchronisieren in Spock's Club importieren."
-      : inc.points === 1
-        ? "Ein Messpunkt mit Ressourcen ist vorhanden. Ab dem zweiten Import von „Total resources“ wird das Einkommen berechnet."
-        : "Noch kein Messpunkt mit Ressourcen.";
   })();
   $("effConstr").textContent = cc
     ? "Bauzeit: " +
@@ -428,11 +405,26 @@ function render() {
     : "Noch kein Snapshot importiert.";
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
+  // ab 3.4: grüner Kasten, wenn der Export das Gebäudeziel zeigt
+  {
+    const gb = goalByExport(p),
+      el = $("goalBox");
+    el.hidden = !gb;
+    el.innerHTML = gb
+      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString("de-DE")} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
+      : "";
+    if (gb) $("goalBoxBtn").onclick = () => completePlan(p);
+  }
   renderPacks(p);
   if (typeof renderEffPanel === "function") renderEffPanel(p);
+  if (typeof renderChainPanel === "function") renderChainPanel(p);
   {
     const pc = packCalc(p);
-    if (!pc) {
+    if (!pc && shipPackMissingText(p)) {
+      $("packsValue").textContent = "–";
+      $("packsDetail").textContent =
+        p.ship && p.ship.key === "other" ? "Für „Anderes Schiff“ gibt es keinen Pack" : "Schiffs-Pack unter Daten & Import › Schiffs-Packs pflegen";
+    } else if (!pc) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent = p.hasPlanData
         ? packEmpty()
@@ -448,16 +440,23 @@ function render() {
         (pc.approx ? "ca. " : "") +
         fx(pc.total * pc.pack.priceEUR) +
         " € · bestimmt durch " +
-        pc.driver.replace("7★ ", "");
+        pc.driver.replace("7★ ", "") +
+        (isShip(p) ? " · " + pc.pack.name : "") +
+        (packInclText(p) ? " · " + packInclText(p) : "");
     }
   }
+  $("packSum").innerHTML = $("packsValue").textContent === "–"
+    ? ""
+    : "Packs bis zum Ziel: <b>" + escAttr($("packsValue").textContent) + "</b> · " + escAttr($("packsDetail").textContent) + " – Details weiter unten";
   renderSnaps();
   renderChart();
   renderBackup();
   renderScan();
   renderCare();
   renderEvents();
-  logForecast();
+  renderGoals();
+  logForecast(); // zuerst protokollieren, damit der Verlauf den heutigen Eintrag schon enthält
+  renderVerlauf();
   renderImportPage();
   flashChanged(p);
 }
@@ -499,15 +498,17 @@ function renderSnaps() {
       '<p class="muted">Für einen Vergleich braucht es mindestens zwei Snapshots.</p>';
 }
 function renderChart() {
-  if (!$("resourceSelect").options.length) {
-    const o = ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)]
+  if ($("resourceSelect").options.length !== trackedMats().length) {
+    const keep = $("resourceSelect").value;
+    const o = trackedMats()
       .map((x) => `<option>${x}</option>`)
       .join("");
     $("resourceSelect").innerHTML = o;
     $("chartBigSelect").innerHTML = o;
-    $("resourceSelect").value = "7★ Rare Ore";
+    $("resourceSelect").value = keep && trackedMats().includes(keep) ? keep : "7★ Rare Ore";
   }
-  drawChart("chartBox", 600, 224, false);
+  const cw = $("chartBox").clientWidth;
+  drawChart("chartBox", cw >= 600 ? Math.round(cw) : 600, 224, false);
   if ($("chartModal").classList.contains("on")) {
     $("chartBigSelect").value = $("resourceSelect").value;
     drawChart("chartBigBox", 1100, 470, true);

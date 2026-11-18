@@ -16,6 +16,7 @@ Was der Build macht:
 Nur Python 3.8+ nötig, keine weiteren Pakete.
 """
 import argparse
+import json
 import base64
 import pathlib
 import re
@@ -48,7 +49,7 @@ def read_parts(folder: str, pattern: str) -> str:
     return "\n".join(f.read_text(encoding="utf-8").rstrip("\n") for f in files) + "\n"
 
 
-def build(version: str) -> str:
+def build(version: str, seed=None) -> str:
     css = read_parts("css", "*.css")
     css = re.sub(
         r'url\("(\.\./assets/[^"]+)"\)',
@@ -61,6 +62,12 @@ def build(version: str) -> str:
         lambda m: '"' + data_uri(SRC / "assets" / m.group(1)) + '"',
         js,
     )
+    # Startwerte für Schiffs-Packs (nur eigener Build, siehe --seed)
+    marker = "/*@@SHIP_PACK_SEED@@*/ null"
+    if js.count(marker) != 1:
+        sys.exit("Build-Fehler: Platzhalter für Schiffs-Pack-Startwerte fehlt oder doppelt")
+    if seed:
+        js = js.replace(marker, seed)
     if re.search(r"</script", js, re.I):
         sys.exit("Build-Fehler: '</script' im JavaScript würde die Datei zerbrechen")
     html = (SRC / "index.html").read_text(encoding="utf-8")
@@ -78,13 +85,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", help="Versionsnummer (Standard: Inhalt von src/VERSION)")
     ap.add_argument("--out", help="Zieldatei (Standard: dist/Bens_G7_STFC_Progress_Planner_v<Version>.html)")
+    ap.add_argument("--seed", help="JSON-Datei mit Startwerten für die Schiffs-Packs (nur für einen eigenen Build)")
     a = ap.parse_args()
     version = a.version or (SRC / "VERSION").read_text(encoding="utf-8").strip()
     if not re.fullmatch(r"\d+(\.\d+)+", version):
         sys.exit(f"Build-Fehler: ungültige Version {version!r}")
     out = pathlib.Path(a.out) if a.out else ROOT / "dist" / f"Bens_G7_STFC_Progress_Planner_v{version}.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    html = build(version)
+    seed = None
+    if a.seed:
+        seed = json.dumps(json.loads(pathlib.Path(a.seed).read_text(encoding="utf-8")), ensure_ascii=False)
+    html = build(version, seed)
     out.write_text(html, encoding="utf-8", newline="\n")
     print(f"gebaut: {out}  ({len(html.encode('utf-8')) / 1024:.0f} KB, Version {version})")
 

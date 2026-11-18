@@ -10,6 +10,8 @@ async function parseExport(raw, name) {
   // Ab 2.1: Jeder Wert, den der Planner nutzt, muss eine Zahl ≥ 0 sein. Sonst wird die ganze Datei
   // abgelehnt (keine stille Übernahme von leeren, negativen oder Text-Werten).
   const used = new Map(Object.entries(IDS).map(([n, id]) => [String(id), n]));
+  // ab 3.0: Schiffsteile – optional (ältere oder schmale Exporte enthalten sie evtl. nicht)
+  for (const [n, id] of Object.entries(SHIP_PART_IDS)) used.set(String(id), n);
   for (const [n, c] of Object.entries(SIGMA)) {
     used.set(String(c.raw), n);
     for (const [ids] of c.tokens) for (const id of ids) used.set(String(id), n);
@@ -30,6 +32,7 @@ async function parseExport(raw, name) {
     if (!map.has(String(id))) throw Error(n + " fehlt");
     values[n] = map.get(String(id));
   }
+  for (const [n, id] of Object.entries(SHIP_PART_IDS)) if (map.has(String(id))) values[n] = map.get(String(id));
   const sg = computeSigma(map);
   Object.assign(values, sg.values);
   const bld = {};
@@ -65,6 +68,27 @@ function syncResources() {
   for (const [n, v] of Object.entries(ls.values))
     if (!s.resources.some((r) => r[0] === n)) s.resources.push([n, v, 0]);
 }
+// ab 3.0: Ältere Snapshots (eingelesen vor 3.0) kennen die Schiffsteile noch nicht. Sie werden aus der
+// ursprünglichen Exportdatei nachgetragen – nur fehlende Teile, sonst ändert sich nichts.
+function snapNeedsParts(sn) {
+  return !!(sn && sn.values && Object.keys(SHIP_PART_IDS).some((k) => sn.values[k] === undefined));
+}
+function backfillParts(sn, values) {
+  let n = 0;
+  for (const k of Object.keys(SHIP_PART_IDS))
+    if (sn.values[k] === undefined && isNum(values[k])) {
+      sn.values[k] = values[k];
+      n++;
+    }
+  return n > 0;
+}
+function partsBackfillDone(n) {
+  if (!n) return;
+  s.logs.push("Schiffsteile aus " + n + (n === 1 ? " älterem Export" : " älteren Exporten") + " nachgetragen");
+  persist();
+  render();
+  toast("Schiffsteile aus " + n + (n === 1 ? " älterem Export" : " älteren Exporten") + " nachgetragen.");
+}
 function sameValues(a, b) {
   if (!a || !b || !a.values || !b.values) return false;
   const ks = Object.keys(a.values);
@@ -86,9 +110,14 @@ async function ingestFiles(files) {
 async function openBatch(entries, source, skipped, quiet) {
   const known = new Set(s.snapshots.map((x) => x.hash)),
     items = [];
+  let filled = 0;
   for (const e of entries) {
     try {
       const snap = await parseExport(await e.read(), e.name);
+      if (known.has(snap.hash)) {
+        const old = s.snapshots.find((x) => x.hash === snap.hash);
+        if (snapNeedsParts(old) && backfillParts(old, snap.values)) filled++;
+      }
       items.push({ snap, status: known.has(snap.hash) ? "dup" : "new" });
     } catch (err) {
       items.push({ snap: { fileName: e.name }, status: "err", msg: err.message });
@@ -132,6 +161,7 @@ async function openBatch(entries, source, skipped, quiet) {
         (it.msg ? it.msg + " " : "") + "Σ-Token nicht eindeutig: " + it.snap.sigmaWarn.join(", ") + ".";
     it.sel = it.status === "new";
   }
+  partsBackfillDone(filled);
   const cand = items.filter((i) => ["new", "old", "same"].includes(i.status));
   if (source === "ordner" && !cand.length) {
     scanMsg =
@@ -264,13 +294,17 @@ async function scanExports(change, quiet) {
     return;
   }
   const names = new Set(s.snapshots.map((x) => x.fileName).concat(s.exportScan.ignored || [])),
-    entries = [];
+    entries = [],
+    backfill = [];
   let skipped = 0;
   try {
     for await (const [n, h] of expDir.entries()) {
       if (h.kind !== "file" || !EXP_RE.test(n)) continue;
       if (names.has(n)) {
         skipped++;
+        // ab 3.0: Schiffsteile in älteren Snapshots nachtragen
+        const old = s.snapshots.find((x) => x.fileName === n);
+        if (snapNeedsParts(old)) backfill.push({ old, h, n });
         continue;
       }
       entries.push({ name: n, read: async () => (await h.getFile()).text() });
@@ -281,6 +315,14 @@ async function scanExports(change, quiet) {
     if (!quiet) toast(scanMsg);
     return;
   }
+  let filled = 0;
+  for (const b of backfill) {
+    try {
+      const snap = await parseExport(await (await b.h.getFile()).text(), b.n);
+      if (snap.hash === b.old.hash && backfillParts(b.old, snap.values)) filled++;
+    } catch (_) {}
+  }
+  partsBackfillDone(filled);
   s.exportScan.lastScan = new Date().toISOString();
   persist();
   await openBatch(entries, "ordner", skipped, quiet);

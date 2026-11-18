@@ -4,8 +4,10 @@ function getPlanResources(p) {
     res = d.resources || {},
     imp = d.importedAt ? new Date(d.importedAt) : null,
     snap = latestSnapshot(),
-    snapNewer = !!snap && (!imp || new Date(snapTime(snap)) > imp);
-  return MATERIALS.map((n) => {
+    snapNewer = !!snap && (!imp || new Date(snapTime(snap)) > imp),
+    // ab 3.0: „startet nach“ – Kosten der Vorgänger werden zuerst vom Bestand abgezogen
+    resv = typeof chainReserved === "function" ? chainReserved(p) : null;
+  return planMaterials(p).map((n) => {
     const r = res[n] || {};
     let cur = r.onHand,
       missing = r.needed,
@@ -15,7 +17,13 @@ function getPlanResources(p) {
       missing = Math.max(0, r.cost - cur);
       src = "snapshot";
     }
-    return [n, cur, r.cost, missing, src];
+    let need = r.cost;
+    if (resv && resv[n] > 0 && isNum(r.cost) && isNum(cur)) {
+      need = r.cost + resv[n];
+      missing = Math.max(0, need - cur);
+    }
+    // [Material, Bestand, Kosten, fehlt, Quelle, Bedarf inkl. Vorgänger]
+    return [n, cur, r.cost, missing, src, need];
   });
 }
 function resourceSourceNote(p, rows) {
@@ -52,7 +60,7 @@ function resourceSourceNote(p, rows) {
 }
 function getBottleneck(rows) {
   if (!rows.length) return null;
-  const share = (r) => (r[2] > 0 ? r[3] / r[2] : 0),
+  const share = (r) => ((r[5] || r[2]) > 0 ? r[3] / (r[5] || r[2]) : 0),
     seven = rows
       .filter((r) => /^7★ (Rare|Uncommon) /.test(r[0]) && r[3] > 0)
       .sort((a, b) => share(b) - share(a) || (/Rare/.test(b[0]) ? 1 : 0) - (/Rare/.test(a[0]) ? 1 : 0));
@@ -99,6 +107,13 @@ function currentLevels(p) {
     cur[b.name.toLowerCase()] = n ? Math.max(b.start, Math.min(n.start, b.target)) : b.target;
   }
   for (const [k, n] of now) if (!(k in cur)) cur[k] = n.start;
+  // ab 3.4: bekannte Gebäude laufen mit dem neuesten Export mit (nie über das Ziel, nie zurück)
+  if (typeof exportLevel === "function")
+    for (const b of bl.buildings) {
+      const k = b.name.toLowerCase(),
+        el = exportLevel(b.name);
+      if (el != null) cur[k] = Math.max(cur[k], Math.min(el, b.target));
+    }
   return cur;
 }
 function planProgress(p) {
@@ -143,7 +158,7 @@ function importOutcome(p, d) {
   const old = p.planData || {},
     bl = getBaseline(p),
     t = d.planData.target,
-    sameTarget = !!(
+    sameTarget = isShip(p) || !!(
       bl &&
       t &&
       bl.building &&
@@ -179,7 +194,7 @@ function makeHistPoint(p, kind, at, withRes, withCon) {
     };
   if (withRes && d.resources) {
     pt.resources = {};
-    for (const k of MATERIALS) {
+    for (const k of planMaterials(p)) {
       const r = d.resources[k];
       if (r && isNum(r.cost) && isNum(r.onHand))
         pt.resources[k] = { cost: r.cost, onHand: r.onHand, needed: r.needed };
@@ -206,7 +221,7 @@ function planIncome(p) {
     days,
     from: a.at,
     to: b.at,
-    rows: MATERIALS.map((k) => {
+    rows: planMaterials(p).map((k) => {
       const ra = a.resources[k],
         rb = b.resources[k];
       if (!ra || !rb) return { name: k, missing: true };

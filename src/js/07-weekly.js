@@ -8,27 +8,41 @@ function dayKey(t) {
   return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 function logForecast() {
-  const p = mainPlan();
-  if (!p || !p.hasPlanData) return;
+  // ab 4.0: jeder aktive Plan wird protokolliert, nicht nur der Hauptplan
+  let changed = false;
+  for (const p of s.plans) {
+    p.status = calcPlanStatus(p);
+    p.hasPlanData = p.status === "active";
+    if (logForecastFor(p)) changed = true;
+  }
+  if (changed) persist();
+}
+function logForecastFor(p) {
+  if (!p || !p.hasPlanData) return false;
   const fc = planForecast(p);
-  if (!fc) return;
+  if (!fc) return false;
   const pc = packCalc(p),
     o = fc.overall,
     e = {
       d: dayKey(Date.now()),
-      eta: o.real == null ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
+      // ab 3.0: Schiff ohne nötige Schiffswerft hat kein Fertigdatum
+      eta: o.real == null || shipYardBlock(p) ? null : o.real === 0 ? 0 : Math.round(fc.base + o.real * 864e5),
       driver: o.realDriver || null,
       packs: pc ? pc.total : null,
     };
+  // ab 4.0: Band konservativ/optimistisch mitspeichern (null = nicht absehbar)
+  const bandAt = (v) => (v == null || shipYardBlock(p) ? null : v === 0 ? 0 : Math.round(fc.base + v * 864e5));
+  e.cons = bandAt(o.cons);
+  e.opt = bandAt(o.opt);
   s.fcLog = s.fcLog && typeof s.fcLog === "object" ? s.fcLog : {};
   const L = (s.fcLog[p.id] = Array.isArray(s.fcLog[p.id]) ? s.fcLog[p.id] : []);
   const last = L[L.length - 1];
   if (last && last.d === e.d) {
-    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs) return;
+    if (last.eta === e.eta && last.driver === e.driver && last.packs === e.packs && last.cons === e.cons && last.opt === e.opt) return false;
     L[L.length - 1] = e;
   } else L.push(e);
   if (L.length > 400) L.splice(0, L.length - 400);
-  persist();
+  return true;
 }
 function weekBounds(off) {
   const n = new Date();
@@ -77,7 +91,7 @@ function weekData(p, off) {
   if (!s0) s0 = inWeek[0] || null;
   const s1 = snapAt(snaps, end);
   const res = [];
-  const mats = ["Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium", ...Object.keys(IDS)];
+  const mats = trackedMats();
   if (s0 && s1 && s1.t > s0.t) {
     const days = (s1.t - s0.t) / 864e5;
     for (const m of mats) {
@@ -102,7 +116,7 @@ function weekData(p, off) {
   const L = (s.fcLog && p && s.fcLog[p.id]) || [],
     fcEnd = [...L].reverse().find((e) => e.d <= dayKey(end - 1) && e.d >= dayKey(W.a)) || null,
     fcPrev = [...L].reverse().find((e) => e.d < dayKey(W.a)) || null;
-  const ev = p ? allEvents(p).filter((e) => e.t >= W.a && e.t < W.b) : [];
+  const ev = (p ? allEvents(p) : goalEvents()).filter((e) => e.t >= W.a && e.t < W.b);
   return {
     W,
     end,
@@ -154,11 +168,11 @@ function renderWeekly() {
       g === 0
         ? "unverändert zur Vorwoche"
         : g > 0
-          ? `<span class="wifGain">${g} Tage früher als Ende Vorwoche</span>`
-          : `<span class="wifLoss">${-g} Tage später als Ende Vorwoche</span>`;
+          ? `<span class="wifGain">${g} Tage früher als zum Wochenbeginn (${dl(W.a)})</span>`
+          : `<span class="wifLoss">${-g} Tage später als zum Wochenbeginn (${dl(W.a)})</span>`;
   } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
   const fcE = d.fcEnd;
-  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : packEmpty() ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
+  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : shipPackMissingText(p) ? (p.ship && p.ship.key === "other" ? "kein Pack für „Anderes Schiff“" : "Schiffs-Pack nicht gepflegt") : packEmptyFor(p) ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
   h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
   // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
   h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
@@ -214,7 +228,9 @@ function wkOutlook(p) {
     (bn && bn.rows.length
       ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
       : "") +
-    `<li>Fertigstellung <b>${fmtEta(fc.overall.real, fc.base)}</b>, wenn das Einkommen gleich bleibt</li></ul>` +
+    (shipYardBlock(p)
+      ? `<li>Fertigstellung offen – <b>Schiffswerft ${shipYardBlock(p).yard} fehlt</b> (${escAttr(shipYardHint(shipYardBlock(p)))})</li></ul>`
+      : `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>`) +
     `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
   );
 }

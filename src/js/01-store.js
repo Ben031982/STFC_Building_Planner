@@ -82,6 +82,22 @@ function migrateState(st) {
     };
     // ab 2.1: Wunschdatum für „Zieltermin prüfen“
     if (typeof p.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.targetDate)) q.targetDate = p.targetDate;
+    // ab 3.0: „startet nach“
+    if (typeof p.after === "string" && p.after) q.after = p.after;
+    // ab 3.0: Gebäudestand, den Ben mit „Gehört nicht zum Plan“ bestätigt hat
+    if (p.bldAck && typeof p.bldAck.t === "string" && p.bldAck.bld && typeof p.bldAck.bld === "object")
+      q.bldAck = { t: p.bldAck.t, bld: Object.assign({}, p.bldAck.bld) };
+    // ab 3.0: Schiffspläne
+    if (p.type === "ship" && p.ship && typeof p.ship === "object") {
+      q.type = "ship";
+      q.ship = {
+        key: String(p.ship.key || "other"),
+        name: String(p.ship.name || q.name),
+        cls: ["battleship", "interceptor", "explorer", "survey"].includes(p.ship.cls) ? p.ship.cls : "explorer",
+        yard: Number.isFinite(+p.ship.yard) ? +p.ship.yard : null,
+        build: !!p.ship.build,
+      };
+    }
     if (!old) {
       q.planData = p.planData || null;
       q.confirmation = p.confirmation || null;
@@ -133,9 +149,17 @@ function migrateState(st) {
     }
     st.plans.forEach((p, i) => (p.isMain = i === 0));
   }
+  // ab 3.0: Verweise auf gelöschte Vorgänger entfernen; ab 3.1 nur noch Schiff → passender Schiffswerft-Plan
+  for (const p of st.plans) {
+    if (!p.after) continue;
+    const q = st.plans.find((x) => x.id === p.after && x !== p);
+    if (!q || p.type !== "ship" || !p.ship || !isShipyardPlan(q, +p.ship.yard)) delete p.after;
+  }
   if (!st.plans.find((p) => p.id === st.active))
     st.active = st.plans.length ? (st.plans.find((p) => p.isMain) || st.plans[0]).id : null;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;
+  // ab 3.2: Schiffs-Packs je Klasse
+  ensureShipPacks(st);
   return st;
 }
 let s = readStore(K),

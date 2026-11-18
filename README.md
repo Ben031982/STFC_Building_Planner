@@ -3,19 +3,76 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.1.0-46C2EE?style=flat-square" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/Version-5.0.0-46C2EE?style=flat-square" alt="Version 5.0.0">
   <img src="https://img.shields.io/badge/l%C3%A4uft-offline%20im%20Browser-5BD2A0?style=flat-square" alt="läuft offline im Browser">
   <img src="https://img.shields.io/badge/Browser-Chrome%20%7C%20Edge-F4A53A?style=flat-square" alt="Chrome oder Edge">
   <img src="https://img.shields.io/badge/Sprache-Deutsch-93A7B9?style=flat-square" alt="Deutsch">
 </p>
 
-**Ben's G7 STFC Progress Planner** zeigt dir für *Star Trek Fleet Command*, **wann du ein Gebäudeziel erreichst** – zum Beispiel Operations 76 – und **welches Material dich am meisten bremst**. Er rechnet nicht mit Schätzwerten, sondern mit deinen echten Daten aus [Spock's Club](https://next.spocks.club): deinem Ressourcenstand aus regelmäßigen Exporten und den Kosten deines Upgrade-Plans.
+**Ben's G7 STFC Progress Planner** zeigt dir für *Star Trek Fleet Command*, **wann du ein Ziel erreichst** – ein Gebäude wie Operations 76 oder ein G7-Schiff wie die Praefortis auf Tier 9 – und **welches Material dich am meisten bremst**. Er rechnet nicht mit Schätzwerten, sondern mit deinen echten Daten aus [Spock's Club](https://next.spocks.club): deinem Ressourcenstand aus regelmäßigen Exporten und den Kosten deines Upgrade-Plans.
 
 Der Planner ist **eine einzige HTML-Datei**. Kein Server, keine Anmeldung, kein Internet nötig – alles, was du einliest, bleibt in deinem Browser auf deinem PC.
 
 <p align="center">
   <img src="docs/images/overview.jpg" alt="Übersicht des Planners" width="100%">
 </p>
+
+## Neu in Version 5.0
+
+- **Treffsicherheit der Prognose** (Tab „Verlauf“ › „Erreichte Ziele“): Beim Abschließen eines Ziels werden die Prognosen zu Planstart und zur Hälfte der Bauzeit mitgespeichert. Kennzahlen und Tabelle zeigen, wie viele Tage das tatsächliche Datum von der Prognose abwich und ob sie eher zu optimistisch oder zu vorsichtig war (ab zwei Zielen).
+- **Effizienzrechner:** In „Ressourcen & Effizienzen“ zusätzliche Effizienz in %-Punkten eintragen – Fehlt, Effizienz und Termin ändern sich sofort, gespeichert wird nichts.
+- **Aufgeräumte Oberfläche:** schmaler Kopf auf den Unterseiten, Ressourcen und Effizienzen in einer Tabelle, Datenstand als Zeile im Kopf der Übersicht, „Packs bis zum Ziel“ am Ende von „Prognose & Packs“, kürzerer Verlauf-Tab.
+
+## Neu in Version 4.0
+
+<p align="center">
+  <img src="docs/images/zeitleiste.jpg" alt="Zeitleiste aller Ziele" width="100%">
+</p>
+
+- **Zeitleiste aller Ziele** (Tab „Verlauf“): jeder aktive Plan eine Reihe – erreichte Ziele mit ✓, aktive mit Fortschritt, Fertigdatum und Band von konservativ bis optimistisch, noch nicht aktive gestrichelt.
+- **Einkommen je Woche:** Tageseinkommen je Kalenderwoche für Σ-Tritanium, Σ-Parsteel, Σ-Dilithium und 7★ Rare/Uncommon. Wochen mit Nebengebäuden sind als „Wert unsicher“ blass und zählen nicht in Durchschnitt und Trend.
+- **Verlauf der Prognose:** Fertigdatum je Tag mit Band, Plan-Importen und Pack-Änderungen als Marker und Vergleich zur Vorwoche. Das Protokoll läuft jetzt für jeden aktiven Plan.
+- **Als Bild teilen:** quadratische Karte für den Allianz-Chat, komplett im Browser gezeichnet. Wählbar sind ein Plan oder „Alle Ziele“, genaue Zahlen oder nur Prozent und grobes Datum, der Inhalt per Häkchen und der Spielername.
+
+<p align="center">
+  <img src="docs/images/teilen-karte.jpg" alt="Karte zum Teilen" width="48%">
+  <img src="docs/images/teilen-alle.jpg" alt="Übersichtskarte Alle Ziele" width="48%">
+</p>
+
+## Neu in Version 3.4
+
+- **Gebäude beim Namen:** Hinweise und Ereignisse nennen das Gebäude, der Datenpflege-Hinweis kommt nur noch für Gebäude deiner Pläne.
+- **Ziel erreicht laut Export:** grüner Kasten mit „Plan abschließen“, sobald der Export das Zielgebäude auf der Zielstufe zeigt.
+- **Fortschritt aus dem Export:** „N von M Stufen“ läuft mit jedem Export mit.
+
+## Neu in Version 3.3
+
+- **Erreichte Ziele:** dauerhafte Liste unter „Verlauf“, Einträge löschbar.
+- **Hinweis bei „Gedeckt“:** Sobald alle Ressourcen da sind, erinnert die Übersicht ans Abschließen nach dem Bau.
+
+## Neu in Version 3.2
+
+- **Schiffs-Packs:** je ein Pack für Kampfschiff, Abfangjäger, Forschungsschiff und Miner. Schiffspläne zeigen damit „Packs bis zum Ziel“, was ein Pack bringt und „1 Pack pro Woche“ – inklusive dem, was der Schiffswerft-Plan noch braucht.
+
+## Neu in Version 3.1
+
+- **Ziel erreicht:** Gebaut? Unter „Plandaten verwalten“ schließt du den Plan ab – im Wochenbericht steht dann „Ziel erreicht“.
+- **Schiffswerft-Plan statt „Startet nach“:** Nur noch ein Schiff kann auf einen Schiffswerft-Plan folgen. Gebäudeketten sind weg, weil sie gemeinsame Vorstufen doppelt zählten.
+
+## Neu in Version 3.0
+
+<p align="center">
+  <img src="docs/images/schiff.jpg" alt="Schiffsplan Praefortis T9 mit Prognose und Engpass" width="100%">
+</p>
+
+- **Schiffe planen:** Neben Gebäuden plant der Planner jetzt G7-Schiffe – Tier-Aufstieg oder Neubau. Zur Wahl stehen zehn G7-Schiffe mit ihrer Schiffswerft-Voraussetzung oder ein anderes Schiff mit frei gewählter Klasse (Kampfschiff, Abfangjäger, Forschungsschiff, Miner).
+- **Schiffsteile zählen mit:** Common, Uncommon und Rare Parts der Klasse kommen aus dem JSON-Export und laufen durch Prognose, Engpass und Zieltermin wie jedes andere Material.
+- **Voraussetzung auf einen Blick:** Der Planner prüft beim Anlegen, ob deine Schiffswerft laut Export hoch genug ist.
+- **Startet nach** (ab 3.1 „Schiffswerft-Plan“): erst Schiffswerft 76, dann die Snakehead. Was die Schiffswerft kostet, ist vorgemerkt; das Schiff rechnet mit dem Rest.
+- **Schiffsteile nachtragen:** Liest du ältere Exporte noch einmal ein, ergänzt der Planner ihre Schiffsteile, ohne Snapshots doppelt anzulegen – so gibt es sofort eine Prognose.
+- **Einfacher Import:** Für Schiffe reichen zwei Texte aus dem Upgrade-Planer (*Total resources* und *Item costs & efficiencies*).
+
+Deine Daten aus früheren Versionen übernimmt 3.0 automatisch. Alle Änderungen im Detail: [CHANGELOG.md](CHANGELOG.md).
 
 ## Neu in Version 2.1
 
@@ -30,8 +87,6 @@ Der Planner ist **eine einzige HTML-Datei**. Kein Server, keine Anmeldung, kein 
 - **Sicherer Import:** Ältere Exporte ändern den aktuellen Bestand nicht mehr, Dateien mit ungültigen Werten werden abgelehnt.
 - **Lesbare Langzeit-Termine:** über ein Jahr als „ca. Mai 2032 (~5,5 Jahre)“, über 100 Jahre „nicht absehbar“.
 - **Neuer Name:** Der Planner ist ganz auf die 7★-Materialien (G7) zugeschnitten und heißt jetzt *Ben's G7 STFC Progress Planner*.
-
-Deine Daten aus 1.0 und 2.0 übernimmt 2.1 automatisch – einfach die neue Datei im selben Browser öffnen. Alle Änderungen im Detail: [CHANGELOG.md](CHANGELOG.md).
 
 ## Neu in Version 2.0
 
@@ -55,14 +110,18 @@ Deine Daten aus 1.0 und 2.0 übernimmt 2.1 automatisch – einfach die neue Date
 
 | | |
 |---|---|
+| 🚀 **Schiffe** | Tier-Aufstieg oder Neubau von G7-Schiffen mit Schiffsteilen, Prognose, Engpass und Prüfung der Schiffswerft-Voraussetzung. |
+| ⛓️ **Schiffswerft-Plan** | Ein Schiff rechnet nach dem nötigen Schiffswerft-Plan: Was die Schiffswerft kostet, wird zuerst vom Bestand abgezogen. |
+| ✅ **Ziel erreicht** | Gebaute Ziele abschließen – sie erscheinen im Wochenbericht. |
 | 🎯 **Fertigstellungsprognose** | Realistisch, konservativ und optimistisch – berechnet aus deinem tatsächlichen Einkommen pro Material, mit Anzeige, wie belastbar das Datum ist (vorläufig, brauchbar, stabil). |
 | 🧱 **Engpass** | Die drei Materialien, die bei deinem Einkommen zuletzt gedeckt sind – und um wie viele Tage dich ein Stationspack früher ans Ziel bringt. |
-| 📦 **Packs bis zum Ziel** | Wie viele Stationspacks nötig wären – inklusive Kosten und „Was wäre, wenn ich jede Woche einen kaufe?“. |
+| 📦 **Packs bis zum Ziel** | Wie viele Packs nötig wären – Stationspack bei Gebäuden, Schiffs-Pack der Klasse bei Schiffen – inklusive Kosten und „Was wäre, wenn ich jede Woche einen kaufe?“. |
 | 🏗️ **Bau-Reihenfolge** | Alle Pflichtgebäude nach OPS-Stufen gegliedert, per Ziehen anpassbar, mit Fortschritt seit Planbeginn. |
 | 🗂️ **Mehrere Zielpläne** | Beliebig viele Ziele parallel; erledigte Schritte setzen betroffene Pläne auf „Veraltet“, und ein Update-Assistent führt nacheinander durch sie. |
 | 📅 **Wochenbericht** | Fortschritt, Fertigstellung und Einkommen im Vergleich zur Vorwoche, Effizienzänderungen, Ereignisse und ein Ausblick auf die kommende Woche. |
 | 🔮 **Was-wäre-wenn** | Packs sofort oder pro Woche, anderer Packinhalt, einmalige Zuwächse – und ein Zieltermin je Plan: reicht dein Einkommen bis zum Wunschdatum? |
-| ⚙️ **Effizienzen** | Was deine Effizienzen sparen und wie sich Änderungen auf den Termin auswirken. |
+| ⚙️ **Effizienzen** | Was deine Effizienzen sparen, wie sich Änderungen auf den Termin auswirken – und ein Rechner für zusätzliche Effizienz. |
+| 🎯 **Treffsicherheit** | Wie weit lagen deine Prognosen bei Planstart, zur Hälfte der Bauzeit und kurz vor Ende neben dem tatsächlichen Datum? |
 | 💾 **Backups** | Automatisch nach jedem Import in einen Ordner deiner Wahl, Wiederherstellen mit einem Klick; Anzeige der Speicherbelegung und Warnung, bevor der Browser-Speicher voll ist. |
 | 🧭 **Einrichtung & Erklärungen** | Fünf Schritte bis zur ersten Prognose, die der Planner selbst abhakt, und kurze Erklärungen zu jedem Fachbegriff. |
 
@@ -75,9 +134,9 @@ Deine Daten aus 1.0 und 2.0 übernimmt 2.1 automatisch – einfach die neue Date
 ## Schnellstart
 
 1. **Spock's Club einrichten** – Konto auf [next.spocks.club](https://next.spocks.club) anlegen und dein Spielkonto synchronisieren: am PC über den [STFC Community Mod](https://github.com/netniv/stfc-mod/releases) (Sync-Token unter *Syncing › Community Mod*) oder mit der Spock's-Club-App.
-2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v2.1.0.html`](Bens_G7_STFC_Progress_Planner_v2.1.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
+2. **Planner herunterladen** – [`Bens_G7_STFC_Progress_Planner_v5.0.0.html`](Bens_G7_STFC_Progress_Planner_v5.0.0.html) öffnen, rechts oben auf *Download raw file* klicken und die Datei an einem festen Ort speichern (oder die Datei aus dem neuesten [Release](https://github.com/Ben031982/STFC_Building_Planner/releases) nehmen). Dann per Doppelklick in **Chrome oder Edge** öffnen – eine kurze Einführung und die Einrichtung in der Übersicht führen dich durch die ersten Schritte.
 3. **Account-Snapshot einlesen** – in Spock's Club unter *Syncing › Export Data* mindestens *Buildings* und *Resources* als **JSON** herunterladen und im Planner mit **„Neue Exporte einlesen“** übernehmen.
-4. **Zielplan anlegen** – im Spock's-Upgrade-Planer genau **ein** Ziel anlegen, die drei Texte *Included upgrades*, *Total resources* und *Item costs & efficiencies* kopieren und im Planner unter **„Plandaten verwalten › Upgrade-Plan importieren“** einfügen. Prüfen, bestätigen – fertig.
+4. **Zielplan anlegen** – im Spock's-Upgrade-Planer genau **ein** Ziel anlegen, die drei Texte *Included upgrades*, *Total resources* und *Item costs & efficiencies* kopieren und im Planner unter **„Plandaten verwalten › Upgrade-Plan importieren“** einfügen. Prüfen, bestätigen – fertig. Für ein Schiff wählst du beim Anlegen *Schiff* und brauchst nur *Total resources* und *Item costs & efficiencies*.
 
 > [!TIP]
 > Exportiere **mehrmals pro Woche**. Für die erste Prognose braucht der Planner drei Abschnitte mit je mindestens 20 Stunden Abstand – also Exporte an vier verschiedenen Tagen.
@@ -87,6 +146,10 @@ Deine Daten aus 1.0 und 2.0 übernimmt 2.1 automatisch – einfach die neue Date
 ## Einblicke
 
 <table>
+  <tr>
+    <td width="50%"><img src="docs/images/schiff-anlegen.jpg" alt="Schiffsplan anlegen"><br><sub><b>Schiffsplan anlegen</b> – Schiff, Klasse, Tier und Voraussetzung</sub></td>
+    <td width="50%"><img src="docs/images/startet-nach.jpg" alt="Schiff nach Schiffswerft-Plan"><br><sub><b>Schiffswerft-Plan</b> – was die Schiffswerft braucht, ist vorgemerkt</sub></td>
+  </tr>
   <tr>
     <td width="50%"><img src="docs/images/prognose.jpg" alt="Prognose und Packs"><br><sub><b>Prognose &amp; Packs</b> – drei Szenarien und die Packs bis zum Ziel</sub></td>
     <td width="50%"><img src="docs/images/wochenbericht.jpg" alt="Wochenbericht"><br><sub><b>Wochenbericht</b> – was sich in dieser Woche getan hat, mit Ausblick</sub></td>
@@ -143,6 +206,11 @@ Er braucht mindestens drei Abschnitte zwischen Exporten mit je 20 Stunden Abstan
 </details>
 
 <details>
+<summary><b>Warum zeigt ein Schiffsplan bei den Schiffsteilen „zu wenig Daten“?</b></summary>
+Exporte, die vor Version 3.0 eingelesen wurden, enthalten im Planner noch keine Schiffsteile. Lies die alten Export-Dateien noch einmal ein („Neue Exporte einlesen“ oder per Ziehen) – der Planner trägt die Schiffsteile nach.
+</details>
+
+<details>
 <summary><b>Die Bestände im Planner weichen vom Spiel ab – warum?</b></summary>
 Bestände und Kosten kommen aus Spock's Club. Sie können abweichen, etwa wenn Spock's Club eine Effizienz nicht abzieht oder der letzte Sync schon älter ist. Vor dem Export im Spiel synchronisieren und auf der Syncing-Seite „Last sync“ prüfen.
 </details>
@@ -160,4 +228,4 @@ Neue Versionen entstehen per GitHub-Action **Release erstellen** (Actions › Ru
 
 ---
 
-<sub>Ein privates Fan-Projekt. Nicht verbunden mit Scopely, CBS Studios / Paramount oder Spock's Club. *Star Trek* und *Star Trek Fleet Command* sind Marken ihrer jeweiligen Inhaber. Die Gebäudebilder im Planner sind eigene KI-generierte Grafiken.</sub>
+<sub>Ein privates Fan-Projekt. Nicht verbunden mit Scopely, CBS Studios / Paramount oder Spock's Club. *Star Trek* und *Star Trek Fleet Command* sind Marken ihrer jeweiligen Inhaber. Die Gebäude- und Schiffsbilder im Planner sind eigene KI-generierte Grafiken.</sub>
