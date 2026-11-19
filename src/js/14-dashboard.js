@@ -4,7 +4,7 @@ function setTab(t) {
   document
     .querySelectorAll("#dashTabs [data-tab]")
     .forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
-  ["ov", "bld", "res", "fc", "hist"].forEach((k) => $("pane-" + k).classList.toggle("on", k === t));
+  ["ov", "bld", "res", "fc", "hist", "log"].forEach((k) => $("pane-" + k).classList.toggle("on", k === t));
   if (typeof navSync === "function") setTimeout(navSync, 0);
   document.querySelector(".hero").classList.toggle("slim", t !== "ov");
   const cp = $("chartPanel");
@@ -287,11 +287,12 @@ function render() {
   $("seqMsg").textContent = $("seqMsg").dataset.keep ? $("seqMsg").textContent : "";
   delete $("seqMsg").dataset.keep;
   $("seqReset").style.display = ((p.planData || {}).customOrder || []).length ? "" : "none";
+  const cover = seq.length && p.status === "active" ? coverMap(p, seq) : null;
   $("seqRows").innerHTML = seq.length
-    ? seqRowsHtml(seq, 0, false, true, (x) => sharedPlans(p, x))
+    ? seqRowsHtml(seq, 0, false, true, (x) => sharedPlans(p, x), cover)
     : isShip(p)
-      ? '<tr><td colspan="4" class="muted">Schiffe haben keine Bau-Reihenfolge – hier zählt nur der Tier-Aufstieg bzw. der Bau des Schiffs.</td></tr>'
-      : '<tr><td colspan="4" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
+      ? '<tr><td colspan="6" class="muted">Schiffe haben keine Bau-Reihenfolge – hier zählt nur der Tier-Aufstieg bzw. der Bau des Schiffs.</td></tr>'
+      : '<tr><td colspan="6" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
   $("seqCount").textContent = seq.length
     ? seq.length -
       openN +
