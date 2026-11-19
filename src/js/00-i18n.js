@@ -38,10 +38,12 @@ function t(key, vars) {
   if (v == null) v = key;
   return vars ? String(v).replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : String(v);
 }
-// statische Texte in index.html: data-i18n (Textinhalt), data-i18n-title, data-i18n-ph (Platzhalter)
+// statische Texte in index.html: data-i18n (Textinhalt), data-i18n-html (Text mit Markup), data-i18n-title, data-i18n-ph (Platzhalter), data-i18n-aria
 function applyLang() {
   document.documentElement.lang = curLang();
   document.querySelectorAll("[data-i18n]").forEach((e) => (e.textContent = t(e.dataset.i18n)));
+  document.querySelectorAll("[data-i18n-html]").forEach((e) => (e.innerHTML = t(e.dataset.i18nHtml)));
+  document.querySelectorAll("[data-i18n-aria]").forEach((e) => e.setAttribute("aria-label", t(e.dataset.i18nAria)));
   document.querySelectorAll("[data-i18n-title]").forEach((e) => (e.title = t(e.dataset.i18nTitle)));
   document.querySelectorAll("[data-i18n-ph]").forEach((e) => (e.placeholder = t(e.dataset.i18nPh)));
   const box = document.getElementById("langPanel");

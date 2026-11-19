@@ -1631,12 +1631,32 @@ def i18n_sprache_erkennen_und_umschalten(b, html, tmp):
     check(det == ["de", "en", "en", "de", "en"], f"Spracherkennung falsch: {det}")
     a.js("()=>setLang('en')")
     check(a.js("()=>LOC()") == "en-US" and a.js("()=>document.documentElement.lang") == "en", "Umschalten auf Englisch greift nicht")
-    check(a.js("()=>t('lang.title')") == "Language", "Englischer Text fehlt")
+    check(a.js("()=>t('ui.sprache')") == "Language", "Englischer Text fehlt")
     check(a.js("()=>JSON.parse(localStorage.getItem(K)).lang") == "en", "Sprache wird nicht gespeichert")
     check(a.js("()=>fmt(30500000)") == "30.5M" and a.js("()=>fx(1234.5)") == "1,234.5", "Zahlenformat folgt der Sprache nicht")
     check(a.js("()=>t('gibt.es.nicht')") == "gibt.es.nicht", "Fehlender Schlüssel muss als Schlüssel erscheinen")
     a.js("()=>setLang('')")
     check(a.js("()=>s.lang") is None, "Automatisch setzt die Sprache nicht zurück")
+    a.done()
+
+
+@test
+def i18n_schluessel_vollstaendig_und_englisch_sichtbar(b, html, tmp):
+    a = App(b, html, tmp)
+    r = a.js("""()=>{const d=I18N(),keys=new Set();
+      document.querySelectorAll('*').forEach(e=>{for(const k of ['i18n','i18nHtml','i18nTitle','i18nPh','i18nAria'])if(e.dataset[k])keys.add(e.dataset[k])});
+      const miss=k=>[...keys].filter(x=>d[k].t[x]==null);
+      const extra=Object.keys(d.de.t).filter(x=>d.en.t[x]==null);
+      return {n:keys.size,missDe:miss('de'),missEn:miss('en'),extra}}""")
+    check(r["n"] > 200, f"Zu wenige Schlüssel im HTML: {r['n']}")
+    check(not r["missDe"], f"Deutsche Texte fehlen: {r['missDe'][:5]}")
+    check(not r["missEn"], f"Englische Texte fehlen: {r['missEn'][:5]}")
+    check(not r["extra"], f"Deutsch ohne Englisch: {r['extra'][:5]}")
+    a.js("()=>{I18N().en.meta.complete=true;setLang('en')}")
+    txt = a.js("()=>[document.querySelector('[data-tab=bld]').textContent.trim(),document.querySelector('#navLog').textContent.trim(),document.querySelector('#langPanel h3').textContent]")
+    check(txt == ["Build order", "Log", "Language"], f"Englische Navigation falsch: {txt}")
+    a.js("()=>setLang('de')")
+    check(a.js("()=>document.querySelector('[data-tab=bld]').textContent.trim()") == "Bau-Reihenfolge", "Zurück auf Deutsch greift nicht")
     a.done()
 
 

@@ -4,6 +4,7 @@
 
 ### Neu
 - **Mehrsprachigkeit, Etappe 1 (Fundament):** Sprachdatei mit Textfunktion, Erkennung der Browsersprache, Umschalter unter „Daten & Import“ (erscheint, sobald mehr als eine Sprache fertig ist) und Datum/Zahlen nach Sprache. Noch ohne sichtbare Änderung: Es gilt weiterhin Deutsch, die englischen Texte folgen in den nächsten Etappen.
+- **Mehrsprachigkeit, Etappe 2 (Oberfläche):** Alle festen Texte der Oberfläche (Menü, Überschriften, Knöpfe, Hinweise) stammen jetzt aus den Sprachdateien, englische Übersetzung liegt bereit. Texte, die der Planner erst beim Rechnen erzeugt (Dashboard, Prognose, Dialoge, Bildkarten), folgen in den nächsten Etappen. Deutsch sieht unverändert aus (per Pixelvergleich geprüft); Test sichert ab, dass jeder Schlüssel Deutsch und Englisch hat.
 
 ## [5.1.0] – 2026-11-19
 
