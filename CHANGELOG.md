@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.1.0] – in Arbeit
+## [5.1.0] – 2026-11-19
 
 ### Neu
 - **Protokoll-Tab:** „Ereignisse“ und „Plan-Verlauf“ sind aus dem Verlauf-Tab in einen eigenen Menüpunkt „Protokoll“ gewandert. Der Verlauf zeigt jetzt nur noch die Auswertungen (Zeitleiste, Einkommen je Woche, Ressourcenentwicklung, erreichte Ziele).
