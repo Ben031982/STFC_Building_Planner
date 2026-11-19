@@ -76,6 +76,91 @@ function shareTimeline(cur) {
   return list;
 }
 // Modell: alles, was die Karte zeigt, als Daten (so lässt es sich testen, ohne Pixel zu lesen)
+// ab 5.1: „Ziel erreicht“-Karte für ein abgeschlossenes Ziel (s.goals)
+function buildGoalShareModel(g, o, stand) {
+  const at = new Date(g.at).getTime(),
+    since = g.since ? new Date(g.since).getTime() : NaN,
+    days = Number.isFinite(since) ? Math.max(1, Math.round((at - since) / 864e5)) : null,
+    chips = [];
+  if (o.exact) {
+    const dv = typeof goalDev === "function" ? goalDev(g, g.fc && g.fc.mid) : null;
+    if (dv != null) chips.push((Math.abs(dv) <= 1 ? "Wie zur Halbzeit prognostiziert" : Math.abs(dv) + " Tage " + (dv > 0 ? "später" : "früher") + " als zur Halbzeit gedacht"));
+  }
+  return {
+    kind: "goal",
+    title: g.name,
+    stand,
+    badge: "ZIEL ERREICHT",
+    etaLabel: "Erreicht am",
+    eta: o.exact ? new Date(at).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }) : shareCoarseDate(at),
+    etaSub: days ? (o.exact ? "in " + days + (days === 1 ? " Tag" : " Tagen") + " geschafft" : null) : null,
+    etaSubUp: true,
+    chips: chips.map((t) => ({ text: t })),
+    note: o.exact ? "Ziel abgeschlossen" : "Nur Datum",
+    exact: o.exact,
+  };
+}
+// ab 5.1: Wochenbericht als Bild (laufende Woche des Hauptplans)
+function buildWeekShareModel(o, who) {
+  const p = mainPlan(),
+    d = weekData(p, 0),
+    dPrev = weekData(p, -1),
+    prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
+    W = d.W,
+    dl = (x) => new Date(x).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+    e = shareEta(p),
+    pc = vzProgress(p) || 0,
+    // ein Minus ist nicht möglich (Bezug des Plans hat sich geändert, z. B. neuer Import) → keine Stufen anzeigen
+    steps = d.doneEnd != null && d.doneStart != null && d.doneEnd >= d.doneStart ? d.doneEnd - d.doneStart : null,
+    r0 = (v) => fmt(Math.abs(v) >= 1e6 ? v : Math.round(v)),
+    bn = planBottleneck(p, getPlanResources(p)),
+    chips = [];
+  let sub = null,
+    up = true;
+  if (d.fcEnd && d.fcPrev && d.fcEnd.eta > 0 && d.fcPrev.eta > 0) {
+    const g = Math.round((d.fcPrev.eta - d.fcEnd.eta) / 864e5);
+    sub = g === 0 ? "unverändert zum Wochenbeginn" : (g > 0 ? "▲ " : "▼ ") + Math.abs(g) + (Math.abs(g) === 1 ? " Tag " : " Tage ") + (g > 0 ? "früher" : "später") + " als zum Wochenbeginn";
+    up = g >= 0;
+  }
+  if (bn && !bn.none) chips.push({ warn: true, text: "⚠ Engpass: " + bn.name });
+  let inc = null;
+  if (o.exact) {
+    const want = [bn && !bn.none ? bn.name : null, "Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium"].filter((x, i, a) => x && a.indexOf(x) === i),
+      rows = want
+        .map((n) => d.res.find((r) => r.m === n))
+        .filter((r) => r && isNum(r.perDay))
+        .slice(0, 3)
+        .map((r) => {
+          const pv = prevPer[r.m],
+            dd = isNum(pv) ? r.perDay - pv : null;
+          return {
+            name: r.m,
+            val: (r.perDay > 0 ? "+" : "") + r0(r.perDay),
+            trend: dd == null ? "kein Vergleich" : Math.abs(dd) < 0.5 ? "= gleich" : (dd > 0 ? "▲ +" : "▼ −") + r0(Math.abs(dd)),
+            up: dd == null || dd >= 0,
+          };
+        });
+    if (rows.length) inc = rows;
+  }
+  return {
+    kind: "week",
+    title: "Meine Woche",
+    stand: "KW " + isoWeek(W.a) + " · " + dl(W.a) + "–" + dl(W.b - 1) + new Date(W.a).getFullYear() + who,
+    badge: "WOCHENBERICHT",
+    pct: steps != null ? (steps > 0 ? "+" : "") + steps : o.exact ? pc.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : Math.round(pc) + " %",
+    pctValue: pc,
+    ringSub: steps != null ? (Math.abs(steps) === 1 ? "Stufe" : "Stufen") : "geschafft",
+    ringNote: steps != null ? Math.round(pc) + " % gesamt" : null,
+    etaLabel: (p.name.length > 24 ? p.name.slice(0, 23) + "…" : p.name) + (e.blocked ? " · wartet auf" : " · voraussichtlich fertig"),
+    eta: e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t),
+    etaSub: o.exact ? sub : null,
+    etaSubUp: up,
+    chips,
+    inc,
+    note: o.exact ? "Schätzung aus meinem Einkommen" : "Nur Prozent & Datum",
+    exact: o.exact,
+  };
+}
 function buildShareModel(o) {
   o = o || shareOpts();
   const now = Date.now(),
@@ -83,6 +168,9 @@ function buildShareModel(o) {
     stand = "Stand " + new Date(now).toLocaleDateString("de-DE") + who,
     plans = shareActivePlans(),
     doneN = (Array.isArray(s.goals) ? s.goals : []).length;
+  const goal = typeof o.plan === "string" && o.plan.startsWith("goal:") ? (s.goals || []).find((g) => g.id === o.plan.slice(5)) : null;
+  if (goal) return buildGoalShareModel(goal, o, stand);
+  if (o.plan === "week" && s.plans.length) return buildWeekShareModel(o, who);
   if (o.plan === "all" || !plans.some((p) => p.id === o.plan)) {
     const rows = plans.map((p) => {
         const e = shareEta(p),
@@ -302,6 +390,22 @@ function drawShare(c, m) {
     });
     if (m.more) shText(c, "+ " + m.more + " weitere", 38, y0 + m.rows.length * rh + 18, 12, "#9fc2d9", 400);
     if (!m.rows.length) shText(c, "Noch kein aktiver Plan", 38, 180, 14, "#9fc2d9", 400);
+  } else if (m.kind === "goal") {
+    shText(c, "✓", 280, 250, 120, "#7aeab0", 700, "center");
+    shText(c, m.etaLabel, 280, 300, 14, "#9fc2d9", 400, "center");
+    const g = c.createLinearGradient(100, 0, 460, 0);
+    g.addColorStop(0, "#ffd166");
+    g.addColorStop(1, "#ff9c3b");
+    c.font = "700 " + (m.eta.length > 16 ? 32 : 40) + 'px "IBM Plex Sans", system-ui, sans-serif';
+    c.fillStyle = g;
+    c.textAlign = "center";
+    c.fillText(m.eta, 280, 346);
+    if (m.etaSub) shText(c, m.etaSub, 280, 374, 15, "#7aeab0", 400, "center");
+    let w = 0;
+    c.font = '500 13px "IBM Plex Sans", system-ui, sans-serif';
+    m.chips.forEach((ch) => (w += c.measureText(ch.text).width + 32));
+    let x = 280 - w / 2;
+    m.chips.forEach((ch) => (x += shPill(c, ch.text, x, 420, 13, "#eaf4fb", "rgba(255,255,255,.08)", "rgba(255,255,255,.13)") + 6));
   } else {
     // Ring
     const cx = 133,
@@ -326,8 +430,9 @@ function drawShare(c, m) {
       c.arc(cx, cy, r - 1, 0, 7);
       c.fillStyle = "rgba(9,24,37,.6)";
       c.fill();
-      shText(c, m.pct, cx, cy + 5, 34, "#eaf4fb", 700, "center");
-      shText(c, "geschafft", cx, cy + 26, 12, "#9fc2d9", 400, "center");
+      shText(c, m.pct, cx, cy + (m.ringNote ? -2 : 5), 34, "#eaf4fb", 700, "center");
+      shText(c, m.ringSub || "geschafft", cx, cy + (m.ringNote ? 17 : 26), 12, "#9fc2d9", 400, "center");
+      if (m.ringNote) shText(c, m.ringNote, cx, cy + 33, 11, "#7f9db2", 400, "center");
     }
     if (m.eta) {
       const ex = m.pct ? 253 : 38;
@@ -358,6 +463,22 @@ function drawShare(c, m) {
         shText(c, q.val, 514, 408 + i * 22, 14, q.val === "✓" ? "#7aeab0" : "#eaf4fb", 700, "right");
       });
     }
+    if (m.inc) {
+      const h = 40 + m.inc.length * 24;
+      shRound(c, 38, 352, 492, h, 14);
+      c.fillStyle = "rgba(10,26,40,.6)";
+      c.fill();
+      c.strokeStyle = "rgba(255,255,255,.1)";
+      c.stroke();
+      shText(c, "EINKOMMEN Ø PRO TAG", 54, 374, 12, "#9fc2d9", 500);
+      shText(c, "ZUR VORWOCHE", 514, 374, 12, "#9fc2d9", 500, "right");
+      m.inc.forEach((q, i) => {
+        const y = 398 + i * 24;
+        shText(c, q.name, 54, y, 14, "#eaf4fb", 400);
+        shText(c, q.val, 380, y, 14, "#7aeab0", 700, "right");
+        shText(c, q.trend, 514, y, 13, q.trend === "kein Vergleich" || q.trend === "= gleich" ? "#9fc2d9" : q.up ? "#7aeab0" : "#ffb07a", 400, "right");
+      });
+    }
     if (m.timeline) shTimeline(c, m.timeline, 474);
   }
   shFooter(c, m);
@@ -379,9 +500,15 @@ function shareReadForm() {
 function shareFillForm() {
   const o = shareOpts(),
     plans = shareActivePlans();
+  const goals = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at));
   $("shPlan").innerHTML =
-    '<option value="all">Alle Ziele</option>' + plans.map((p) => `<option value="${escAttr(p.id)}">${escAttr(p.name)}</option>`).join("");
-  $("shPlan").value = plans.some((p) => p.id === o.plan) ? o.plan : "all";
+    '<option value="all">Alle Ziele</option>' +
+    (s.plans.length ? '<option value="week">Wochenbericht (laufende Woche)</option>' : "") +
+    plans.map((p) => `<option value="${escAttr(p.id)}">${escAttr(p.name)}</option>`).join("") +
+    (goals.length
+      ? '<optgroup label="Erreichte Ziele">' + goals.map((g) => `<option value="goal:${escAttr(g.id)}">✓ ${escAttr(g.name)}</option>`).join("") + "</optgroup>"
+      : "");
+  $("shPlan").value = plans.some((p) => p.id === o.plan) || (o.plan === "week" && s.plans.length) || goals.some((g) => "goal:" + g.id === o.plan) ? o.plan : "all";
   $("shExact").checked = o.exact;
   $("shCoarse").checked = !o.exact;
   document.querySelectorAll("#shInc input[data-inc]").forEach((i) => (i.checked = !!o.inc[i.dataset.inc]));
@@ -392,7 +519,7 @@ function shareRefresh() {
   const o = shareReadForm();
   s.share = o;
   persist();
-  $("shInc").style.display = o.plan === "all" ? "none" : "";
+  $("shInc").style.display = o.plan === "all" || o.plan === "week" || o.plan.startsWith("goal:") ? "none" : "";
   $("shAllNote").style.display = o.plan === "all" ? "" : "none";
   $("shPlayer").disabled = !o.name;
   const run = () => drawShare($("shCanvas").getContext("2d"), buildShareModel(o));
@@ -410,8 +537,9 @@ function shareFileName() {
     p = s.plans.find((x) => x.id === o.plan),
     z = (n) => String(n).padStart(2, "0"),
     d = new Date();
+  const gl = o.plan.startsWith("goal:") ? (s.goals || []).find((x) => x.id === o.plan.slice(5)) : null;
   return (
-    "STFC_" + (p && o.plan !== "all" ? p.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : "Ziele") + "_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".png"
+    "STFC_" + (o.plan === "week" ? "Woche" : gl ? "Ziel_" + gl.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : p && o.plan !== "all" ? p.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : "Ziele") + "_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".png"
   );
 }
 function shareSave() {

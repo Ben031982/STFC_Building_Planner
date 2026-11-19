@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.1.0] – in Arbeit
+
+### Neu
+- **Protokoll-Tab:** „Ereignisse“ und „Plan-Verlauf“ sind aus dem Verlauf-Tab in einen eigenen Menüpunkt „Protokoll“ gewandert. Der Verlauf zeigt jetzt nur noch die Auswertungen (Zeitleiste, Einkommen je Woche, Ressourcenentwicklung, erreichte Ziele).
+- **„Ziel erreicht“-Karte als Bild:** Bei jedem erreichten Ziel gibt es unter „Erreichte Ziele“ einen Knopf **Bild**. Die Karte nennt das Datum, die Dauer und – falls gespeichert – wie die Prognose zur Hälfte der Bauzeit lag. Die Karte ist auch im Dialog „Als Bild teilen“ unter „Erreichte Ziele“ wählbar.
+- **Wochenbericht als Bild:** Im Wochenbericht und im Dialog „Als Bild teilen“ gibt es eine Wochenkarte für den Hauptplan: Stufen der Woche, Fertigdatum mit Vergleich zum Wochenbeginn, Engpass und Einkommen pro Tag mit Trend zur Vorwoche (bei „Nur Prozent & Datum“ ohne Einkommen). Der Planname steht auf der Karte; ist die Stufenzahl nicht vergleichbar (z. B. nach einem neuen Plan-Import), zeigt der Ring nur den Prozentwert.
+- **„Kosten gedeckt“ in der Bau-Reihenfolge (Schätzung):** Neue Spalte in der Tabelle. ✓ = mit dem aktuellen Bestand gedeckt, ! = hier geht der Bestand vermutlich aus, ✗ = danach nicht gedeckt; bei ! und ✗ steht „ab“ mit Datum, berechnet aus Bestand plus Einkommen der Prognose. Die Kosten je Schritt sind nicht bekannt – sie werden nach Level verteilt (Spanne von „alle Level gleich“ bis „+30 % je Level“), daher nur eine Schätzung. Ändert sich die Reihenfolge, wird neu gerechnet.
+
 ## [5.0.0] – 2026-11-15
 
 ### Neu

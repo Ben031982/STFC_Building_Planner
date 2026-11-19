@@ -28,6 +28,10 @@ $("wkBack").onclick = () => {
   dash();
   setTab("ov");
 };
+$("wkShare").onclick = () => {
+  s.share = { ...shareOpts(), plan: "week" };
+  openShare();
+};
 $("wkPrev").onclick = () => {
   wkOffset--;
   renderWeekly();

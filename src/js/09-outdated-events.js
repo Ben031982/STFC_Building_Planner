@@ -230,11 +230,18 @@ function renderGoals() {
       <table class="histTable" style="width:100%"><thead><tr><th>Ziel</th><th>Erreicht am</th><th>Prognose bei Planstart</th><th>Prognose bei 50 %</th><th>Prognose kurz vor Ende</th><th></th></tr></thead><tbody id="goalRows">${gs
         .map(
           (g) =>
-            `<tr><td>${escAttr(g.name)}<br><span class="muted">geplant seit ${d(g.since)}</span></td><td>${d(g.at)}</td>${cell(g, g.fc && g.fc.start)}${cell(g, g.fc && g.fc.mid)}${cell(g, g.eta)}<td><button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
+            `<tr><td>${escAttr(g.name)}<br><span class="muted">geplant seit ${d(g.since)}</span></td><td>${d(g.at)}</td>${cell(g, g.fc && g.fc.start)}${cell(g, g.fc && g.fc.mid)}${cell(g, g.eta)}<td style="white-space:nowrap"><button class="btn" data-goalshare="${escAttr(g.id)}" title="Als Bild teilen">Bild</button> <button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
         )
         .join("")}</tbody></table>
       <p class="muted" style="margin-top:10px">Abweichung = tatsächliches Erreichen − damalige Prognose (+ = später als prognostiziert). Prognosen zu Planstart und 50 % werden erst bei neu abgeschlossenen Zielen gespeichert.</p>`
     : '<p class="muted">Noch kein Ziel abgeschlossen.</p>';
+  el.querySelectorAll("[data-goalshare]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        s.share = Object.assign({}, shareOpts(), { plan: "goal:" + b.dataset.goalshare });
+        openShare();
+      }),
+  );
   el.querySelectorAll("[data-goal]").forEach(
     (b) =>
       (b.onclick = () => {

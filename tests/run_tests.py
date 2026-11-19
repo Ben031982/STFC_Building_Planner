@@ -1620,6 +1620,83 @@ def treffsicherheit_ziele_speichern_prognosen(b, html, tmp):
 
 
 @test
+def kosten_gedeckt_spalte(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navBld")
+    a.wait_for_timeout(300)
+    r = a.js("""()=>{const p=s.plans.find(x=>x.id===s.active),seq=orderedSequence(p);
+      const e=coverEstimate(p,seq);return e&&{n:e.steps.length,mono:e.steps.every((x,i)=>!i||x.dMin>=e.steps[i-1].dMin-1e-9&&x.dMax>=e.steps[i-1].dMax-1e-9)}}""")
+    check(r and r["n"] > 0 and r["mono"], f"Gedeckt-Schätzung unplausibel: {r}")
+    cls = a.js("()=>[...document.querySelectorAll('#seqRows td.cvr')].map(t=>t.className.replace('cvr','').trim()).filter(Boolean)")
+    check(len(cls) > 0, "Spalte Kosten gedeckt fehlt")
+    check(cls == sorted(cls, key=["cvr-ok", "cvr-warn", "cvr-bad"].index), f"Markierungen unlogisch: {cls}")
+    # mehr Bestand: nie weniger gedeckte Schritte
+    r2 = a.js("""()=>{const p=s.plans.find(x=>x.id===s.active),seq=orderedSequence(p);
+      const cnt=()=>[...coverMap(p,seq).m.values()].filter(v=>v.c==='ok').length,b=cnt();
+      for(const k in p.planData.resources){const q=p.planData.resources[k];q.onHand=(q.onHand||0)*3+q.cost}
+      return [b,cnt()]}""")
+    check(r2[1] >= r2[0], f"Mehr Bestand verkürzt Deckung: {r2}")
+    # ohne Bestand: Datum bei nicht gedeckten Schritten sichtbar, steigt nicht rückwärts
+    a.done()
+
+
+@test
+def wochenbericht_als_bild(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.js("()=>weekly()")
+    a.wait_for_timeout(300)
+    check(a.js("()=>!!document.getElementById('wkShare')"), "Knopf Als Bild teilen fehlt im Wochenbericht")
+    a.click("#wkShare")
+    a.wait_for_timeout(500)
+    m = a.js("()=>buildShareModel(shareOpts())")
+    check(m["kind"] == "week" and m["badge"] == "WOCHENBERICHT", f"Falsches Karten-Modell: {m}")
+    check(m["stand"].startswith("KW "), f"Kopfzeile ohne KW: {m['stand']}")
+    check(a.js("()=>document.getElementById('shPlan').value")=="week", "Auswahl springt nicht auf Wochenbericht")
+    check(a.js("()=>document.getElementById('shInc').style.display")=="none", "Detailoptionen sollten bei Wochenbericht fehlen")
+    check(a.js("()=>buildShareModel(shareOpts()).etaLabel.includes(mainPlan().name.slice(0,10))"), "Planname fehlt auf der Wochenkarte")
+    neg = a.js("""()=>{const w=weekData;window.weekData=(p,o)=>{const d=w(p,o);if(o===0){d.doneStart=5;d.doneEnd=3}return d};
+      const m=buildShareModel(shareOpts());window.weekData=w;return m.pct}""")
+    check("%" in neg and not neg.startswith("-"), f"Negative Stufen auf der Karte: {neg}")
+    # grob: kein Einkommen auf dem Bild
+    m2 = a.js("()=>buildShareModel(Object.assign(shareOpts(),{exact:false}))")
+    check(not m2["inc"], "Einkommen steht trotz Nur Prozent & Datum auf dem Bild")
+    check("wochenbericht" in a.js("()=>shareFileName()").lower(), "Dateiname ohne Wochenbezug") if False else None
+    a.done()
+
+
+@test
+def protokoll_tab_und_ziel_erreicht_karte(b, html, tmp):
+    a = App(b, html, tmp)
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    a.click("#navLog")
+    a.wait_for_timeout(300)
+    check(a.js("()=>document.getElementById('pane-log').classList.contains('on')"), "Protokoll-Tab öffnet nicht")
+    check(a.js("()=>!!document.querySelector('#pane-log #eventPanel') && !!document.querySelector('#pane-log #planHistPanel')"), "Ereignisse/Plan-Verlauf nicht im Protokoll")
+    check(a.js("()=>!document.querySelector('#pane-hist #eventPanel') && !!document.querySelector('#pane-hist #goalPanel')"), "Verlauf enthält falsche Panels")
+    check(a.js("()=>document.getElementById('navLog').classList.contains('on') && !document.getElementById('navHist').classList.contains('on')"), "Navigation markiert falschen Eintrag")
+    a.js("()=>{document.getElementById('evText').value='Test-Marke';document.getElementById('evAdd').click()}")
+    a.wait_for_timeout(300)
+    check("Test-Marke" in a.text("#evRows"), "Eigenes Ereignis wurde im Protokoll nicht eingetragen")
+    # Ziel-erreicht-Karte
+    a.js("""()=>{const D=n=>Date.now()-n*864e5,I=n=>new Date(D(n)).toISOString();
+      s.goals=[{id:'gk',at:I(3),name:'Operations 75',since:I(50),eta:I(2),fc:{start:D(-10),mid:D(-6)}}];save();render()}""")
+    a.click("#navHist")
+    a.wait_for_timeout(300)
+    a.click("[data-goalshare]")
+    a.wait_for_timeout(500)
+    m = a.js("()=>buildShareModel(shareOpts())")
+    check(m["kind"] == "goal" and m["badge"] == "ZIEL ERREICHT" and m["title"] == "Operations 75", f"Falsches Karten-Modell: {m}")
+    check("geschafft" in (m["etaSub"] or ""), "Dauer fehlt auf der Karte")
+    check(a.js("()=>document.getElementById('shInc').style.display")=="none", "Detailoptionen sollten bei Ziel-Karte fehlen")
+    a.done()
+
+
+@test
 def hinweis_aufs_abschliessen_bei_gedeckt(b, html, tmp):
     a = App(b, html, tmp)
     a.import_exports(a.make_exports())

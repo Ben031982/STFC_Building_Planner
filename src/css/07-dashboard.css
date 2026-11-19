@@ -411,3 +411,8 @@
 .tsDev.ok { color: #5ad19a; }
 .tsDev.mid { color: #e8b04a; }
 .tsDev.bad { color: #ef7a6a; }
+.cvr { text-align: left; font-weight: 800; font-size: 16px; white-space: nowrap; }
+.cvrD { font-size: 12px; font-weight: 600; margin-left: 6px; opacity: 0.9; }
+.cvr-ok { color: #3ddc97; }
+.cvr-warn { color: #ffbe5a; }
+.cvr-bad { color: #ff6b6b; }
