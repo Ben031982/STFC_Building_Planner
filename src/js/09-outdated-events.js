@@ -165,7 +165,7 @@ function manualEvents() {
 }
 // ab 3.1: abgeschlossene Ziele („Ziel erreicht“), unabhängig vom gewählten Plan
 function goalEvents() {
-  const d = (x) => new Date(x).toLocaleDateString("de-DE");
+  const d = (x) => new Date(x).toLocaleDateString(LOC());
   return (Array.isArray(s.goals) ? s.goals : []).map((g) => ({
     t: new Date(g.at).getTime(),
     type: "goal",
@@ -194,7 +194,7 @@ function renderGoals() {
   const el = $("goalList");
   if (!el) return;
   const gs = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at)),
-    d = (x) => (x ? new Date(x).toLocaleDateString("de-DE") : "–"),
+    d = (x) => (x ? new Date(x).toLocaleDateString(LOC()) : "–"),
     day = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n) + (Math.abs(n) === 1 ? " Tag" : " Tage"),
     cell = (g, eta) => {
       const dv = goalDev(g, eta);
@@ -295,7 +295,7 @@ function renderEvents() {
     ? ev
         .map(
           (e) =>
-            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString("de-DE") : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="Ereignis löschen">✕</button>` : ""}</td></tr>`,
+            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="Ereignis löschen">✕</button>` : ""}</td></tr>`,
         )
         .join("")
     : '<tr><td colspan="4" class="muted">Noch keine Ereignisse.</td></tr>';

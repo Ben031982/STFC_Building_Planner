@@ -1620,6 +1620,27 @@ def treffsicherheit_ziele_speichern_prognosen(b, html, tmp):
 
 
 @test
+def i18n_sprache_erkennen_und_umschalten(b, html, tmp):
+    a = App(b, html, tmp)
+    check(a.js("()=>curLang()") == "de" and a.js("()=>LOC()") == "de-DE", "Ohne fertige Übersetzung muss Deutsch gelten")
+    check(a.js("()=>document.getElementById('langPanel').style.display") == "none", "Sprachwahl darf mit nur einer Sprache nicht erscheinen")
+    a.js("()=>{I18N().en.meta.complete=true;applyLang()}")
+    check(a.js("()=>document.getElementById('langPanel').style.display") == "", "Sprachwahl fehlt bei zwei fertigen Sprachen")
+    det = a.js("""()=>{const set=l=>Object.defineProperty(navigator,'languages',{get:()=>l,configurable:true});
+      const r=[];for(const l of [['de-AT'],['en-GB'],['fr-FR'],['fr-FR','de-DE'],[]]){set(l);r.push(i18nDetect())}return r}""")
+    check(det == ["de", "en", "en", "de", "en"], f"Spracherkennung falsch: {det}")
+    a.js("()=>setLang('en')")
+    check(a.js("()=>LOC()") == "en-US" and a.js("()=>document.documentElement.lang") == "en", "Umschalten auf Englisch greift nicht")
+    check(a.js("()=>t('lang.title')") == "Language", "Englischer Text fehlt")
+    check(a.js("()=>JSON.parse(localStorage.getItem(K)).lang") == "en", "Sprache wird nicht gespeichert")
+    check(a.js("()=>fmt(30500000)") == "30.5M" and a.js("()=>fx(1234.5)") == "1,234.5", "Zahlenformat folgt der Sprache nicht")
+    check(a.js("()=>t('gibt.es.nicht')") == "gibt.es.nicht", "Fehlender Schlüssel muss als Schlüssel erscheinen")
+    a.js("()=>setLang('')")
+    check(a.js("()=>s.lang") is None, "Automatisch setzt die Sprache nicht zurück")
+    a.done()
+
+
+@test
 def kosten_gedeckt_spalte(b, html, tmp):
     a = App(b, html, tmp)
     a.import_exports(a.make_exports())

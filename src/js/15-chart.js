@@ -121,7 +121,7 @@ function drawChart(boxId, W, H, big) {
   for (let v = ymin; v <= ymax + step / 2; v += step) {
     g += `<line class="gridLine" x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}"/><text class="chartText" x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${fmt(v)}</text>`;
   }
-  const dl = (t) => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  const dl = (t) => new Date(t).toLocaleDateString(LOC(), { day: "2-digit", month: "2-digit" });
   let xl = `<text class="chartText" x="${x(first.t)}" y="${H - 8}" text-anchor="middle">${dl(first.t)}</text>`;
   if (pts.length > 1)
     xl += `<text class="chartText" x="${x(last.t)}" y="${H - 8}" text-anchor="middle">${dl(last.t)}</text>`;
@@ -149,7 +149,7 @@ function drawChart(boxId, W, H, big) {
     .filter((e) => e.t >= tMin && e.t <= tEnd)
     .map((e) => {
       const c = EV_COL[e.type] || "#cfe6f7";
-      return `<line class="evMark" x1="${x(e.t)}" y1="${T}" x2="${x(e.t)}" y2="${H - B}" stroke="${c}"/><path class="evDot" d="M${x(e.t)} ${T - 6} l5 5 l-5 5 l-5 -5 z" fill="${c}"><title>${new Date(e.t).toLocaleString("de-DE")} · ${escAttr(EV_LAB[e.type])}: ${escAttr(e.text)}</title></path>`;
+      return `<line class="evMark" x1="${x(e.t)}" y1="${T}" x2="${x(e.t)}" y2="${H - B}" stroke="${c}"/><path class="evDot" d="M${x(e.t)} ${T - 6} l5 5 l-5 5 l-5 -5 z" fill="${c}"><title>${new Date(e.t).toLocaleString(LOC())} · ${escAttr(EV_LAB[e.type])}: ${escAttr(e.text)}</title></path>`;
     })
     .join("");
   const fcSvg = lines
@@ -215,7 +215,7 @@ function attachChartHover(box, P, y0, y1) {
     const days = q.prev ? (q.t - q.prev.t) / 864e5 : 0,
       rate = q.prev && days >= FC_GAP_DAYS ? (q.v - q.prev.v) / days : null;
     tip.innerHTML =
-      new Date(q.t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
+      new Date(q.t).toLocaleString(LOC(), { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
       `<br>Bestand <b>${fmt(q.v)}</b>` +
       (rate != null
         ? `<br>Veränderung seit vorigem Export <b class="${rate >= 0 ? "green" : "red"}">${rate > 0 ? "+" : ""}${fmt(rate)}/Tag</b>`

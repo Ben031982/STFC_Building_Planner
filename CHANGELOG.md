@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.2.0] – in Arbeit
+
+### Neu
+- **Mehrsprachigkeit, Etappe 1 (Fundament):** Sprachdatei mit Textfunktion, Erkennung der Browsersprache, Umschalter unter „Daten & Import“ (erscheint, sobald mehr als eine Sprache fertig ist) und Datum/Zahlen nach Sprache. Noch ohne sichtbare Änderung: Es gilt weiterhin Deutsch, die englischen Texte folgen in den nächsten Etappen.
+
 ## [5.1.0] – 2026-11-19
 
 ### Neu

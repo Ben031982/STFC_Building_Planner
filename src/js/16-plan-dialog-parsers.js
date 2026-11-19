@@ -107,7 +107,7 @@ function fillManage(p) {
     ? p.sources
         .map(
           (x) =>
-            `<div class="sourceItem"><b>${escAttr(x.name)}</b><br><span class="muted">${x.role === "text-import" ? "Textimport" : escAttr(x.type)} · ${new Date(x.addedAt).toLocaleString("de-DE")}</span></div>`,
+            `<div class="sourceItem"><b>${escAttr(x.name)}</b><br><span class="muted">${x.role === "text-import" ? "Textimport" : escAttr(x.type)} · ${new Date(x.addedAt).toLocaleString(LOC())}</span></div>`,
         )
         .join("")
     : '<div class="muted">Noch kein Import durchgeführt.</div>';
@@ -239,7 +239,7 @@ function completePlan(p) {
     o = fc && fc.overall,
     eta = o && o.real != null && !shipYardBlock(p) ? new Date(fc.base + o.real * 864e5).toISOString() : null,
     since = planSince(p),
-    d = (x) => new Date(x).toLocaleDateString("de-DE");
+    d = (x) => new Date(x).toLocaleDateString(LOC());
   if (
     !confirm(
       "„" +
@@ -286,7 +286,7 @@ const escAttr = (s) =>
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;"),
-  fx = (n) => Number(n).toLocaleString("de-DE");
+  fx = (n) => Number(n).toLocaleString(LOC());
 function normResName(n) {
   return String(n || "")
     .toLowerCase()

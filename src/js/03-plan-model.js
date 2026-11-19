@@ -31,7 +31,7 @@ function resourceSourceNote(p, rows) {
   const d = p.planData || {},
     f = (t) =>
       t
-        ? new Date(t).toLocaleString("de-DE", {
+        ? new Date(t).toLocaleString(LOC(), {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",

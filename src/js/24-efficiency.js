@@ -60,7 +60,7 @@ function renderEffPanel(p) {
   }
   const H = effHistory(p),
     prev = H.prev && H.prev.efficiencies,
-    prevAt = H.prev ? new Date(H.prev.at).toLocaleDateString("de-DE") : "";
+    prevAt = H.prev ? new Date(H.prev.at).toLocaleDateString(LOC()) : "";
   // Karte 1: Ersparnis bei der größten Σ-Ressource, sonst beim ersten Material
   const big = rows.filter((r) => /^Σ/.test(r.m)).sort((a, b) => b.base - a.base)[0] || rows[0];
   // Karte 2: Änderungen seit dem vorigen Import
@@ -79,7 +79,7 @@ function renderEffPanel(p) {
           [up ? up + (up === 1 ? " Effizienz gestiegen" : " Effizienzen gestiegen") : "", down ? down + " gesunken" : ""]
             .filter(Boolean)
             .join(", "),
-          "Import " + prevAt + " → " + new Date(H.last.at).toLocaleDateString("de-DE"),
+          "Import " + prevAt + " → " + new Date(H.last.at).toLocaleDateString(LOC()),
         ]
       : ["Unverändert", "seit dem Import vom " + prevAt];
   // Karte 3: Einfluss auf den Termin (in Kalendertagen)

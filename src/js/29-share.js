@@ -30,15 +30,15 @@ function shareCoarseDate(t) {
     return "später als Q" + (Math.floor(lim.getMonth() / 3) + 1) + " " + String(lim.getFullYear()).slice(2);
   }
   const part = d.getDate() <= 10 ? "Anfang" : d.getDate() <= 20 ? "Mitte" : "Ende",
-    mon = d.toLocaleDateString("de-DE", { month: "short" }).replace(".", "") + ".";
+    mon = d.toLocaleDateString(LOC(), { month: "short" }).replace(".", "") + ".";
   return part + " " + mon + (d.getFullYear() !== new Date().getFullYear() ? " " + String(d.getFullYear()).slice(2) : "");
 }
 function shareExactDate(t, long) {
   const now = Date.now();
   if (t - now > 365 * 864e5) return "später als Q" + (Math.floor(new Date(now + 365 * 864e5).getMonth() / 3) + 1) + " " + String(new Date(now + 365 * 864e5).getFullYear()).slice(2);
   return long
-    ? new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "long" })
-    : new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }).replace(/\.?$/, ".");
+    ? new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "long" })
+    : new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" }).replace(/\.?$/, ".");
 }
 // aktive Pläne mit Prognose (hasPlanData je Plan selbst setzen – render() tut das nur für den gewählten)
 function shareActivePlans() {
@@ -92,7 +92,7 @@ function buildGoalShareModel(g, o, stand) {
     stand,
     badge: "ZIEL ERREICHT",
     etaLabel: "Erreicht am",
-    eta: o.exact ? new Date(at).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }) : shareCoarseDate(at),
+    eta: o.exact ? new Date(at).toLocaleDateString(LOC(), { day: "numeric", month: "long", year: "numeric" }) : shareCoarseDate(at),
     etaSub: days ? (o.exact ? "in " + days + (days === 1 ? " Tag" : " Tagen") + " geschafft" : null) : null,
     etaSubUp: true,
     chips: chips.map((t) => ({ text: t })),
@@ -107,7 +107,7 @@ function buildWeekShareModel(o, who) {
     dPrev = weekData(p, -1),
     prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
     W = d.W,
-    dl = (x) => new Date(x).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+    dl = (x) => new Date(x).toLocaleDateString(LOC(), { day: "2-digit", month: "2-digit" }),
     e = shareEta(p),
     pc = vzProgress(p) || 0,
     // ein Minus ist nicht möglich (Bezug des Plans hat sich geändert, z. B. neuer Import) → keine Stufen anzeigen
@@ -147,7 +147,7 @@ function buildWeekShareModel(o, who) {
     title: "Meine Woche",
     stand: "KW " + isoWeek(W.a) + " · " + dl(W.a) + "–" + dl(W.b - 1) + new Date(W.a).getFullYear() + who,
     badge: "WOCHENBERICHT",
-    pct: steps != null ? (steps > 0 ? "+" : "") + steps : o.exact ? pc.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : Math.round(pc) + " %",
+    pct: steps != null ? (steps > 0 ? "+" : "") + steps : o.exact ? pc.toLocaleString(LOC(), { maximumFractionDigits: 1 }) + " %" : Math.round(pc) + " %",
     pctValue: pc,
     ringSub: steps != null ? (Math.abs(steps) === 1 ? "Stufe" : "Stufen") : "geschafft",
     ringNote: steps != null ? Math.round(pc) + " % gesamt" : null,
@@ -165,7 +165,7 @@ function buildShareModel(o) {
   o = o || shareOpts();
   const now = Date.now(),
     who = o.name && o.playerName.trim() ? " · " + o.playerName.trim() : "",
-    stand = "Stand " + new Date(now).toLocaleDateString("de-DE") + who,
+    stand = "Stand " + new Date(now).toLocaleDateString(LOC()) + who,
     plans = shareActivePlans(),
     doneN = (Array.isArray(s.goals) ? s.goals : []).length;
   const goal = typeof o.plan === "string" && o.plan.startsWith("goal:") ? (s.goals || []).find((g) => g.id === o.plan.slice(5)) : null;
@@ -212,7 +212,7 @@ function buildShareModel(o) {
     title: p.name,
     stand,
     badge: statusLabel(p.status).toUpperCase(),
-    pct: o.inc.goal ? (o.exact ? pc.toLocaleString("de-DE", { maximumFractionDigits: 1 }) : String(Math.round(pc))) + " %" : null,
+    pct: o.inc.goal ? (o.exact ? pc.toLocaleString(LOC(), { maximumFractionDigits: 1 }) : String(Math.round(pc))) + " %" : null,
     pctValue: pc,
     etaLabel: o.inc.eta ? (e.blocked ? "Wartet auf" : "Voraussichtlich fertig") : null,
     eta: o.inc.eta ? (e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t)) : null,

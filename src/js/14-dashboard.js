@@ -237,7 +237,7 @@ function render() {
     ? (shipReqHtml(p.ship.yard).cls === "no" ? "Schiffswerft " + p.ship.yard + " noch nicht erreicht" : p.ship.name)
     : pr
       ? `${pr.done} von ${pr.total} Stufen` +
-        (pr.since ? " seit " + new Date(pr.since).toLocaleDateString("de-DE") : "")
+        (pr.since ? " seit " + new Date(pr.since).toLocaleDateString(LOC()) : "")
       : `${p.done} von ${p.total}`;
   $("bottleneckValue").textContent = bottleneck ? bottleneck.name : "Nicht berechenbar";
   $("bottleneckValue").className = bottleneck ? (bottleneck.none ? "green" : "amber") : "";
@@ -412,7 +412,7 @@ function render() {
       el = $("goalBox");
     el.hidden = !gb;
     el.innerHTML = gb
-      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString("de-DE")} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
+      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString(LOC())} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
       : "";
     if (gb) $("goalBoxBtn").onclick = () => completePlan(p);
   }

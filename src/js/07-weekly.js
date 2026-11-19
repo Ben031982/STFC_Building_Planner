@@ -154,7 +154,7 @@ function renderWeekly() {
     dPrev = weekData(p, wkOffset - 1),
     prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
     W = d.W,
-    dl = (t) => new Date(t).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+    dl = (t) => new Date(t).toLocaleDateString(LOC(), { day: "2-digit", month: "2-digit" });
   $("wkPlan").textContent = p ? p.name + " (Hauptplan · " + statusLabel(calcPlanStatus(p)) + ")" : "";
   $("wkLabel").textContent =
     "KW " + isoWeek(W.a) + " · " + dl(W.a) + "–" + dl(W.b - 1) + (d.current ? " (laufend)" : "");
@@ -183,7 +183,7 @@ function renderWeekly() {
           .sort((a, b) => a.t - b.t)
           .map(
             (e) =>
-              `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString("de-DE") : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td></tr>`,
+              `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td></tr>`,
           )
           .join("")}</tbody></table>`
       : '<p class="muted">Keine Ereignisse in dieser Woche.</p>'

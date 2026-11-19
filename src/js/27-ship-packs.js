@@ -98,7 +98,7 @@ function renderShipPacks() {
       const n = Object.values(pk.contents || {}).filter((c) => c && +c.amount > 0).length;
       return `<tr><td>${SHIP_CLASSES[cls].label}</td><td>${escAttr(pk.name)}</td><td>${
         n ? n + " Material" + (n === 1 ? "" : "ien") : '<span class="muted">noch nicht gepflegt</span>'
-      }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"}</td><td>${fx(pk.priceEUR)} €</td><td><button class="miniBtn" data-shippack="${cls}">Bearbeiten</button></td></tr>`;
+      }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"}</td><td>${fx(pk.priceEUR)} €</td><td><button class="miniBtn" data-shippack="${cls}">Bearbeiten</button></td></tr>`;
     })
     .join("");
   el.querySelectorAll("[data-shippack]").forEach((b) => (b.onclick = () => openPacks(b.dataset.shippack)));

@@ -5,14 +5,14 @@ function vzDay() {
   return 864e5;
 }
 function vzFmtD(t) {
-  return new Date(t).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+  return new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" });
 }
 // Datum mit Jahr, wenn es nicht im laufenden Jahr liegt
 function vzFmtDY(t) {
   const d = new Date(t);
   return d.getFullYear() === new Date().getFullYear()
     ? vzFmtD(t)
-    : d.toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "2-digit" });
+    : d.toLocaleDateString(LOC(), { day: "numeric", month: "numeric", year: "2-digit" });
 }
 function vzSvgOpen(W, H) {
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img">`;
@@ -107,7 +107,7 @@ function renderTimeline() {
   for (let m = new Date(m0); m.getTime() <= t1; m.setMonth(m.getMonth() + stepM)) {
     const x = X(m.getTime());
     if (x < L - 1) continue;
-    g += `<line x1="${x}" x2="${x}" y1="${T - 8}" y2="${H - 26}" class="vzGrid"/><text x="${x + 4}" y="${T - 14}" class="vzAx">${m.toLocaleDateString("de-DE", { month: "short", year: "2-digit" })}</text>`;
+    g += `<line x1="${x}" x2="${x}" y1="${T - 8}" y2="${H - 26}" class="vzGrid"/><text x="${x + 4}" y="${T - 14}" class="vzAx">${m.toLocaleDateString(LOC(), { month: "short", year: "2-digit" })}</text>`;
   }
   rows.forEach((r, i) => {
     const y = T + i * RH,
@@ -203,7 +203,7 @@ function renderFcHistory() {
   el.innerHTML =
     vzSvgOpen(W, H) +
     g +
-    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Aktuell (realistisch)</span><b>${new Date(last.eta).toLocaleDateString("de-DE")}</b><span class="muted">${sub}</span></div><div><span class="muted">Früheste / späteste Prognose</span><b>${vzFmtD(Math.min(...L.map((x) => x.eta)))} – ${vzFmtD(Math.max(...L.map((x) => x.eta)))}</b><span class="muted">im gezeigten Zeitraum</span></div><div><span class="muted">Einträge</span><b>${L.length}</b><span class="muted">seit ${new Date(tOf(L[0])).toLocaleDateString("de-DE")}</span></div></div>`;
+    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Aktuell (realistisch)</span><b>${new Date(last.eta).toLocaleDateString(LOC())}</b><span class="muted">${sub}</span></div><div><span class="muted">Früheste / späteste Prognose</span><b>${vzFmtD(Math.min(...L.map((x) => x.eta)))} – ${vzFmtD(Math.max(...L.map((x) => x.eta)))}</b><span class="muted">im gezeigten Zeitraum</span></div><div><span class="muted">Einträge</span><b>${L.length}</b><span class="muted">seit ${new Date(tOf(L[0])).toLocaleDateString(LOC())}</span></div></div>`;
 }
 
 // ---------------------------------------------------------------- Einkommen je Woche
@@ -296,7 +296,7 @@ function renderIncomeWeeks() {
     X = (i) => Lm + ((i + 0.5) * (W - Lm - Rm)) / W6.length,
     Y = (v) => T + ((mx - v) / mx) * (H - T - B),
     bw = ((W - Lm - Rm) / W6.length) * 0.55,
-    fv = (v) => (Math.abs(v) >= 1e6 ? (v / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 2 }) + " Mio." : Math.round(v).toLocaleString("de-DE"));
+    fv = (v) => (Math.abs(v) >= 1e6 ? (v / 1e6).toLocaleString(LOC(), { maximumFractionDigits: 2 }) + " Mio." : Math.round(v).toLocaleString(LOC()));
   let g = "";
   for (let k = 0; k <= 4; k++) {
     const v = (mx * k) / 4;

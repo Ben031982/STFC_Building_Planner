@@ -184,7 +184,7 @@ function bkDue() {
   return ref ? (Date.now() - new Date(ref).getTime()) / 864e5 : 0;
 }
 function fmtMB(n) {
-  return n < 1e5 ? "< 0,1 MB" : (n / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " MB";
+  return n < 1e5 ? "< 0,1 MB" : (n / 1e6).toLocaleString(LOC(), { maximumFractionDigits: 1 }) + " MB";
 }
 function renderStoreUsage() {
   const el = $("storeUsage");

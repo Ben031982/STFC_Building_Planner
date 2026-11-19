@@ -152,7 +152,7 @@ function renderTarget() {
     ct = (p.planData || {}).construction;
   out.innerHTML =
     `<div class="wifSum tdSum"><div><span class="muted">Rechnerische Bewertung</span><b><span class="tdV ${vcls}">${V[0]}</span></b><span class="muted">${V[1]}</span></div>` +
-    `<div><span class="muted">Verbleibende Tage</span><b>${Math.max(0, Math.floor(r.days))}</b><span class="muted">ab Datenstand ${new Date(r.fc.base).toLocaleDateString("de-DE")}</span></div>` +
+    `<div><span class="muted">Verbleibende Tage</span><b>${Math.max(0, Math.floor(r.days))}</b><span class="muted">ab Datenstand ${new Date(r.fc.base).toLocaleDateString(LOC())}</span></div>` +
     `<div><span class="muted">Kritisch</span><b>${c ? escAttr(c.m) : "–"}</b><span class="muted">${c ? "braucht " + sg(c.need) + "/Tag, bisher " + sg(c.h) + "/Tag (" + sg(c.diff) + ")" : r.noData.length ? "zu wenig Daten für: " + r.noData.map(escAttr).join(", ") : "nichts offen"}</span></div></div>` +
     `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Fehlt</th><th>Benötigt pro Tag</th><th>Bisher pro Tag</th><th>Differenz</th><th>Bewertung</th></tr></thead><tbody id="tdRows">` +
     r.rows

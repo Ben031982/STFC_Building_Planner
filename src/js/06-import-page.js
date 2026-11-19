@@ -25,7 +25,7 @@ function renderPackSummary() {
     " · " +
     fx(pk.priceEUR || 100) +
     " € pro Pack" +
-    (pk.validFrom ? " · gültig ab " + new Date(pk.validFrom).toLocaleDateString("de-DE") : "") +
+    (pk.validFrom ? " · gültig ab " + new Date(pk.validFrom).toLocaleDateString(LOC()) : "") +
     "<br>Nach einem OPS-Aufstieg den Inhalt prüfen.";
 }
 function renderImportPage() {

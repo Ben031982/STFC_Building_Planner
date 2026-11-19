@@ -176,7 +176,7 @@ function renderCareStrip() {
     ls = latestSnapshot(),
     dm = (t) =>
       new Date(t)
-        .toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+        .toLocaleString(LOC(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
         .replace(",", "");
   st.className = "careState " + (w ? "warn" : "ok");
   st.textContent = w

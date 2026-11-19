@@ -58,7 +58,7 @@ function planChecks(p) {
 let pending = null;
 const $ = (x) => document.getElementById(x),
   fmt = (n) =>
-    new Intl.NumberFormat("de-DE", {
+    new Intl.NumberFormat(LOC(), {
       maximumFractionDigits: 1,
       notation: Math.abs(n) >= 1e6 ? "compact" : "standard",
     }).format(n),
@@ -155,7 +155,7 @@ function snapTime(x) {
 function snapHasExport(x) {
   return !!(x.exportedAt || exportTimeFromName(x.fileName));
 }
-const fdt = (t) => new Date(t).toLocaleString("de-DE");
+const fdt = (t) => new Date(t).toLocaleString(LOC());
 function latestSnapshot() {
   let b = null;
   for (const x of s.snapshots)

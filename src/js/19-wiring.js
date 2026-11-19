@@ -226,6 +226,8 @@ $("restoreOk").onclick = async () => {
   setTimeout(() => location.reload(), 700);
 };
 if (!s.backup || typeof s.backup !== "object") s.backup = { since: new Date().toISOString() };
+$("langSel").onchange = () => setLang($("langSel").value);
+applyLang();
 render();
 
 $("iwSel").onchange = () => {

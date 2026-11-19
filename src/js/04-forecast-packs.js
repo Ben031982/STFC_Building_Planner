@@ -13,14 +13,14 @@ function fcTooFar(days) {
 }
 function fcYears(days) {
   const y = Math.max(1, Math.round((days / FC_YEAR) * 2) / 2);
-  return y.toLocaleString("de-DE") + (y === 1 ? " Jahr" : " Jahre");
+  return y.toLocaleString(LOC()) + (y === 1 ? " Jahr" : " Jahre");
 }
 // Datum eines Termins: bis 1 Jahr Tagesdatum, darüber „ca. Mai 2032“
 function fcDate(base, days) {
   const d = new Date(base + days * 864e5);
   return days > FC_YEAR
-    ? "ca. " + d.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
-    : d.toLocaleDateString("de-DE");
+    ? "ca. " + d.toLocaleDateString(LOC(), { month: "long", year: "numeric" })
+    : d.toLocaleDateString(LOC());
 }
 // Dauer: „9 Tage“, „~12 Wochen“, „~5,5 Jahre“
 function fcDur(days) {
@@ -369,7 +369,7 @@ function renderForecast(p) {
                 .filter(Boolean)
                 .join(" · ") || "–",
             o = ov[v.key] || "auto";
-          return `<tr><td>${new Date(v.from).toLocaleDateString("de-DE")} – ${new Date(v.to).toLocaleDateString("de-DE")}</td><td>${v.days.toFixed(1).replace(".", ",")}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>Automatisch</option><option value="include"${o === "include" ? " selected" : ""}>Immer mitrechnen</option><option value="exclude"${o === "exclude" ? " selected" : ""}>Nicht mitrechnen</option></select></td></tr>`;
+          return `<tr><td>${new Date(v.from).toLocaleDateString(LOC())} – ${new Date(v.to).toLocaleDateString(LOC())}</td><td>${v.days.toFixed(1).replace(".", ",")}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>Automatisch</option><option value="include"${o === "include" ? " selected" : ""}>Immer mitrechnen</option><option value="exclude"${o === "exclude" ? " selected" : ""}>Nicht mitrechnen</option></select></td></tr>`;
         })
         .join("")
     : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit ' + FC_GAP_H + ' Stunden Abstand.</td></tr>';
@@ -463,7 +463,7 @@ function renderPacks(p) {
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString("de-DE") : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
   $("packEditBtn").onclick = () => openPackFor(p);
 }
 // Stationspack oder (ab 3.2) Schiffs-Pack einer Klasse bearbeiten
@@ -532,7 +532,7 @@ function renderBottleneckCard(p) {
     day = (t) =>
       t > FC_YEAR
         ? fcDate(bn.fc.base, t)
-        : new Date(bn.fc.base + t * 864e5).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }),
+        : new Date(bn.fc.base + t * 864e5).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" }),
     inT = (t) => (t > FC_YEAR ? "~" + fcYears(t) : Math.ceil(t) + " T.");
   let h = bn.rows
     .map(
