@@ -3,7 +3,7 @@ function drawChart(boxId, W, H, big) {
   if (!p) return;
   let name = $("resourceSelect").value || "7★ Rare Ore";
   if (big) {
-    $("chartBigTitle").textContent = "Ressourcenentwicklung · " + p.name;
+    $("chartBigTitle").textContent = _t("chart.big_title", { name: p.name });
   }
   const empty = (msg, note) => {
     $(boxId).innerHTML = '<div style="padding:80px 20px;text-align:center;color:#8ca5b7">' + msg + "</div>";
@@ -17,8 +17,8 @@ function drawChart(boxId, W, H, big) {
   };
   if (!p.hasPlanData) {
     empty(
-      "Keine planabhängige Kostengrundlage für " + escAttr(p.name) + ".",
-      "Die Bedarfslinie und planabhängige Kennzahlen werden erst nach Import und Bestätigung des Upgrade-Plans angezeigt.",
+      _t("chart.keine_kosten", { name: escAttr(p.name) }),
+      _t("chart.bedarfslinie"),
     );
     return;
   }
@@ -31,10 +31,10 @@ function drawChart(boxId, W, H, big) {
     miss = row ? row[3] : 0;
   if (!pts.length) {
     empty(
-      "Noch keine Snapshot-Daten für diese Ressource.",
+      _t("chart.keine_daten"),
       name.startsWith("Σ")
-        ? "Σ-Werte gibt es in Snapshots ab Version 1.4.4. Importiere einen neuen JSON-Export."
-        : "Importiere mindestens einen Snapshot, um den Verlauf zu starten.",
+        ? _t("chart.sigma_ab")
+        : _t("chart.mind_einen"),
     );
     return;
   }
@@ -44,17 +44,17 @@ function drawChart(boxId, W, H, big) {
     first = pts[0],
     spanDays = (last.t - first.t) / 864e5;
   {
-    const a = pts.length > 1 ? sg(last.v - pts.at(-2).v) : "Nur Startwert",
+    const a = pts.length > 1 ? sg(last.v - pts.at(-2).v) : _t("chart.nur_start"),
       b =
         st.n >= FC_MIN
           ? sg(st.real)
           : spanDays < FC_GAP_DAYS
-            ? "Zeitraum < " + FC_GAP_H + " h"
-            : "zu wenig Daten (" + st.n + "/" + FC_MIN + ")",
-      c = st.n >= FC_MIN ? sg(st.real * 7) : "Noch nicht belastbar";
+            ? _t("chart.zeitraum", { h: FC_GAP_H })
+            : _t("chart.zu_wenig", { n: st.n, min: FC_MIN }),
+      c = st.n >= FC_MIN ? sg(st.real * 7) : _t("chart.nicht_belastbar");
     if (big)
       $("chartBigStats").innerHTML =
-        `<div><span class="muted">Aktuell</span><b>${fmt(last.v)}</b></div><div><span class="muted">Benötigt · fehlt</span><b>${need > 0 ? fmt(need) + " · " + (miss > 0 ? fmt(miss) : "gedeckt") : "–"}</b></div><div><span class="muted">Letzte Änderung</span><b>${a}</b></div><div><span class="muted">Ø pro Tag</span><b>${b}</b></div><div><span class="muted">Ø pro Woche</span><b>${c}</b></div>`;
+        `<div><span class="muted">${_t("chart.aktuell")}</span><b>${fmt(last.v)}</b></div><div><span class="muted">${_t("chart.benoetigt_fehlt")}</span><b>${need > 0 ? fmt(need) + " · " + (miss > 0 ? fmt(miss) : _t("common.gedeckt")) : "–"}</b></div><div><span class="muted">${_t("chart.letzte_aenderung")}</span><b>${a}</b></div><div><span class="muted">${_t("wk.pro_tag")}</span><b>${b}</b></div><div><span class="muted">${_t("chart.pro_woche")}</span><b>${c}</b></div>`;
     else {
       $("lastDelta").textContent = a;
       $("daily").textContent = b;
@@ -64,9 +64,9 @@ function drawChart(boxId, W, H, big) {
   const sc =
     st.n >= FC_MIN
       ? [
-          ["cons", st.cons, "fcCons", "konservativ"],
-          ["real", st.real, "fcReal", "realistisch"],
-          ["opt", st.opt, "fcOpt", "optimistisch"],
+          ["cons", st.cons, "fcCons", _t("chart.kons")],
+          ["real", st.real, "fcReal", _t("chart.real")],
+          ["opt", st.opt, "fcOpt", _t("chart.opt")],
         ].filter((x) => x[1] > 0)
       : [];
   let tEnd = sc.length
@@ -141,9 +141,9 @@ function drawChart(boxId, W, H, big) {
     xl += `<text class="chartText" x="${W - R}" y="${H - 8}" text-anchor="end">${dl(tEnd)}</text><line class="axis" x1="${x(last.t)}" y1="${T}" x2="${x(last.t)}" y2="${H - B}" opacity=".35"/>`;
   const path = pts.map((q, i) => (i ? "L" : "M") + x(q.t) + " " + y(q.v)).join(" ");
   const needSvg = needIn
-    ? `<line class="need" x1="${L}" y1="${y(need)}" x2="${W - R}" y2="${y(need)}"/><text class="chartText" x="${W - R - 4}" y="${y(need) - 5}" text-anchor="end">Benötigt ${fmt(need)}</text>`
+    ? `<line class="need" x1="${L}" y1="${y(need)}" x2="${W - R}" y2="${y(need)}"/><text class="chartText" x="${W - R - 4}" y="${y(need) - 5}" text-anchor="end">${_t("chart.benoetigt", { n: fmt(need) })}</text>`
     : need > 0
-      ? `<text class="chartText" x="${W - R - 4}" y="${HY}" text-anchor="end" style="fill:${need > ymax ? "#F4A53A" : "#5BD2A0"}">Benötigt ${fmt(need)} ${need > ymax ? "↑ · fehlt " + fmt(miss) : "↓ · gedeckt"}</text>`
+      ? `<text class="chartText" x="${W - R - 4}" y="${HY}" text-anchor="end" style="fill:${need > ymax ? "#F4A53A" : "#5BD2A0"}">${_t("chart.benoetigt", { n: fmt(need) })} ${need > ymax ? "↑ · " + _t("chart.fehlt", { n: fmt(miss) }) : "↓ · " + _t("common.gedeckt")}</text>`
       : "";
   const evSvg = chartEvents(p, name)
     .filter((e) => e.t >= tMin && e.t <= tEnd)
@@ -170,12 +170,12 @@ function drawChart(boxId, W, H, big) {
   );
   $(big ? "chartBigNote" : "chartNote").textContent =
     pts.length === 1
-      ? "Ein Startwert ist vorhanden. Raten und Prognose entstehen ab drei Abschnitten mit je mindestens " + FC_GAP_H + " Stunden Abstand."
+      ? _t("chart.note_start", { h: FC_GAP_H })
       : st.n < FC_MIN
         ? spanDays < FC_GAP_DAYS
-          ? "Die Snapshots liegen weniger als " + FC_GAP_H + " Stunden auseinander. Deshalb werden bewusst keine Raten gezeigt."
-          : "Noch zu wenig Abschnitte für eine Rate (" + st.n + " von " + FC_MIN + ")."
-        : "Ø-Werte = nach Länge gewichteter Median der Abschnitte der letzten 6 Wochen, Bauvorgänge herausgerechnet. Gestrichelt: Prognose bis zum Bedarf.";
+          ? _t("chart.note_nah", { h: FC_GAP_H })
+          : _t("chart.note_wenig", { n: st.n, min: FC_MIN })
+        : _t("chart.note_avg");
 }
 
 // Werte beim Darüberfahren (ab 1.6): Hilfslinie am nächsten Messpunkt, Datum, Bestand, Veränderung pro Tag
@@ -216,12 +216,12 @@ function attachChartHover(box, P, y0, y1) {
       rate = q.prev && days >= FC_GAP_DAYS ? (q.v - q.prev.v) / days : null;
     tip.innerHTML =
       new Date(q.t).toLocaleString(LOC(), { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
-      `<br>Bestand <b>${fmt(q.v)}</b>` +
+      `<br>${_t("chart.bestand")} <b>${fmt(q.v)}</b>` +
       (rate != null
-        ? `<br>Veränderung seit vorigem Export <b class="${rate >= 0 ? "green" : "red"}">${rate > 0 ? "+" : ""}${fmt(rate)}/Tag</b>`
+        ? `<br>${_t("chart.veraenderung")} <b class="${rate >= 0 ? "green" : "red"}">${rate > 0 ? "+" : ""}${fmt(rate)}/${_t("common.tag")}</b>`
         : q.prev
-          ? '<br><span class="muted">weniger als ' + FC_GAP_H + ' Stunden nach dem vorigen Export</span>'
-          : '<br><span class="muted">erster Messpunkt</span>');
+          ? `<br><span class="muted">${_t("chart.weniger_als", { h: FC_GAP_H })}</span>`
+          : `<br><span class="muted">${_t("chart.erster")}</span>`);
     tip.classList.add("on");
     const br = box.getBoundingClientRect(),
       sx = m.a * q.px + m.e - br.left,

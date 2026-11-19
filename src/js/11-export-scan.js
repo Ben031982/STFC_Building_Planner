@@ -3,10 +3,10 @@ async function parseExport(raw, name) {
   try {
     j = JSON.parse(raw);
   } catch (_) {
-    throw Error("Kein gültiges JSON");
+    throw Error(_t("exp.kein_json"));
   }
   const h = await hash(raw);
-  if (!j || !Array.isArray(j.resources) || !Array.isArray(j.buildings)) throw Error("Ungültiger Export");
+  if (!j || !Array.isArray(j.resources) || !Array.isArray(j.buildings)) throw Error(_t("exp.ungueltig"));
   // Ab 2.1: Jeder Wert, den der Planner nutzt, muss eine Zahl ≥ 0 sein. Sonst wird die ganze Datei
   // abgelehnt (keine stille Übernahme von leeren, negativen oder Text-Werten).
   const used = new Map(Object.entries(IDS).map(([n, id]) => [String(id), n]));
@@ -25,11 +25,11 @@ async function parseExport(raw, name) {
     const v = x.amount;
     const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? +v : NaN;
     if (!Number.isFinite(n) || n < 0)
-      throw Error("Ungültiger Wert bei " + used.get(id) + ": " + (v === undefined ? "fehlt" : JSON.stringify(v)));
+      throw Error(_t("exp.ungueltiger_wert", { n: used.get(id), v: v === undefined ? _t("exp.fehlt_wert") : JSON.stringify(v) }));
     map.set(id, n);
   }
   for (let [n, id] of Object.entries(IDS)) {
-    if (!map.has(String(id))) throw Error(n + " fehlt");
+    if (!map.has(String(id))) throw Error(_t("exp.fehlt", { n }));
     values[n] = map.get(String(id));
   }
   for (const [n, id] of Object.entries(SHIP_PART_IDS)) if (map.has(String(id))) values[n] = map.get(String(id));
@@ -84,10 +84,10 @@ function backfillParts(sn, values) {
 }
 function partsBackfillDone(n) {
   if (!n) return;
-  s.logs.push("Schiffsteile aus " + n + (n === 1 ? " älterem Export" : " älteren Exporten") + " nachgetragen");
+  s.logs.push(_t(n === 1 ? "exp.teile1" : "exp.teile", { n }));
   persist();
   render();
-  toast("Schiffsteile aus " + n + (n === 1 ? " älterem Export" : " älteren Exporten") + " nachgetragen.");
+  toast(_t(n === 1 ? "exp.teile1" : "exp.teile", { n }) + ".");
 }
 function sameValues(a, b) {
   if (!a || !b || !a.values || !b.values) return false;
@@ -128,7 +128,7 @@ async function openBatch(entries, source, skipped, quiet) {
     if (it.status !== "new") continue;
     if (seen.has(it.snap.hash)) {
       it.status = "dup";
-      it.msg = "doppelt in dieser Auswahl";
+      it.msg = _t("exp.doppelt");
     } else seen.add(it.snap.hash);
   }
   const t = (x) => new Date(snapTime(x)).getTime();
@@ -149,24 +149,23 @@ async function openBatch(entries, source, skipped, quiet) {
     }
     if (prev && sameValues(it.snap, prev)) {
       it.status = "same";
-      it.msg = "Werte identisch zum Stand " + fdt(snapTime(prev)) + " – vermutlich Export vor dem Sync.";
+      it.msg = _t("exp.identisch", { d: fdt(snapTime(prev)) });
     } else if (tt < newest) {
       it.status = "old";
-      it.msg = "Älter als dein neuester Snapshot – verfeinert nachträglich die Raten.";
+      it.msg = _t("exp.aelter");
     }
     if (!it.snap.exportedAt)
-      it.msg = (it.msg ? it.msg + " " : "") + "Keine Exportzeit im Dateinamen, Importzeit wird verwendet.";
+      it.msg = (it.msg ? it.msg + " " : "") + _t("exp.keine_zeit");
     if (it.snap.sigmaWarn && it.snap.sigmaWarn.length)
       it.msg =
-        (it.msg ? it.msg + " " : "") + "Σ-Token nicht eindeutig: " + it.snap.sigmaWarn.join(", ") + ".";
+        (it.msg ? it.msg + " " : "") + _t("exp.sigma_unklar", { list: it.snap.sigmaWarn.join(", ") });
     it.sel = it.status === "new";
   }
   partsBackfillDone(filled);
   const cand = items.filter((i) => ["new", "old", "same"].includes(i.status));
   if (source === "ordner" && !cand.length) {
     scanMsg =
-      "Keine neuen Exporte im Ordner gefunden" +
-      (skipped ? " (" + skipped + " bereits importiert oder übersprungen)." : ".");
+      _t("exp.keine_neuen") + (skipped ? _t("exp.skipped", { n: skipped }) : ".");
     renderScan();
     if (!quiet) toast(scanMsg);
     return;
@@ -174,23 +173,20 @@ async function openBatch(entries, source, skipped, quiet) {
   pendingBatch = items;
   batchSource = source;
   const lab = {
-    new: ["neu", "bNew"],
-    old: ["älter", "bOld"],
-    same: ["identisch", "bSame"],
-    dup: ["schon importiert", "bDup"],
-    err: ["fehlerhaft", "bErr"],
+    new: [_t("exp.lab_neu"), "bNew"],
+    old: [_t("exp.lab_aelter"), "bOld"],
+    same: [_t("exp.lab_identisch"), "bSame"],
+    dup: [_t("exp.lab_dup"), "bDup"],
+    err: [_t("exp.lab_err"), "bErr"],
   };
   $("batchHead").textContent =
     (source === "ordner"
-      ? "Gefunden im Ordner „" + ((s.exportScan && s.exportScan.folder) || "") + "“: "
-      : "Ausgewählte Dateien: ") +
-    cand.length +
-    " übernehmbar" +
-    (skipped ? ", " + skipped + " bereits importiert oder übersprungen (ausgeblendet)" : "") +
-    (source === "ordner"
-      ? ". Nicht ausgewählte Dateien werden beim nächsten Einlesen nicht mehr angeboten"
-      : "") +
-    ". Übernommen wird in zeitlicher Reihenfolge.";
+      ? _t("exp.head_ordner", { f: (s.exportScan && s.exportScan.folder) || "" })
+      : _t("exp.head_dateien")) +
+    _t("exp.uebernehmbar", { n: cand.length }) +
+    (skipped ? _t("exp.ausgeblendet", { n: skipped }) : "") +
+    (source === "ordner" ? _t("exp.nicht_ausgewaehlt") : "") +
+    _t("exp.zeitlich");
   $("batchRows").innerHTML = items
     .map((it, i) => {
       const ok = ["new", "old", "same"].includes(it.status);
@@ -212,7 +208,7 @@ async function openBatch(entries, source, skipped, quiet) {
 function batchBtn() {
   const n = (pendingBatch || []).filter((i) => i.sel).length;
   $("batchOk").disabled = !n;
-  $("batchOk").textContent = n ? "Ausgewählte übernehmen (" + n + ")" : "Nichts ausgewählt";
+  $("batchOk").textContent = n ? _t("exp.ausgewaehlte", { n }) : _t("exp.nichts");
 }
 function applyBatch() {
   const sel = (pendingBatch || []).filter((i) => i.sel).map((i) => i.snap);
@@ -225,16 +221,11 @@ function applyBatch() {
   }
   for (const sn of sel) s.snapshots.push(sn);
   syncResources();
-  toast(sel.length === 1 ? "1 Export übernommen." : sel.length + " Exporte übernommen.");
+  toast(sel.length === 1 ? _t("exp.uebernommen1") : _t("exp.uebernommen", { n: sel.length }));
   s.logs.push(
     sel.length === 1
-      ? "Snapshot: " + sel[0].fileName
-      : sel.length +
-          " Snapshots übernommen (" +
-          fdt(snapTime(sel[0])) +
-          " bis " +
-          fdt(snapTime(sel[sel.length - 1])) +
-          ")",
+      ? _t("exp.log_snap", { f: sel[0].fileName })
+      : _t("exp.log_snaps", { n: sel.length, a: fdt(snapTime(sel[0])), b: fdt(snapTime(sel[sel.length - 1])) }),
   );
   pendingBatch = null;
   scanMsg = "";
@@ -272,7 +263,7 @@ async function scanExports(change, quiet) {
   s.exportScan = s.exportScan || {};
   if (change || !(await expLoadDir())) {
     if (!(await expPick())) {
-      scanMsg = "Abgebrochen – kein Ordner gewählt.";
+      scanMsg = _t("exp.abgebrochen");
       renderScan();
       toast(scanMsg);
       return;
@@ -288,7 +279,7 @@ async function scanExports(change, quiet) {
     ok = false;
   }
   if (!ok) {
-    scanMsg = "Zugriff auf den Ordner wurde nicht erlaubt.";
+    scanMsg = _t("exp.kein_zugriff");
     renderScan();
     toast(scanMsg);
     return;
@@ -310,7 +301,7 @@ async function scanExports(change, quiet) {
       entries.push({ name: n, read: async () => (await h.getFile()).text() });
     }
   } catch (e) {
-    scanMsg = "Ordner konnte nicht gelesen werden (" + e.message + ").";
+    scanMsg = _t("exp.nicht_lesbar", { e: e.message });
     renderScan();
     if (!quiet) toast(scanMsg);
     return;
@@ -347,10 +338,8 @@ function renderScan() {
   }
   const f = s.exportScan && s.exportScan.folder;
   let h = f
-    ? '<div class="folderRow"><span>Exporte-Ordner: <b>' +
-      escAttr(f) +
-      '</b></span><button id="scanChange" class="miniBtn">Ordner ändern</button></div>'
-    : "Beim ersten Mal wählst du den Ordner, in dem die Spock's-Club-Exporte landen (z. B. Downloads).";
+    ? `<div class="folderRow"><span>${_t("exp.ordner")} <b>${escAttr(f)}</b></span><button id="scanChange" class="miniBtn">${_t("exp.ordner_aendern")}</button></div>`
+    : _t("exp.erstes_mal");
   if (scanMsg) h += '<div style="margin-top:4px">' + escAttr(scanMsg) + "</div>";
   el.innerHTML = h;
   const c = $("scanChange");

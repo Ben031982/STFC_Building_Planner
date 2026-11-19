@@ -49,13 +49,13 @@ function renderEffPanel(p) {
   const box = $("effBody");
   if (!box) return;
   if (!p || !p.hasPlanData) {
-    box.innerHTML = '<p class="muted">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    box.innerHTML = `<p class="muted">${_t("td.braucht_aktiv")}</p>`;
     return;
   }
   const rows = effRows(p);
   if (!rows.length) {
     box.innerHTML =
-      '<p class="muted">Für diesen Plan liegen keine Grundkosten vor. Bitte „Total resources“ mit Grundkosten (Base Cost) neu importieren.</p>';
+      `<p class="muted">${_t("eff.keine_grund")}</p>`;
     return;
   }
   const H = effHistory(p),
@@ -73,18 +73,18 @@ function renderEffPanel(p) {
       else if (r.eff < prev[r.m]) down++;
     }
   const chTxt = !prev
-    ? ["Noch kein Vergleich", "ab dem nächsten Plan-Import"]
+    ? [_t("eff.kein_vgl"), _t("eff.ab_naechstem")]
     : up || down
       ? [
-          [up ? up + (up === 1 ? " Effizienz gestiegen" : " Effizienzen gestiegen") : "", down ? down + " gesunken" : ""]
+          [up ? _t(up === 1 ? "eff.gestiegen1" : "eff.gestiegen", { n: up }) : "", down ? _t("eff.gesunken", { n: down }) : ""]
             .filter(Boolean)
             .join(", "),
-          "Import " + prevAt + " → " + new Date(H.last.at).toLocaleDateString(LOC()),
+          _t("eff.import_pfeil", { a: prevAt, b: new Date(H.last.at).toLocaleDateString(LOC()) }),
         ]
-      : ["Unverändert", "seit dem Import vom " + prevAt];
+      : [_t("eff.unveraendert"), _t("eff.seit_import", { d: prevAt })];
   // Karte 3: Einfluss auf den Termin (in Kalendertagen)
   let etaB = "–",
-    etaS = prev ? "Termin noch nicht berechenbar" : "ab dem nächsten Plan-Import";
+    etaS = prev ? _t("eff.termin_nicht") : _t("eff.ab_naechstem");
   if (prev) {
     const w = effEtaWith(p, prev);
     if (w) {
@@ -92,16 +92,16 @@ function renderEffPanel(p) {
         g = Math.round((dd(w.days) - dd(w.fc.overall.real)) / 864e5);
       etaB =
         g === 0
-          ? "kein ganzer Tag"
-          : `<span class="${g > 0 ? "green" : "red"}">${Math.abs(g)} ${Math.abs(g) === 1 ? "Tag" : "Tage"} ${g > 0 ? "früher" : "später"}</span>`;
-      etaS = "mit den Effizienzen vom " + prevAt + ": " + fmtEta(w.days, w.fc.base);
+          ? _t("eff.kein_tag")
+          : `<span class="${g > 0 ? "green" : "red"}">${_t((g > 0 ? "eff.frueher" : "eff.spaeter") + (Math.abs(g) === 1 ? "1" : ""), { n: Math.abs(g) })}</span>`;
+      etaS = _t("eff.mit_eff", { d: prevAt, v: fmtEta(w.days, w.fc.base) });
     }
   }
   box.innerHTML =
-    `<div class="wifSum effSum"><div><span class="muted">Ersparnis durch Effizienzen</span><b>${fmt(big.base - big.cost)} ${escAttr(big.m)}</b><span class="muted">Kosten ${fmt(big.cost)} statt ${fmt(big.base)}</span></div>` +
-    `<div><span class="muted">Seit dem vorigen Import</span><b>${chTxt[0]}</b><span class="muted">${chTxt[1]}</span></div>` +
-    `<div><span class="muted">Einfluss auf den Termin</span><b>${etaB}</b><span class="muted">${escAttr(etaS)}</span></div></div>` +
-    `<div class="chartNote" style="margin-top:8px">Kosten = Grundkosten ÷ (1 + Effizienz). Der Verlauf beginnt mit Version 2.1: Ab jetzt merkt sich der Planner die Effizienzen bei jedem Plan-Import. „Einfluss auf den Termin“ rechnet die heutigen Grundkosten mit den früheren Effizienzen, bei gleichem Bestand und Einkommen. Frühere Termine und Raten werden nicht nachträglich umgerechnet.</div>`;
+    `<div class="wifSum effSum"><div><span class="muted">${_t("eff.ersparnis")}</span><b>${fmt(big.base - big.cost)} ${escAttr(big.m)}</b><span class="muted">${_t("eff.kosten_statt", { a: fmt(big.cost), b: fmt(big.base) })}</span></div>` +
+    `<div><span class="muted">${_t("eff.seit_vorigem")}</span><b>${chTxt[0]}</b><span class="muted">${chTxt[1]}</span></div>` +
+    `<div><span class="muted">${_t("eff.einfluss")}</span><b>${etaB}</b><span class="muted">${escAttr(etaS)}</span></div></div>` +
+    `<div class="chartNote" style="margin-top:8px">${_t("eff.note")}</div>`;
 }
 
 // Ressourcen- und Effizienztabelle mit eingebautem Effizienzrechner (ab 5.0).
@@ -120,16 +120,16 @@ function renderResMerged(p, planRows, bn) {
     on = !!effSimOn && p.hasPlanData;
   $("esToggle").setAttribute("aria-pressed", on ? "true" : "false");
   $("esToggle").classList.toggle("esOn", on);
-  $("esToggle").textContent = on ? "Rechner an ✓" : "Rechner";
+  $("esToggle").textContent = on ? _t("eff.rechner_an") : _t("eff.rechner");
   $("esToggle").disabled = !p.hasPlanData;
   $("esReset").hidden = !on;
   $("esHint").innerHTML =
     (on
-      ? "Zusatz in %-Punkten – es wird nichts gespeichert."
+      ? _t("eff.zusatz_hint")
       : p.hasPlanData
-        ? "Was wäre, wenn bei einem Material Effizienz dazukommt?"
-        : "Braucht einen aktiven Plan mit bestätigten Plandaten.") +
-    ' Für Packs, Zuwachs und Wunschtermin: <button class="linkBtn" id="esWifLink">Was-wäre-wenn</button>';
+        ? _t("eff.was_waere")
+        : _t("td.braucht_aktiv")) +
+    ` ${_t("eff.fuer_packs")} <button class="linkBtn" id="esWifLink">${_t("eff.wif")}</button>`;
   $("esWifLink").onclick = () => $("nw").click();
   $("esSum").hidden = !on;
   $("esToggle").onclick = () => {
@@ -142,7 +142,7 @@ function renderResMerged(p, planRows, bn) {
   };
   if (!planRows.length || !p.hasPlanData) {
     head.innerHTML = "";
-    tb.innerHTML = '<tr><td class="muted">Keine planabhängige Kostengrundlage – der Plan ist nicht aktiv.</td></tr>';
+    tb.innerHTML = `<tr><td class="muted">${_t("eff.keine_kosten")}</td></tr>`;
     return;
   }
   const effR = {};
@@ -152,9 +152,9 @@ function renderResMerged(p, planRows, bn) {
     slow = new Set(((p.hasPlanData && bottleneckRows(p)) || { rows: [] }).rows.map((x) => x.m)),
     ncol = on ? 10 : 9;
   head.innerHTML =
-    "<tr><th>Material</th><th>Aktuell</th><th>Benötigt</th><th>Fehlt</th><th>Fortschritt</th>" +
-    (on ? "<th>Zusatz (%-P.)</th>" : "") +
-    "<th>Effizienz</th><th>Änderung</th><th>Grundkosten</th><th>Ersparnis</th></tr>";
+    `<tr><th>${_t("common.material")}</th><th>${_t("chart.aktuell")}</th><th>${_t("eff.th_ben")}</th><th>${_t("pk.th_fehlt")}</th><th>${_t("eff.th_fort")}</th>` +
+    (on ? `<th>${_t("eff.th_zusatz")}</th>` : "") +
+    `<th>${_t("eff.th_eff")}</th><th>${_t("eff.th_aend")}</th><th>${_t("eff.th_grund")}</th><th>${_t("eff.th_ersp")}</th></tr>`;
   let h = "";
   for (const [g, rs] of resGroups(planRows)) {
     h += `<tr class="resGrp"><td colspan="${ncol}">${g}</td></tr>`;
@@ -170,12 +170,12 @@ function renderResMerged(p, planRows, bn) {
             ? '<span class="muted">–</span>'
             : x.eff === o
               ? '<span class="muted">±0</span>'
-              : `<span class="${x.eff > o ? "green" : "red"}">${x.eff > o ? "+" : "−"}${fx(Math.abs(x.eff - o))} %-P.</span>`,
+              : `<span class="${x.eff > o ? "green" : "red"}">${x.eff > o ? "+" : "−"}${_t("eff.pp", { n: fx(Math.abs(x.eff - o)) })}</span>`,
         save = x ? x.base - x.cost : null;
-      h += `<tr data-m="${escAttr(r[0])}" class="${com ? "resCommon" : ""}${isB ? " resBn" : slow.has(r[0]) ? " resSlow" : ""}"><td>${r[0]}${isB ? ' <span class="bnTag">ENGPASS</span>' : ""}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td class="esMiss ${m ? (isB ? "amber" : "") : "green"}">${m ? fmt(m) : "gedeckt"}</td><td><span class="prog${m ? "" : " done"}"><i style="width:${pc}%"></i></span> ${pc}%</td>`;
+      h += `<tr data-m="${escAttr(r[0])}" class="${com ? "resCommon" : ""}${isB ? " resBn" : slow.has(r[0]) ? " resSlow" : ""}"><td>${r[0]}${isB ? ` <span class="bnTag">${_t("dash.engpass_tag")}</span>` : ""}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td class="esMiss ${m ? (isB ? "amber" : "") : "green"}">${m ? fmt(m) : _t("common.gedeckt")}</td><td><span class="prog${m ? "" : " done"}"><i style="width:${pc}%"></i></span> ${pc}%</td>`;
       if (on)
         h += x
-          ? `<td><input class="esIn" type="number" step="any" min="0" inputmode="decimal" value="${sim[r[0]] || ""}" placeholder="0" aria-label="Zusätzliche Effizienz ${escAttr(r[0])}"></td>`
+          ? `<td><input class="esIn" type="number" step="any" min="0" inputmode="decimal" value="${sim[r[0]] || ""}" placeholder="0" aria-label="${_t("eff.aria", { m: escAttr(r[0]) })}"></td>`
           : '<td class="muted">–</td>';
       h += `<td class="esEff">${x ? fx(effSimEff(x)) + " %" : "–"}</td><td>${ch}</td><td>${x ? fmt(x.base) : "–"}</td><td class="${x ? "green" : "muted"}">${x ? `−${fmt(save)} (${Math.round((100 * save) / x.base)} %)` : "–"}</td></tr>`;
     }
@@ -235,20 +235,20 @@ function effSimUpdate(p, planRows) {
   if (!sum) return;
   if (!Object.keys(sim).length) {
     sum.innerHTML =
-      '<div><span class="muted">Einfluss auf den Termin</span><b>Noch nichts eingetragen</b><span class="muted">Trag bei einem Material einen Zusatz ein.</span></div>';
+      `<div><span class="muted">${_t("eff.einfluss")}</span><b>${_t("eff.nichts")}</b><span class="muted">${_t("eff.trag_ein")}</span></div>`;
     return;
   }
   const w0 = effEtaWith(p, eff0),
     w1 = effEtaWith(p, eff1);
   let t = "–",
-    s2 = "Termin noch nicht berechenbar (zu wenige Daten oder zu weit weg)";
+    s2 = _t("eff.termin_nicht2");
   if (w0 && w1) {
     const dd = (x) => new Date(w0.fc.base + x * 864e5).setHours(0, 0, 0, 0),
       g = Math.round((dd(w0.days) - dd(w1.days)) / 864e5);
     t =
       g === 0
-        ? "kein ganzer Tag"
-        : `<span class="${g > 0 ? "green" : "red"}">${Math.abs(g)} ${Math.abs(g) === 1 ? "Tag" : "Tage"} ${g > 0 ? "früher" : "später"}</span>`;
+        ? _t("eff.kein_tag")
+        : `<span class="${g > 0 ? "green" : "red"}">${_t((g > 0 ? "eff.frueher" : "eff.spaeter") + (Math.abs(g) === 1 ? "1" : ""), { n: Math.abs(g) })}</span>`;
     s2 = fmtEta(w0.days, w0.fc.base) + " → " + fmtEta(w1.days, w1.fc.base);
   }
   // Was bremst danach? Material mit den meisten Resttagen bei neuen Effizienzen
@@ -267,7 +267,7 @@ function effSimUpdate(p, planRows) {
     }
   const saved = rows.reduce((a, r) => a + (sim[r.m] ? effCost(r.base, eff0[r.m]) - effCost(r.base, eff1[r.m]) : 0), 0);
   sum.innerHTML =
-    `<div><span class="muted">Einfluss auf den Termin</span><b>${t}</b><span class="muted">${s2}</span></div>` +
-    `<div><span class="muted">Ersparnis bei den Kosten</span><b class="green">−${fmt(Math.round(saved))}</b><span class="muted">über alle geänderten Materialien</span></div>` +
-    `<div><span class="muted">Danach bremst</span><b>${next ? escAttr(next.replace("7★ ", "7★ ")) : "–"}</b><span class="muted">${next ? "braucht dann noch ca. " + Math.ceil(nd) + " Tage" : "nicht berechenbar"}</span></div>`;
+    `<div><span class="muted">${_t("eff.einfluss")}</span><b>${t}</b><span class="muted">${s2}</span></div>` +
+    `<div><span class="muted">${_t("eff.ersp_kosten")}</span><b class="green">−${fmt(Math.round(saved))}</b><span class="muted">${_t("eff.ueber_alle")}</span></div>` +
+    `<div><span class="muted">${_t("eff.danach")}</span><b>${next ? escAttr(next.replace("7★ ", "7★ ")) : "–"}</b><span class="muted">${next ? _t("eff.braucht_noch", { n: Math.ceil(nd) }) : _t("wif.nicht_berechenbar")}</span></div>`;
 }

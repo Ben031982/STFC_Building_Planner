@@ -85,11 +85,11 @@ function calcPlanStatus0(p) {
 function statusLabel(st) {
   return (
     {
-      active: "Aktiv",
-      draft: "Entwurf",
-      incomplete: "Unvollständig",
-      review: "Prüfbereit",
-      stale: "Veraltet",
+      active: _t("status.active"),
+      draft: _t("status.draft"),
+      incomplete: _t("status.incomplete"),
+      review: _t("status.review"),
+      stale: _t("status.stale"),
     }[st] || st
   );
 }

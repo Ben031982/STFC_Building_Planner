@@ -136,9 +136,9 @@ function etaTxt(e) {
   return !e
     ? "–"
     : e.eta == null
-      ? "offen"
+      ? _t("common.offen")
       : e.eta === 0
-        ? "gedeckt"
+        ? _t("common.gedeckt")
         : fcDate(Date.now(), (e.eta - Date.now()) / 864e5);
 }
 function renderWeekly() {
@@ -146,7 +146,7 @@ function renderWeekly() {
     $("wkPlan").textContent = "";
     $("wkLabel").textContent = "";
     $("wkBody").innerHTML =
-      '<section class="panel"><p class="muted">Der Wochenbericht braucht einen Zielplan. Leg im Dashboard deinen ersten Plan an.</p></section>';
+      `<section class="panel"><p class="muted">${_t("wk.braucht_plan")}</p></section>`;
     return;
   }
   const p = mainPlan(),
@@ -155,9 +155,9 @@ function renderWeekly() {
     prevPer = Object.fromEntries(dPrev.res.map((r) => [r.m, r.perDay])),
     W = d.W,
     dl = (t) => new Date(t).toLocaleDateString(LOC(), { day: "2-digit", month: "2-digit" });
-  $("wkPlan").textContent = p ? p.name + " (Hauptplan · " + statusLabel(calcPlanStatus(p)) + ")" : "";
+  $("wkPlan").textContent = p ? _t("wk.planname", { name: p.name, st: statusLabel(calcPlanStatus(p)) }) : "";
   $("wkLabel").textContent =
-    "KW " + isoWeek(W.a) + " · " + dl(W.a) + "–" + dl(W.b - 1) + (d.current ? " (laufend)" : "");
+    _t("wk.kw_label", { w: isoWeek(W.a), a: dl(W.a), b: dl(W.b - 1) }) + (d.current ? _t("wk.laufend") : "");
   $("wkNext").disabled = wkOffset >= 0;
   const steps = d.doneEnd != null && d.doneStart != null ? d.doneEnd - d.doneStart : null,
     pr = p ? planProgress(p) : null;
@@ -166,18 +166,18 @@ function renderWeekly() {
     const g = Math.round((d.fcPrev.eta - d.fcEnd.eta) / 864e5);
     shift =
       g === 0
-        ? "unverändert zur Vorwoche"
+        ? _t("wk.unveraendert")
         : g > 0
-          ? `<span class="wifGain">${g} Tage früher als zum Wochenbeginn (${dl(W.a)})</span>`
-          : `<span class="wifLoss">${-g} Tage später als zum Wochenbeginn (${dl(W.a)})</span>`;
-  } else shift = d.fcPrev ? "Vorwoche: " + etaTxt(d.fcPrev) : "noch kein Vergleich zur Vorwoche";
+          ? `<span class="wifGain">${_t("wk.tage_frueher", { n: g, d: dl(W.a) })}</span>`
+          : `<span class="wifLoss">${_t("wk.tage_spaeter", { n: -g, d: dl(W.a) })}</span>`;
+  } else shift = d.fcPrev ? _t("wk.vorwoche", { v: etaTxt(d.fcPrev) }) : _t("wk.kein_vergleich_vorwoche");
   const fcE = d.fcEnd;
-  let h = `<div class="wkCards"><div><span class="muted">Fortschritt in dieser Woche</span><b>${steps == null ? "–" : (steps > 0 ? "+" : "") + steps + " Stufe" + (Math.abs(steps) === 1 ? "" : "n")}</b><span class="muted">${pr ? "gesamt " + pr.done + " von " + pr.total + " Stufen (" + pr.pct + " %)" : "kein Ausgangsstand"}${steps === 0 ? " · kein Plan-Import mit Baufortschritt" : ""}</span></div><div><span class="muted">Fertigstellung (Stand ${d.current ? "heute" : "Wochenende"})</span><b>${d.current && shipYardBlock(p) ? "Schiffswerft " + shipYardBlock(p).yard + " fehlt" : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">Engpass</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? "Packs bis zum Ziel: " + (fcE.packs ? "≈ " + fcE.packs : "keine nötig") : shipPackMissingText(p) ? (p.ship && p.ship.key === "other" ? "kein Pack für „Anderes Schiff“" : "Schiffs-Pack nicht gepflegt") : packEmptyFor(p) ? "Stationspack nicht gepflegt" : "keine Pack-Rechnung"}</span></div></div>`;
-  h += `<section class="panel"><h3>Ressourcen in dieser Woche</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">Vergleich der Snapshots ${fdt(d.s0.t)} → ${fdt(d.s1.t)}. Einkommen = Bestandsänderung + Verbautes.</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand Anfang</th><th>Bestand Ende</th><th>Veränderung</th><th>Verbaut</th><th>Einkommen</th><th>Ø pro Tag</th><th>Ø Vorwoche</th><th>Trend</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : '<p class="muted">Für diese Woche gibt es keine zwei Snapshots zum Vergleichen' + (d.s1 ? " (letzter Stand " + fdt(d.s1.t) + ")" : "") + ".</p>"}</section>`;
+  let h = `<div class="wkCards"><div><span class="muted">${_t("wk.fortschritt")}</span><b>${steps == null ? "–" : _t(Math.abs(steps) === 1 ? "wk.stufen_1" : "wk.stufen_n", { n: (steps > 0 ? "+" : "") + steps })}</b><span class="muted">${pr ? _t("wk.gesamt", { a: pr.done, b: pr.total, p: pr.pct }) : _t("wk.kein_ausgang")}${steps === 0 ? _t("wk.kein_import_fortschritt") : ""}</span></div><div><span class="muted">${_t(d.current ? "wk.fertig_heute" : "wk.fertig_we")}</span><b>${d.current && shipYardBlock(p) ? _t("common.werft_fehlt", { n: shipYardBlock(p).yard }) : etaTxt(fcE)}</b><span class="muted">${shift}</span></div><div><span class="muted">${_t("common.engpass")}</span><b>${fcE && fcE.driver ? escAttr(fcE.driver.replace("7★ ", "")) : "–"}</b><span class="muted">${fcE && fcE.packs != null ? _t("wk.packs_bis_ziel", { v: fcE.packs ? "≈ " + fcE.packs : _t("wk.keine_noetig") }) : shipPackMissingText(p) ? (p.ship && p.ship.key === "other" ? _t("common.kein_pack_anderes") : _t("common.schiffspack_fehlt")) : packEmptyFor(p) ? _t("common.stationspack_fehlt") : _t("common.keine_packrechnung")}</span></div></div>`;
+  h += `<section class="panel"><h3>${_t("wk.res_titel")}</h3>${d.s0 && d.s1 && d.s1.t > d.s0.t ? `<p class="muted" style="margin:4px 0 8px;font-size:12px">${_t("wk.vergleich_snaps", { a: fdt(d.s0.t), b: fdt(d.s1.t) })}</p><div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>${_t("common.material")}</th><th>${_t("wk.bestand_anfang")}</th><th>${_t("wk.bestand_ende")}</th><th>${_t("wk.veraenderung")}</th><th>${_t("wk.verbaut")}</th><th>${_t("common.einkommen")}</th><th>${_t("wk.pro_tag")}</th><th>${_t("wk.avg_vorwoche")}</th><th>${_t("common.trend")}</th></tr></thead><tbody id="wkRes">${d.res.map((r) => `<tr><td>${escAttr(r.m)}</td><td>${fmt(r.a)}</td><td>${fmt(r.b)}</td><td class="${r.delta >= 0 ? "green" : "red"}">${r.delta > 0 ? "+" : ""}${fmt(r.delta)}</td><td>${r.built ? fmt(r.built) : "–"}</td><td>${r.inc > 0 ? "+" : ""}${fmt(r.inc)}</td><td>${r.perDay == null ? "< " + FC_GAP_H + " h" : (r.perDay > 0 ? "+" : "") + fmt(r.perDay)}</td>${wkTrend(r.perDay, prevPer[r.m])}</tr>`).join("")}</tbody></table></div>` : `<p class="muted">${_t("wk.keine_zwei_snaps")}${d.s1 ? _t("wk.letzter_stand", { d: fdt(d.s1.t) }) : ""}.</p>`}</section>`;
   // ab 2.1: Effizienz-Zeile unter der Ressourcentabelle
   h = h.replace(/<\/section>$/, wkEffLine(p, W.a, d.end) + "</section>");
   if (d.current) h += wkOutlook(p);
-  h += `<section class="panel" style="margin-top:12px"><h3>Ereignisse der Woche</h3>${
+  h += `<section class="panel" style="margin-top:12px"><h3>${_t("wk.ereignisse")}</h3>${
     d.ev.length
       ? `<table class="histTable" style="width:100%"><tbody id="wkEv">${d.ev
           .sort((a, b) => a.t - b.t)
@@ -186,21 +186,21 @@ function renderWeekly() {
               `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td></tr>`,
           )
           .join("")}</tbody></table>`
-      : '<p class="muted">Keine Ereignisse in dieser Woche.</p>'
+      : `<p class="muted">${_t("wk.keine_ereignisse")}</p>`
   }</section>`;
   h +=
-    '<div class="chartNote" style="margin-top:10px">Wochen laufen Montag bis Sonntag. Die Fertigstellung im Wochenvergleich wird ab 1.8.4 täglich mitprotokolliert – ältere Wochen haben deshalb noch keinen Vergleichswert.</div>';
+    `<div class="chartNote" style="margin-top:10px">${_t("wk.note")}</div>`;
   $("wkBody").innerHTML = h;
 }
 
 // Ab 2.1 (F19): Vergleich mit dem Ø-Einkommen der Vorwoche
 function wkTrend(now, prev) {
-  if (now == null || prev == null) return '<td class="muted">–</td><td class="muted">kein Vergleich</td>';
+  if (now == null || prev == null) return `<td class="muted">–</td><td class="muted">${_t("common.kein_vergleich")}</td>`;
   const d = now - prev;
   return (
     `<td>${prev > 0 ? "+" : ""}${fmt(prev)}</td>` +
     (Math.abs(d) < 0.05
-      ? '<td class="muted">= gleich</td>'
+      ? `<td class="muted">${_t("wk.gleich")}</td>`
       : `<td class="${d > 0 ? "green" : "red"}">${d > 0 ? "▲ +" : "▼ −"}${fmt(Math.abs(d))}</td>`)
   );
 }
@@ -208,11 +208,11 @@ function wkTrend(now, prev) {
 function wkOutlook(p) {
   const fc = p && p.hasPlanData ? planForecast(p) : null,
     wb = weekBounds(1),
-    head = `<section class="panel" id="wkOutlook" style="margin-top:12px"><h3>Ausblick auf KW ${isoWeek(wb.a)}</h3>`;
+    head = `<section class="panel" id="wkOutlook" style="margin-top:12px"><h3>${_t("wk.ausblick", { w: isoWeek(wb.a) })}</h3>`;
   if (!fc || !(fc.overall.real > 0))
     return (
       head +
-      `<p class="muted">${fc && fc.overall.real === 0 ? "Alle Ressourcen für das Ziel sind schon gedeckt." : "Der Ausblick braucht eine Prognose (mindestens " + FC_MIN + " Abschnitte mit je " + FC_GAP_H + " Stunden Abstand)."}</p></section>`
+      `<p class="muted">${fc && fc.overall.real === 0 ? _t("wk.alles_gedeckt") : _t("wk.braucht_prognose", { n: FC_MIN, h: FC_GAP_H })}</p></section>`
     );
   const until = (wb.b - fc.base) / 864e5,
     soon = fc.res
@@ -220,18 +220,18 @@ function wkOutlook(p) {
       .sort((a, b) => a.eta.real - b.eta.real),
     bn = bottleneckRows(p),
     li = soon.length
-      ? soon.map((x) => `<li>${escAttr(x.m)} voraussichtlich gedeckt am <b>${fcDate(fc.base, x.eta.real)}</b></li>`).join("")
-      : `<li>Bis Ende KW ${isoWeek(wb.a)} wird voraussichtlich kein weiteres Material gedeckt.</li>`;
+      ? soon.map((x) => `<li>${_t("wk.gedeckt_am", { m: escAttr(x.m), d: fcDate(fc.base, x.eta.real) })}</li>`).join("")
+      : `<li>${_t("wk.kein_weiteres", { w: isoWeek(wb.a) })}</li>`;
   return (
     head +
     `<ul class="wkList">${li}` +
     (bn && bn.rows.length
-      ? `<li>Engpass bleibt <b>${escAttr(bn.rows[0].m)}</b>${bn.rows[1] ? " – danach " + escAttr(bn.rows[1].m) : ""}</li>`
+      ? `<li>${_t("wk.engpass_bleibt", { m: escAttr(bn.rows[0].m) })}${bn.rows[1] ? _t("wk.danach", { m: escAttr(bn.rows[1].m) }) : ""}</li>`
       : "") +
     (shipYardBlock(p)
-      ? `<li>Fertigstellung offen – <b>Schiffswerft ${shipYardBlock(p).yard} fehlt</b> (${escAttr(shipYardHint(shipYardBlock(p)))})</li></ul>`
-      : `<li>Fertigstellung <b>${fcRealTxt(fc)}</b>, wenn das Einkommen gleich bleibt</li></ul>`) +
-    `<p class="muted" style="font-size:11.5px;margin:6px 0 0">Rechnet mit dem realistischen Einkommen. Fehlen in einer Woche zwei Snapshots, steht beim Vergleich „kein Vergleich“.</p></section>`
+      ? `<li>${_t("wk.fertig_offen", { n: shipYardBlock(p).yard, h: escAttr(shipYardHint(shipYardBlock(p))) })}</li></ul>`
+      : `<li>${_t("wk.fertig_wenn", { d: fcRealTxt(fc) })}</li></ul>`) +
+    `<p class="muted" style="font-size:11.5px;margin:6px 0 0">${_t("wk.rechnet_real")}</p></section>`
   );
 }
 
@@ -241,17 +241,17 @@ function wkEffLine(p, a, end) {
     .filter((x) => x.efficiencies && Object.keys(x.efficiencies).length)
     .map((x) => ({ t: new Date(x.at).getTime(), e: x.efficiencies }))
     .sort((x, y) => x.t - y.t);
-  const lead = '<p class="muted wkEff"><b>Effizienzen diese Woche:</b> ';
-  if (!h.length) return lead + "noch kein Verlauf – er beginnt mit dem nächsten Plan-Import.</p>";
+  const lead = `<p class="muted wkEff"><b>${_t("wk.eff_woche")}</b> `;
+  if (!h.length) return lead + _t("wk.eff_kein_verlauf") + "</p>";
   const e1 = snapAt(h, end - 1),
     inWeek = h.filter((x) => x.t > a && x.t < end),
     e0 = snapAt(h, a) || (inWeek.length > 1 ? inWeek[0] : null);
-  if (!e1 || !e0 || e0 === e1) return lead + "kein Vergleich (kein Plan-Import mit Effizienzen in dieser Woche).</p>";
+  if (!e1 || !e0 || e0 === e1) return lead + _t("wk.eff_kein_vergleich") + "</p>";
   const ch = Object.keys(e1.e)
     .filter((k) => isNum(e1.e[k]) && isNum(e0.e[k]) && e1.e[k] !== e0.e[k])
     .map(
       (k) =>
         `${escAttr(k)} ${fx(e0.e[k])} % → ${fx(e1.e[k])} % <span class="${e1.e[k] > e0.e[k] ? "green" : "red"}">(${e1.e[k] > e0.e[k] ? "+" : "−"}${fx(Math.abs(e1.e[k] - e0.e[k]))})</span>`,
     );
-  return lead + (ch.length ? ch.join(" · ") : "keine Änderung") + "</p>";
+  return lead + (ch.length ? ch.join(" · ") : _t("common.keine_aenderung")) + "</p>";
 }

@@ -27,18 +27,19 @@ function shareCoarseDate(t) {
     d = new Date(t);
   if (t - now > 365 * 864e5) {
     const lim = new Date(now + 365 * 864e5);
-    return "später als Q" + (Math.floor(lim.getMonth() / 3) + 1) + " " + String(lim.getFullYear()).slice(2);
+    return _t("sh.spaeter_q", { q: Math.floor(lim.getMonth() / 3) + 1, y: String(lim.getFullYear()).slice(2) });
   }
-  const part = d.getDate() <= 10 ? "Anfang" : d.getDate() <= 20 ? "Mitte" : "Ende",
+  const part = _t(d.getDate() <= 10 ? "sh.anfang" : d.getDate() <= 20 ? "sh.mitte" : "sh.ende"),
     mon = d.toLocaleDateString(LOC(), { month: "short" }).replace(".", "") + ".";
   return part + " " + mon + (d.getFullYear() !== new Date().getFullYear() ? " " + String(d.getFullYear()).slice(2) : "");
 }
 function shareExactDate(t, long) {
   const now = Date.now();
-  if (t - now > 365 * 864e5) return "später als Q" + (Math.floor(new Date(now + 365 * 864e5).getMonth() / 3) + 1) + " " + String(new Date(now + 365 * 864e5).getFullYear()).slice(2);
+  if (t - now > 365 * 864e5)
+    return _t("sh.spaeter_q", { q: Math.floor(new Date(now + 365 * 864e5).getMonth() / 3) + 1, y: String(new Date(now + 365 * 864e5).getFullYear()).slice(2) });
   return long
     ? new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "long" })
-    : new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" }).replace(/\.?$/, ".");
+    : ((x) => (curLang() === "de" ? x.replace(/\.?$/, ".") : x))(new Date(t).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" }));
 }
 // aktive Pläne mit Prognose (hasPlanData je Plan selbst setzen – render() tut das nur für den gewählten)
 function shareActivePlans() {
@@ -84,19 +85,19 @@ function buildGoalShareModel(g, o, stand) {
     chips = [];
   if (o.exact) {
     const dv = typeof goalDev === "function" ? goalDev(g, g.fc && g.fc.mid) : null;
-    if (dv != null) chips.push((Math.abs(dv) <= 1 ? "Wie zur Halbzeit prognostiziert" : Math.abs(dv) + " Tage " + (dv > 0 ? "später" : "früher") + " als zur Halbzeit gedacht"));
+    if (dv != null) chips.push((Math.abs(dv) <= 1 ? _t("sh.wie_halbzeit") : _t(dv > 0 ? "sh.spaeter_halbzeit" : "sh.frueher_halbzeit", { n: Math.abs(dv) })));
   }
   return {
     kind: "goal",
     title: g.name,
     stand,
-    badge: "ZIEL ERREICHT",
-    etaLabel: "Erreicht am",
+    badge: _t("sh.badge_ziel"),
+    etaLabel: _t("ev.th_erreicht"),
     eta: o.exact ? new Date(at).toLocaleDateString(LOC(), { day: "numeric", month: "long", year: "numeric" }) : shareCoarseDate(at),
-    etaSub: days ? (o.exact ? "in " + days + (days === 1 ? " Tag" : " Tagen") + " geschafft" : null) : null,
+    etaSub: days ? (o.exact ? _t(days === 1 ? "sh.geschafft1" : "sh.geschafft", { n: days }) : null) : null,
     etaSubUp: true,
     chips: chips.map((t) => ({ text: t })),
-    note: o.exact ? "Ziel abgeschlossen" : "Nur Datum",
+    note: o.exact ? _t("sh.ziel_abg") : _t("sh.nur_datum"),
     exact: o.exact,
   };
 }
@@ -119,10 +120,10 @@ function buildWeekShareModel(o, who) {
     up = true;
   if (d.fcEnd && d.fcPrev && d.fcEnd.eta > 0 && d.fcPrev.eta > 0) {
     const g = Math.round((d.fcPrev.eta - d.fcEnd.eta) / 864e5);
-    sub = g === 0 ? "unverändert zum Wochenbeginn" : (g > 0 ? "▲ " : "▼ ") + Math.abs(g) + (Math.abs(g) === 1 ? " Tag " : " Tage ") + (g > 0 ? "früher" : "später") + " als zum Wochenbeginn";
+    sub = g === 0 ? _t("sh.wb_unv") : (g > 0 ? "▲ " : "▼ ") + _t((g > 0 ? "sh.wb_frueher" : "sh.wb_spaeter") + (Math.abs(g) === 1 ? "1" : ""), { n: Math.abs(g) });
     up = g >= 0;
   }
-  if (bn && !bn.none) chips.push({ warn: true, text: "⚠ Engpass: " + bn.name });
+  if (bn && !bn.none) chips.push({ warn: true, text: _t("sh.engpass", { m: bn.name }) });
   let inc = null;
   if (o.exact) {
     const want = [bn && !bn.none ? bn.name : null, "Σ-Parsteel", "Σ-Tritanium", "Σ-Dilithium"].filter((x, i, a) => x && a.indexOf(x) === i),
@@ -136,7 +137,7 @@ function buildWeekShareModel(o, who) {
           return {
             name: r.m,
             val: (r.perDay > 0 ? "+" : "") + r0(r.perDay),
-            trend: dd == null ? "kein Vergleich" : Math.abs(dd) < 0.5 ? "= gleich" : (dd > 0 ? "▲ +" : "▼ −") + r0(Math.abs(dd)),
+            trend: dd == null ? _t("common.kein_vergleich") : Math.abs(dd) < 0.5 ? _t("wk.gleich") : (dd > 0 ? "▲ +" : "▼ −") + r0(Math.abs(dd)),
             up: dd == null || dd >= 0,
           };
         });
@@ -144,20 +145,21 @@ function buildWeekShareModel(o, who) {
   }
   return {
     kind: "week",
-    title: "Meine Woche",
-    stand: "KW " + isoWeek(W.a) + " · " + dl(W.a) + "–" + dl(W.b - 1) + new Date(W.a).getFullYear() + who,
-    badge: "WOCHENBERICHT",
+    title: _t("sh.meine_woche"),
+    stand:
+      _t("wk.kw_label", { w: isoWeek(W.a), a: dl(W.a), b: new Date(W.b - 1).toLocaleDateString(LOC(), { day: "2-digit", month: "2-digit", year: "numeric" }) }) + who,
+    badge: _t("sh.badge_woche"),
     pct: steps != null ? (steps > 0 ? "+" : "") + steps : o.exact ? pc.toLocaleString(LOC(), { maximumFractionDigits: 1 }) + " %" : Math.round(pc) + " %",
     pctValue: pc,
-    ringSub: steps != null ? (Math.abs(steps) === 1 ? "Stufe" : "Stufen") : "geschafft",
-    ringNote: steps != null ? Math.round(pc) + " % gesamt" : null,
-    etaLabel: (p.name.length > 24 ? p.name.slice(0, 23) + "…" : p.name) + (e.blocked ? " · wartet auf" : " · voraussichtlich fertig"),
-    eta: e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t),
+    ringSub: steps != null ? _t(Math.abs(steps) === 1 ? "sh.ring_stufe" : "sh.ring_stufen") : _t("sh.ring_geschafft"),
+    ringNote: steps != null ? _t("sh.ring_gesamt", { p: Math.round(pc) }) : null,
+    etaLabel: (p.name.length > 24 ? p.name.slice(0, 23) + "…" : p.name) + " · " + _t(e.blocked ? "sh.wartet_klein" : "sh.vorauss_klein"),
+    eta: e.blocked ? _t("ship.werft_grp", { n: e.blocked }) : e.t == null ? _t("fc.far") : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t),
     etaSub: o.exact ? sub : null,
     etaSubUp: up,
     chips,
     inc,
-    note: o.exact ? "Schätzung aus meinem Einkommen" : "Nur Prozent & Datum",
+    note: o.exact ? _t("sh.note_schaetz") : _t("ui.nur_prozent_und_datum"),
     exact: o.exact,
   };
 }
@@ -165,7 +167,7 @@ function buildShareModel(o) {
   o = o || shareOpts();
   const now = Date.now(),
     who = o.name && o.playerName.trim() ? " · " + o.playerName.trim() : "",
-    stand = "Stand " + new Date(now).toLocaleDateString(LOC()) + who,
+    stand = _t("sh.stand", { d: new Date(now).toLocaleDateString(LOC()) }) + who,
     plans = shareActivePlans(),
     doneN = (Array.isArray(s.goals) ? s.goals : []).length;
   const goal = typeof o.plan === "string" && o.plan.startsWith("goal:") ? (s.goals || []).find((g) => g.id === o.plan.slice(5)) : null;
@@ -178,20 +180,20 @@ function buildShareModel(o) {
         return {
           name: p.name,
           pct: o.exact ? Math.round(pc * 10) / 10 : Math.round(pc),
-          date: e.blocked ? "nach Werft" : e.t == null ? "–" : o.exact ? shareExactDate(e.t) : shareCoarseDate(e.t),
+          date: e.blocked ? _t("sh.nach_werft") : e.t == null ? "–" : o.exact ? shareExactDate(e.t) : shareCoarseDate(e.t),
           t: e.t || null,
         };
       }),
       next = rows.filter((r) => r.t).sort((a, b) => a.t - b.t)[0];
     return {
       kind: "all",
-      title: "Meine Ziele",
+      title: _t("sh.meine_ziele"),
       stand,
-      badge: rows.length + (rows.length === 1 ? " PLAN" : " PLÄNE"),
-      chips: (doneN ? ["✓ " + doneN + (doneN === 1 ? " Ziel" : " Ziele") + " erreicht"] : []).concat(next ? ["Nächstes: " + next.name] : []),
+      badge: _t(rows.length === 1 ? "sh.plaene1" : "sh.plaene", { n: rows.length }),
+      chips: (doneN ? [_t(doneN === 1 ? "sh.ziele_erreicht1" : "sh.ziele_erreicht", { n: doneN })] : []).concat(next ? [_t("sh.naechstes", { name: next.name })] : []),
       rows: rows.slice(0, 10),
       more: Math.max(0, rows.length - 10),
-      note: o.exact ? "Jeder Plan einzeln gerechnet" : "Nur Prozent & Datum",
+      note: o.exact ? _t("sh.einzeln") : _t("ui.nur_prozent_und_datum"),
       exact: o.exact,
     };
   }
@@ -203,10 +205,10 @@ function buildShareModel(o) {
     pk = o.inc.packs && o.exact ? packCalc(p) : null,
     diff = o.exact && o.inc.eta ? shareWeekDiff(p) : null;
   const chips = [];
-  if (o.inc.bottleneck && bn && !bn.none) chips.push({ warn: true, text: "⚠ Engpass: " + bn.name });
-  if (!o.exact && o.inc.res && rows.length) chips.push({ text: "fehlt noch ~" + Math.max(1, 100 - Math.round(pc)) + " %" });
-  if (o.exact && o.inc.eta) chips.push({ text: "Prognose realistisch" });
-  if (pk && pk.total > 0) chips.push({ text: pk.total + " Packs" + (pk.pack.priceEUR ? " · " + fx(Math.round(pk.total * pk.pack.priceEUR)) + " €" : "") });
+  if (o.inc.bottleneck && bn && !bn.none) chips.push({ warn: true, text: _t("sh.engpass", { m: bn.name }) });
+  if (!o.exact && o.inc.res && rows.length) chips.push({ text: _t("sh.fehlt_noch", { p: Math.max(1, 100 - Math.round(pc)) }) });
+  if (o.exact && o.inc.eta) chips.push({ text: _t("sh.prog_real") });
+  if (pk && pk.total > 0) chips.push({ text: _t("dash.n_packs", { n: pk.total }) + (pk.pack.priceEUR ? " · " + _t("pk.eur", { p: fx(Math.round(pk.total * pk.pack.priceEUR)) }) : "") });
   return {
     kind: "single",
     title: p.name,
@@ -214,19 +216,19 @@ function buildShareModel(o) {
     badge: statusLabel(p.status).toUpperCase(),
     pct: o.inc.goal ? (o.exact ? pc.toLocaleString(LOC(), { maximumFractionDigits: 1 }) : String(Math.round(pc))) + " %" : null,
     pctValue: pc,
-    etaLabel: o.inc.eta ? (e.blocked ? "Wartet auf" : "Voraussichtlich fertig") : null,
-    eta: o.inc.eta ? (e.blocked ? "Schiffswerft " + e.blocked : e.t == null ? "nicht absehbar" : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t)) : null,
-    etaSub: diff == null ? null : diff > 0 ? "▲ " + diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor 7 Tagen" : diff < 0 ? "▼ " + -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor 7 Tagen" : "unverändert gegenüber vor 7 Tagen",
+    etaLabel: o.inc.eta ? (e.blocked ? _t("sh.wartet_auf") : _t("sh.vorauss_fertig")) : null,
+    eta: o.inc.eta ? (e.blocked ? _t("ship.werft_grp", { n: e.blocked }) : e.t == null ? _t("fc.far") : o.exact ? shareExactDate(e.t, true) : shareCoarseDate(e.t)) : null,
+    etaSub: diff == null ? null : diff > 0 ? "▲ " + _t(diff === 1 ? "vz.frueher1" : "vz.frueher", { n: diff }) : diff < 0 ? "▼ " + _t(diff === -1 ? "vz.spaeter1" : "vz.spaeter", { n: -diff }) : _t("vz.unveraendert"),
     etaSubUp: diff != null && diff >= 0,
     chips,
     res:
       o.exact && o.inc.res
         ? rows.length
           ? rows.slice(0, 3).map((r) => ({ name: r[0], val: fx(Math.round(r[3])) }))
-          : [{ name: "Alles gedeckt", val: "✓" }]
+          : [{ name: _t("sh.alles_gedeckt"), val: "✓" }]
         : null,
     timeline: o.inc.timeline ? shareTimeline(p) : null,
-    note: o.exact ? "Schätzung aus meinem Einkommen" : "Nur Prozent & Datum",
+    note: o.exact ? _t("sh.note_schaetz") : _t("ui.nur_prozent_und_datum"),
     exact: o.exact,
   };
 }
@@ -315,7 +317,7 @@ function shFooter(c, m) {
 }
 function shTimeline(c, list, y) {
   if (!list || !list.length) return;
-  shText(c, "MEINE ZIELE", 38, y, 12, "#9fc2d9", 500);
+  shText(c, _t("sh.meine_ziele_up"), 38, y, 12, "#9fc2d9", 500);
   const n = list.length,
     x0 = 50,
     x1 = 518,
@@ -383,13 +385,13 @@ function drawShare(c, m) {
       shRound(c, 196, y + rh / 2 - 4.5, w, 9, 4.5);
       c.fillStyle = g;
       c.fill();
-      shText(c, (m.exact ? String(r.pct).replace(".", ",") : r.pct) + " %", 436, y + rh / 2 + 5, 13.5, "#46c2ee", 600, "right");
+      shText(c, (m.exact ? r.pct.toLocaleString(LOC()) : r.pct) + " %", 436, y + rh / 2 + 5, 13.5, "#46c2ee", 600, "right");
       shText(c, r.date, 530, y + rh / 2 + 5, 13.5, "#ffc98b", 600, "right");
       c.fillStyle = "rgba(255,255,255,.08)";
       c.fillRect(38, y + rh, 492, 1);
     });
-    if (m.more) shText(c, "+ " + m.more + " weitere", 38, y0 + m.rows.length * rh + 18, 12, "#9fc2d9", 400);
-    if (!m.rows.length) shText(c, "Noch kein aktiver Plan", 38, 180, 14, "#9fc2d9", 400);
+    if (m.more) shText(c, _t("sh.weitere", { n: m.more }), 38, y0 + m.rows.length * rh + 18, 12, "#9fc2d9", 400);
+    if (!m.rows.length) shText(c, _t("sh.kein_aktiv"), 38, 180, 14, "#9fc2d9", 400);
   } else if (m.kind === "goal") {
     shText(c, "✓", 280, 250, 120, "#7aeab0", 700, "center");
     shText(c, m.etaLabel, 280, 300, 14, "#9fc2d9", 400, "center");
@@ -457,7 +459,7 @@ function drawShare(c, m) {
       c.fill();
       c.strokeStyle = "rgba(255,255,255,.1)";
       c.stroke();
-      shText(c, "ES FEHLEN NOCH", 54, 384, 12, "#9fc2d9", 500);
+      shText(c, _t("sh.es_fehlen"), 54, 384, 12, "#9fc2d9", 500);
       m.res.forEach((q, i) => {
         shText(c, q.name, 54, 408 + i * 22, 14, "#eaf4fb", 400);
         shText(c, q.val, 514, 408 + i * 22, 14, q.val === "✓" ? "#7aeab0" : "#eaf4fb", 700, "right");
@@ -470,13 +472,13 @@ function drawShare(c, m) {
       c.fill();
       c.strokeStyle = "rgba(255,255,255,.1)";
       c.stroke();
-      shText(c, "EINKOMMEN Ø PRO TAG", 54, 374, 12, "#9fc2d9", 500);
-      shText(c, "ZUR VORWOCHE", 514, 374, 12, "#9fc2d9", 500, "right");
+      shText(c, _t("sh.eink"), 54, 374, 12, "#9fc2d9", 500);
+      shText(c, _t("sh.zur_vorwoche"), 514, 374, 12, "#9fc2d9", 500, "right");
       m.inc.forEach((q, i) => {
         const y = 398 + i * 24;
         shText(c, q.name, 54, y, 14, "#eaf4fb", 400);
         shText(c, q.val, 380, y, 14, "#7aeab0", 700, "right");
-        shText(c, q.trend, 514, y, 13, q.trend === "kein Vergleich" || q.trend === "= gleich" ? "#9fc2d9" : q.up ? "#7aeab0" : "#ffb07a", 400, "right");
+        shText(c, q.trend, 514, y, 13, q.trend === _t("common.kein_vergleich") || q.trend === _t("wk.gleich") ? "#9fc2d9" : q.up ? "#7aeab0" : "#ffb07a", 400, "right");
       });
     }
     if (m.timeline) shTimeline(c, m.timeline, 474);
@@ -502,11 +504,11 @@ function shareFillForm() {
     plans = shareActivePlans();
   const goals = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at));
   $("shPlan").innerHTML =
-    '<option value="all">Alle Ziele</option>' +
-    (s.plans.length ? '<option value="week">Wochenbericht (laufende Woche)</option>' : "") +
+    `<option value="all">${_t("sh.alle_ziele")}</option>` +
+    (s.plans.length ? `<option value="week">${_t("sh.opt_woche")}</option>` : "") +
     plans.map((p) => `<option value="${escAttr(p.id)}">${escAttr(p.name)}</option>`).join("") +
     (goals.length
-      ? '<optgroup label="Erreichte Ziele">' + goals.map((g) => `<option value="goal:${escAttr(g.id)}">✓ ${escAttr(g.name)}</option>`).join("") + "</optgroup>"
+      ? `<optgroup label="${_t("sh.erreichte")}">` + goals.map((g) => `<option value="goal:${escAttr(g.id)}">✓ ${escAttr(g.name)}</option>`).join("") + "</optgroup>"
       : "");
   $("shPlan").value = plans.some((p) => p.id === o.plan) || (o.plan === "week" && s.plans.length) || goals.some((g) => "goal:" + g.id === o.plan) ? o.plan : "all";
   $("shExact").checked = o.exact;
@@ -544,7 +546,7 @@ function shareFileName() {
 }
 function shareSave() {
   $("shCanvas").toBlob((b) => {
-    if (!b) return toast("Das Bild konnte nicht erzeugt werden.");
+    if (!b) return toast(_t("sh.fehler"));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(b);
     a.download = shareFileName();
@@ -552,15 +554,15 @@ function shareSave() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    toast("Bild gespeichert: " + a.download);
+    toast(_t("sh.gespeichert", { f: a.download }));
   }, "image/png");
 }
 function shareCopy() {
-  if (!navigator.clipboard || typeof ClipboardItem === "undefined") return toast("Kopieren geht in diesem Browser nicht – bitte „Bild speichern“.");
+  if (!navigator.clipboard || typeof ClipboardItem === "undefined") return toast(_t("sh.kopieren_nicht"));
   $("shCanvas").toBlob((b) => {
     navigator.clipboard.write([new ClipboardItem({ "image/png": b })]).then(
-      () => toast("Bild in die Zwischenablage kopiert."),
-      () => toast("Kopieren wurde blockiert – bitte „Bild speichern“."),
+      () => toast(_t("sh.kopiert")),
+      () => toast(_t("sh.blockiert")),
     );
   }, "image/png");
 }

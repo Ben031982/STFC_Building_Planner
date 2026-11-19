@@ -20,47 +20,47 @@ function setupSteps() {
   return [
     {
       key: "json",
-      title: "Export einlesen",
+      title: _t("su.json_title"),
       done: !!ls,
-      doneTxt: s.snapshots.length + " Snapshot" + (s.snapshots.length === 1 ? "" : "s") + " vorhanden",
-      txt: "In Spock's Club synchronisieren, dann unter Syncing › Export Data mindestens Buildings und Resources als JSON herunterladen.",
-      btn: "Neue Exporte einlesen",
+      doneTxt: _t(s.snapshots.length === 1 ? "su.snaps1" : "su.snaps", { n: s.snapshots.length }),
+      txt: _t("su.json_txt"),
+      btn: _t("care.neue_exporte"),
     },
     {
       key: "plan",
-      title: "Zielplan aktiv",
+      title: _t("su.plan_title"),
       done: !!active,
-      doneTxt: active ? active.name + " ist bestätigt" : "",
+      doneTxt: active ? _t("su.bestaetigt", { name: active.name }) : "",
       txt: s.plans.length
-        ? "Upgrade-Plan importieren und unter „Plandaten verwalten“ bestätigen."
-        : "Ziel im Spock's-Upgrade-Planer anlegen (nur ein Item), Plan anlegen und die drei Texte importieren.",
-      btn: s.plans.length ? "Plandaten verwalten" : "+ Ersten Plan anlegen",
+        ? _t("su.plan_txt1")
+        : _t("su.plan_txt0"),
+      btn: s.plans.length ? _t("care.plandaten_verwalten") : _t("su.plan_btn"),
       planId: firstOpen && firstOpen.id,
     },
     {
       key: "pack",
-      title: "Stationspack eintragen",
+      title: _t("su.pack_title"),
       done: !packEmpty(),
-      doneTxt: "Inhalt gepflegt",
-      txt: "Der Inhalt hängt von deiner OPS-Stufe ab. Nötig für „Packs bis zum Ziel“ und den Pack-Effekt.",
-      btn: "Stationspack pflegen",
+      doneTxt: _t("su.pack_done"),
+      txt: _t("su.pack_txt"),
+      btn: _t("care.station_pflegen"),
     },
     {
       key: "backup",
-      title: "Backup-Ordner wählen",
+      title: _t("su.bk_title"),
       done: !!(s.backup && s.backup.lastAt),
-      doneTxt: "Letztes Backup " + (s.backup && s.backup.lastAt ? fdt(s.backup.lastAt) : ""),
-      txt: "Einmal speichern und Ordner wählen – danach sichert der Planner nach jedem Import automatisch.",
-      btn: "Backup jetzt speichern",
+      doneTxt: _t("su.bk_done", { d: s.backup && s.backup.lastAt ? fdt(s.backup.lastAt) : "" }),
+      txt: _t("su.bk_txt"),
+      btn: _t("bk.jetzt_speichern"),
     },
     {
       key: "fc",
-      title: "Prognose",
+      title: _t("su.fc_title"),
       done: fcOk,
-      doneTxt: "Fertigstellungsdatum wird berechnet",
+      doneTxt: _t("su.fc_done"),
       txt: !active
-        ? "Kommt, sobald ein Plan aktiv ist und genug Exporte vorliegen."
-        : "Noch " + missN + " Abschnitt" + (missN === 1 ? "" : "e") + ": an verschiedenen Tagen exportieren (je mindestens 20 Stunden Abstand).",
+        ? _t("su.fc_inaktiv")
+        : _t(missN === 1 ? "su.fc_noch1" : "su.fc_noch", { n: missN }),
     },
   ];
 }
@@ -81,10 +81,10 @@ function renderSetup() {
   el.hidden = false;
   renderSetupToggle();
   el.innerHTML =
-    `<div class="setupHead"><h3>${fresh ? "Willkommen – so startest du" : "Einrichtung"}</h3><span class="prog"><i style="width:${Math.round((100 * n) / steps.length)}%"></i></span><span class="muted">${n} von ${steps.length} erledigt</span><button class="miniBtn" data-setup="tut">Einführung ansehen</button>${
+    `<div class="setupHead"><h3>${fresh ? _t("su.willkommen") : _t("su.einrichtung")}</h3><span class="prog"><i style="width:${Math.round((100 * n) / steps.length)}%"></i></span><span class="muted">${_t("su.erledigt", { a: n, b: steps.length })}</span><button class="miniBtn" data-setup="tut">${_t("su.einfuehrung")}</button>${
       setupAsk
-        ? '<span class="setupAsk">Ausblenden:<button class="miniBtn" data-setup="hide-once">bis zum nächsten Öffnen</button><button class="miniBtn" data-setup="hide-forever">dauerhaft</button><button class="miniBtn" data-setup="hide-cancel">Abbrechen</button></span>'
-        : '<button class="miniBtn" data-setup="hide">Ausblenden</button>'
+        ? `<span class="setupAsk">${_t("su.ausblenden")}:<button class="miniBtn" data-setup="hide-once">${_t("su.bis_naechstes")}</button><button class="miniBtn" data-setup="hide-forever">${_t("su.dauerhaft")}</button><button class="miniBtn" data-setup="hide-cancel">${_t("common.abbrechen")}</button></span>`
+        : `<button class="miniBtn" data-setup="hide">${_t("su.ausblenden")}</button>`
     }</div>` +
     `<div class="setupSteps">` +
     steps
@@ -94,7 +94,7 @@ function renderSetup() {
       )
       .join("") +
     `</div>` +
-    (fresh ? `<p class="muted setupFoot">Ausführlich mit Bildern: Userguide <b>STFC_Planner_Userguide.pdf</b>.</p>` : "");
+    (fresh ? `<p class="muted setupFoot">${_t("su.userguide")}</p>` : "");
   el.querySelectorAll("[data-setup]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -111,7 +111,7 @@ function renderSetup() {
           setupAsk = false;
           s.setupHide = "forever";
           save();
-          toast("Einrichtung ausgeblendet. Unter Daten & Import kannst du sie wieder einblenden.");
+          toast(_t("su.ausgeblendet"));
         } else if (a === "tut") tutOpen();
         else if (a === "json") {
           if (typeof window.showDirectoryPicker === "function") scanExports(false);
@@ -146,20 +146,27 @@ function renderSetupToggle() {
 // ---------------------------------------------------------------- Begriffe erklärt
 
 const TERMS = {
-  engpass:
-    "<b>Engpass</b> ist das Material, das bei deinem Einkommen zuletzt gedeckt ist. Es bestimmt, wann du fertig bist – nicht unbedingt das Material, von dem absolut am meisten fehlt. 7★ Common zählt nicht, weil es per Latinum kaufbar ist.",
-  qualitaet:
-    "<b>Prognose-Qualität</b> sagt, wie belastbar das Datum ist. Gezählt werden die Abschnitte der letzten 6 Wochen. Vorläufig: unter 6 Abschnitten oder 14 Tagen. Brauchbar: ab 6 Abschnitten über 14 Tage. Stabil: ab 10 Abschnitten über 28 Tage.",
-  abschnitt:
-    "<b>Abschnitt</b> ist die Zeit zwischen zwei Exporten mit mindestens 20 Stunden Abstand. Daraus ergibt sich dein Tageseinkommen je Material. Abschnitte mit einem Pack oder einem Bau werden markiert und nicht mitgerechnet.",
-  datenquelle:
-    "<b>Datenstand</b>: Bestände und Kosten kommen aus Spock's Club und können vom Spiel abweichen – etwa wenn eine Effizienz nicht abgezogen wird oder der letzte Sync alt ist.",
-  snapshot:
-    "<b>Snapshot</b> ist ein eingelesener Spock's-Export: dein Ressourcenstand und deine Gebäudestufen zu einem Zeitpunkt. Aus mehreren Snapshots berechnet der Planner dein Einkommen.",
-  hauptplan:
-    "<b>Zielplan</b> ist ein Ziel aus dem Spock's-Upgrade-Planer, zum Beispiel Operations 76. Der erste Plan ist der <b>Hauptplan</b>; der Wochenbericht bezieht sich auf ihn.",
-  status:
-    "<b>Entwurf</b>: noch keine Plandaten. <b>Unvollständig</b>: es fehlen Teile. <b>Prüfbereit</b>: alles da, bitte bestätigen. <b>Aktiv</b>: bestätigt, wird berechnet. <b>Veraltet</b>: ein Bau ist erledigt oder das Ziel passt nicht mehr – bitte neu importieren.",
+  get engpass() {
+    return _t("term.engpass");
+  },
+  get qualitaet() {
+    return _t("term.qualitaet");
+  },
+  get abschnitt() {
+    return _t("term.abschnitt");
+  },
+  get datenquelle() {
+    return _t("term.datenquelle");
+  },
+  get snapshot() {
+    return _t("term.snapshot");
+  },
+  get hauptplan() {
+    return _t("term.hauptplan");
+  },
+  get status() {
+    return _t("term.status");
+  },
 };
 function showTerm(el) {
   const t = TERMS[el.dataset.term];

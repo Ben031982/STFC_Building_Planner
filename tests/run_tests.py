@@ -1652,6 +1652,16 @@ def i18n_schluessel_vollstaendig_und_englisch_sichtbar(b, html, tmp):
     check(not r["missDe"], f"Deutsche Texte fehlen: {r['missDe'][:5]}")
     check(not r["missEn"], f"Englische Texte fehlen: {r['missEn'][:5]}")
     check(not r["extra"], f"Deutsch ohne Englisch: {r['extra'][:5]}")
+    # ab 5.2 Etappe 3: jeder _t("…")-Schlüssel im Code hat Deutsch und Englisch
+    import re as _re
+    code_keys = sorted(set(_re.findall(r'_t\("([^"]+)"', pathlib.Path(html).read_text(encoding="utf-8"))))
+    check(len(code_keys) > 500, f"Zu wenige _t-Schlüssel im Code: {len(code_keys)}")
+    miss = a.js("(ks)=>{const d=I18N();return ks.filter(k=>d.de.t[k]==null||d.en.t[k]==null)}", code_keys)
+    check(not miss, f"Code-Schlüssel ohne Text: {miss[:5]}")
+    # Platzhalter {x} müssen in beiden Sprachen gleich sein
+    bad = a.js("""()=>{const d=I18N(),ph=s=>(String(s).match(/\\{\\w+\\}/g)||[]).sort().join();
+      return Object.keys(d.de.t).filter(k=>d.en.t[k]!=null&&ph(d.de.t[k])!==ph(d.en.t[k]))}""")
+    check(not bad, f"Platzhalter weichen ab: {bad[:5]}")
     a.js("()=>{I18N().en.meta.complete=true;setLang('en')}")
     txt = a.js("()=>[document.querySelector('[data-tab=bld]').textContent.trim(),document.querySelector('#navLog').textContent.trim(),document.querySelector('#langPanel h3').textContent]")
     check(txt == ["Build order", "Log", "Language"], f"Englische Navigation falsch: {txt}")

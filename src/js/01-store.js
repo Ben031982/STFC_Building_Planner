@@ -135,9 +135,7 @@ function migrateState(st) {
   });
   if (old && reimport.length)
     st.logs.push(
-      "Umstellung auf Version 1.3.7: Ressourcen für " +
-        reimport.join(", ") +
-        " bitte einmal neu importieren.",
+      _t("store.umstellung137", { list: reimport.join(", ") }),
     );
   st.schema = SCHEMA;
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;

@@ -42,20 +42,17 @@ function resourceSourceNote(p, rows) {
     snap = latestSnapshot(),
     src = (g) =>
       rows.filter((r) => g(r[0])).some((r) => r[4] === "snapshot")
-        ? "aus JSON-Snapshot (Exportstand " +
-          f(snapTime(snap)) +
-          (snapHasExport(snap) ? "" : ", Importzeit") +
-          ")"
-        : "aus Plan-Import vom " + f(d.importedAt);
+        ? _t("model.src_snap", { d: f(snapTime(snap)), x: snapHasExport(snap) ? "" : _t("model.importzeit") })
+        : _t("model.src_plan", { d: f(d.importedAt) });
   return (
-    "Stand: 7★ " +
+    _t("model.stand7") +
     src((n) => n.startsWith("7★")) +
     " · Σ " +
     src((n) => n.startsWith("Σ")) +
     (rows.some((r) => r[0].startsWith("Σ") && r[4] === "snapshot")
-      ? " (Σ berechnet aus Rohbestand + Token)"
+      ? _t("model.sigma_calc")
       : "") +
-    ". Benötigt = Cost laut Spock's Club inkl. Effizienzen."
+    _t("model.benoetigt_cost")
   );
 }
 function getBottleneck(rows) {
@@ -69,7 +66,7 @@ function getBottleneck(rows) {
     const r = rows.find((x) => x[0] === n);
     if (r && r[3] > 0) return { name: n, missing: r[3], share: share(r) };
   }
-  return { name: "Kein Engpass", missing: 0, share: 0, none: true };
+  return { name: _t("model.kein_engpass"), missing: 0, share: 0, none: true };
 }
 const CORE_ORDER = (n) =>
   /^Defense Platform/i.test(n)

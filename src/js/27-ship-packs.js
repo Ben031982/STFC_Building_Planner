@@ -65,7 +65,7 @@ function packEmptyFor(p) {
 // Bezeichnung in Texten: „Stationspack“ bzw. der Name des Schiffs-Packs
 function packLabel(p) {
   const pk = planPack(p);
-  return isShip(p) && pk ? pk.name : "Stationspack";
+  return isShip(p) && pk ? pk.name : _t("common.stationspack");
 }
 function packPlural(name, n) {
   return n === 1 ? name : /paket$/i.test(name) ? name + "e" : name + "s";
@@ -73,14 +73,14 @@ function packPlural(name, n) {
 // „inkl. Schiffswerft 76“, wenn ein aktiver Schiffswerft-Plan mitgerechnet wird
 function packInclText(p) {
   const anc = typeof chainAncestors === "function" ? chainAncestors(p).filter((q) => calcPlanStatus(q) === "active") : [];
-  return anc.length ? "inkl. " + anc.map((q) => q.name).join(", ") : "";
+  return anc.length ? _t("sp.inkl", { list: anc.map((q) => q.name).join(", ") }) : "";
 }
 // Hinweis für Schiffe ohne nutzbaren Pack (null, wenn ein Pack gepflegt ist oder es kein Schiff ist)
 function shipPackMissingText(p) {
   if (!isShip(p)) return null;
-  if (!p.ship || p.ship.key === "other") return "Für „Anderes Schiff“ gibt es keinen Pack – hier zählt nur dein Einkommen.";
+  if (!p.ship || p.ship.key === "other") return _t("sp.anderes");
   if (packEmptyFor(p))
-    return "Der Pack für " + SHIP_CLASSES[p.ship.cls].label + " ist noch nicht gepflegt (Daten & Import › Schiffs-Packs).";
+    return _t("sp.leer", { k: SHIP_CLASSES[p.ship.cls].label });
   return null;
 }
 function openPackFor(p) {
@@ -97,8 +97,8 @@ function renderShipPacks() {
     .map(([cls, pk]) => {
       const n = Object.values(pk.contents || {}).filter((c) => c && +c.amount > 0).length;
       return `<tr><td>${SHIP_CLASSES[cls].label}</td><td>${escAttr(pk.name)}</td><td>${
-        n ? n + " Material" + (n === 1 ? "" : "ien") : '<span class="muted">noch nicht gepflegt</span>'
-      }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"}</td><td>${fx(pk.priceEUR)} €</td><td><button class="miniBtn" data-shippack="${cls}">Bearbeiten</button></td></tr>`;
+        n ? _t(n === 1 ? "sp.n_mat1" : "sp.n_mat", { n }) : `<span class="muted">${_t("sp.nicht_gepflegt")}</span>`
+      }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"}</td><td>${_t("pk.eur", { p: fx(pk.priceEUR) })}</td><td><button class="miniBtn" data-shippack="${cls}">${_t("sp.bearbeiten")}</button></td></tr>`;
     })
     .join("");
   el.querySelectorAll("[data-shippack]").forEach((b) => (b.onclick = () => openPacks(b.dataset.shippack)));

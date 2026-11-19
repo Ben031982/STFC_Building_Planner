@@ -38,6 +38,10 @@ function t(key, vars) {
   if (v == null) v = key;
   return vars ? String(v).replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : String(v);
 }
+// Im JS-Code immer _t() verwenden: viele Funktionen haben lokale Variablen namens t, die t() verdecken würden.
+function _t(key, vars) {
+  return t(key, vars);
+}
 // statische Texte in index.html: data-i18n (Textinhalt), data-i18n-html (Text mit Markup), data-i18n-title, data-i18n-ph (Platzhalter), data-i18n-aria
 function applyLang() {
   document.documentElement.lang = curLang();

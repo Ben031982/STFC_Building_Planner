@@ -6,8 +6,8 @@ function careHints() {
   if (!ls)
     out.push({
       warn: true,
-      text: "Noch kein JSON-Snapshot importiert. Ohne Snapshots gibt es keine Bestände, Raten und Prognose.",
-      btn: "JSON importieren",
+      text: _t("care.kein_snapshot"),
+      btn: _t("care.json_importieren"),
       act: "json",
     });
   else {
@@ -16,32 +16,28 @@ function careHints() {
       out.push({
         warn: true,
         text:
-          "Letzter Exportstand vom " +
-          fdt(snapTime(ls)) +
-          " (vor " +
-          Math.floor(age) +
-          " Tagen). Zeit für einen neuen Export aus Spock's Club – vorher synchronisieren.",
-        btn: typeof window.showDirectoryPicker === "function" ? "Neue Exporte einlesen" : "JSON importieren",
+          _t("care.export_alt", { d: fdt(snapTime(ls)), n: Math.floor(age) }),
+        btn: typeof window.showDirectoryPicker === "function" ? _t("care.neue_exporte") : _t("care.json_importieren"),
         act: "json",
       });
   }
   if (p) {
     const stt = calcPlanStatus(p);
     const msg = {
-      draft: "Für diesen Plan wurde noch kein Upgrade-Plan importiert.",
-      incomplete: "Die Plandaten sind unvollständig.",
-      review: "Die Plandaten sind vollständig, aber noch nicht bestätigt.",
+      draft: _t("care.draft"),
+      incomplete: _t("care.incomplete"),
+      review: _t("care.review"),
       stale:
-        "Die Plandaten passen nicht mehr zum Ziel oder wurden geändert – neu importieren und bestätigen.",
+        _t("care.stale"),
     }[stt];
     if (msg && !isOutdated(p))
-      out.push({ warn: true, text: p.name + ": " + msg, btn: "Plandaten verwalten", act: "manage" });
+      out.push({ warn: true, text: p.name + ": " + msg, btn: _t("care.plandaten_verwalten"), act: "manage" });
   }
   if (p && !isShip(p) && p.hasPlanData && packEmpty())
     out.push({
       warn: false,
-      text: "Stationspack noch nicht gepflegt. Trag den Inhalt deines Stationspacks ein (im Spiel ablesen), dann zeigt der Planner, wie viele Packs bis zum Ziel nötig wären.",
-      btn: "Stationspack pflegen",
+      text: _t("care.station_leer"),
+      btn: _t("care.station_pflegen"),
       act: "packs",
     });
   const su = storeUsage();
@@ -49,15 +45,13 @@ function careHints() {
     out.push({
       warn: true,
       text:
-        "Browser-Speicher zu " +
-        Math.round(su.pct * 100) +
-        " % belegt. Sichere ein Backup und lösche alte Snapshots, die du nicht mehr brauchst.",
-      btn: "Zur Sicherung",
+        _t("care.speicher", { n: Math.round(su.pct * 100) }),
+      btn: _t("care.zur_sicherung"),
       act: "store",
     });
   for (const q of s.plans)
     if (isOutdated(q))
-      out.push({ warn: true, text: outdatedText(q), btn: "Upgrade-Plan importieren", act: "ocr:" + q.id });
+      out.push({ warn: true, text: outdatedText(q), btn: _t("care.upgrade_importieren"), act: "ocr:" + q.id });
   if (p && !isShip(p) && p.hasPlanData && p.planData && p.planData.importedAt) {
     const bs = bldSnaps(),
       last = bs[bs.length - 1];
@@ -73,16 +67,12 @@ function careHints() {
         out.push({
           warn: true,
           text:
-            "Seit dem letzten Plan-Import (" +
-            fdt(p.planData.importedAt) +
-            ") ist laut JSON gestiegen: " +
-            ch.map((c) => c.name + " " + c.from + " → " + c.to).join(", ") +
-            ". " +
-            (ch.length === 1 ? "Das Gebäude gehört" : "Die Gebäude gehören") +
-            " zu " +
-            p.name +
-            " – die Kosten sind dadurch nicht mehr aktuell. „Included upgrades“ und „Total resources“ neu importieren.",
-          btn: "Upgrade-Plan importieren",
+            _t(ch.length === 1 ? "care.gestiegen1" : "care.gestiegen", {
+            d: fdt(p.planData.importedAt),
+            list: ch.map((c) => c.name + " " + c.from + " → " + c.to).join(", "),
+            name: p.name,
+          }),
+          btn: _t("care.upgrade_importieren"),
           act: "ocr",
         });
     }
@@ -111,18 +101,15 @@ function careHints() {
           out.push({
             warn: true,
             text:
-              "Seit dem letzten Plan-Import (" +
-              fdt(p.planData.importedAt) +
-              ")" +
-              (ack && ack > base.t ? " und deiner letzten Bestätigung" : "") +
-              " ist laut JSON ein Gebäude gestiegen, das der Planner nicht kennt (Nr. " +
-              unk.map((c) => c.id).join(", ") +
-              "). Gehört es zu " +
-              p.name +
-              ", sind die Kosten nicht mehr aktuell – dann „Included upgrades“ und „Total resources“ neu importieren.",
-            btn: "Upgrade-Plan importieren",
+              _t("care.unbekannt", {
+              d: fdt(p.planData.importedAt),
+              ack: ack && ack > base.t ? _t("care.und_bestaetigung") : "",
+              ids: unk.map((c) => c.id).join(", "),
+              name: p.name,
+            }),
+            btn: _t("care.upgrade_importieren"),
             act: "ocr",
-            btn2: "Gehört nicht zum Plan",
+            btn2: _t("care.gehoert_nicht"),
             act2: "bldack:" + p.id,
           });
       }
@@ -145,17 +132,13 @@ function careHints() {
         out.push({
           warn: false,
           text:
-            "Prognose: noch " +
-            miss +
-            " Abschnitt" +
-            (miss === 1 ? "" : "e") +
-            " bis zur Fertigstellungsprognose (" +
-            n +
-            "/" +
-            FC_MIN +
-            "). Der nächste zählende Export ist " +
-            (next <= now ? "ab sofort" : "ab " + fdt(next)) +
-            " möglich (mindestens " + FC_GAP_H + " Stunden Abstand).",
+            _t(miss === 1 ? "care.prognose_noch1" : "care.prognose_noch", {
+            miss,
+            n,
+            min: FC_MIN,
+            ab: next <= now ? _t("care.ab_sofort") : _t("care.ab", { d: fdt(next) }),
+            h: FC_GAP_H,
+          }),
         });
       }
     }
@@ -180,28 +163,28 @@ function renderCareStrip() {
         .replace(",", "");
   st.className = "careState " + (w ? "warn" : "ok");
   st.textContent = w
-    ? "⚠ " + w + " Hinweis" + (w === 1 ? "" : "e")
-    : "✓ alles aktuell";
+    ? "⚠ " + _t(w === 1 ? "care.hinweise_1" : "care.hinweise_n", { n: w })
+    : _t("care.alles_aktuell_klein");
   const imp = p && p.planData && p.planData.importedAt;
   $("careMeta").innerHTML =
-    (ls ? "Neuester Export <b>" + dm(snapTime(ls)) + "</b>" : "Noch kein Export") +
-    (imp ? " · Plan-Import <b>" + dm(imp) + "</b>" : "");
+    (ls ? _t("care.neuester_export", { d: dm(snapTime(ls)) }) : _t("care.noch_kein_export")) +
+    (imp ? _t("care.plan_import_meta", { d: dm(imp) }) : "");
   const b = s.backup || {},
     bl = $("careBackupLink"),
     age = b.lastAt ? Math.floor((Date.now() - new Date(b.lastAt).getTime()) / 864e5) : null;
   bl.className = "linkBtn" + (!b.lastAt || bkDue() > 14 ? " due" : "");
   bl.textContent = !b.lastAt
-    ? "● Noch kein Backup – jetzt speichern"
+    ? _t("care.kein_backup")
     : bkDue() > 14
-      ? "● Backup fällig (vor " + age + " Tagen) – jetzt speichern"
-      : "Backup: " + (age === 0 ? "heute" : age === 1 ? "gestern" : "vor " + age + " Tagen");
+      ? _t("care.backup_faellig", { n: age })
+      : _t("care.backup_meta", { v: age === 0 ? _t("common.heute") : age === 1 ? _t("common.gestern") : _t("common.vor_tagen", { n: age }) });
   bl.onclick = () => doBackup("manual");
 }
 function renderCareInto(lid, cid) {
   const el = $(lid);
   if (!el) return;
   const hs = careHints();
-  $(cid).textContent = hs.length ? hs.length + " Hinweis" + (hs.length === 1 ? "" : "e") : cid === "impCareCount" ? "✓ Alles aktuell. Nichts zu pflegen." : "";
+  $(cid).textContent = hs.length ? _t(hs.length === 1 ? "care.hinweise_1" : "care.hinweise_n", { n: hs.length }) : cid === "impCareCount" ? _t("care.alles_aktuell") : "";
   el.innerHTML = hs.length
     ? hs
         .map(
@@ -209,7 +192,7 @@ function renderCareInto(lid, cid) {
             `<div class="careItem${h.warn ? "" : " info"}"><span>${escAttr(h.text)}</span>${h.btn2 ? `<span class="careBtns"><button class="miniBtn" data-care="${h.act2}">${escAttr(h.btn2)}</button>` : ""}${h.btn ? `<button class="miniBtn" data-care="${h.act}">${escAttr(h.btn)}</button>` : ""}${h.btn2 ? "</span>" : ""}</div>`,
         )
         .join("")
-    : '<div class="careOk">✓ Alles aktuell. Nichts zu pflegen.</div>';
+    : `<div class="careOk">${_t("care.alles_aktuell")}</div>`;
   el.querySelectorAll("[data-care]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -232,10 +215,10 @@ function renderCareInto(lid, cid) {
             last = bldSnaps().at(-1);
           if (q && last) {
             q.bldAck = { t: new Date(last.t).toISOString(), bld: Object.assign({}, last.snap.bld) };
-            s.logs.push("Gebäudestufen als „gehört nicht zum Plan“ bestätigt: " + q.name);
+            s.logs.push(_t("care.bldack_log", { name: q.name }));
             save();
             render();
-            toast("Hinweis ausgeblendet – er kommt wieder, sobald eine weitere Gebäudestufe dazukommt.");
+            toast(_t("care.ausgeblendet"));
           }
         } else if (a.startsWith("ocr:")) {
           s.active = a.slice(4);

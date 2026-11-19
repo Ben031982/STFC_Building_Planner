@@ -24,26 +24,18 @@ function propagateDone(src, oldReq, newBlds) {
     }
     q.planData.outdatedBy = { at, source: src.name, items: merged };
     s.logs.push(
-      "Veraltet: " +
-        q.name +
-        " – " +
-        items.map((i) => i.name + " → " + i.level).join(", ") +
-        " erledigt (erkannt bei " +
-        src.name +
-        ")",
+      _t("ev.veraltet_log", { name: q.name, list: items.map((i) => i.name + " → " + i.level).join(", "), src: src.name }),
     );
   }
 }
 function outdatedText(q) {
   const o = q.planData.outdatedBy;
   return (
-    q.name +
-    ": veraltet – " +
-    o.items.map((i) => i.name + " → " + i.level).join(", ") +
-    (o.items.length === 1 ? " wurde" : " wurden") +
-    " erledigt (erkannt beim Import von " +
-    o.source +
-    "). Bitte die Plandaten aus Spock's Club aktualisieren."
+    _t(o.items.length === 1 ? "ev.outdated1" : "ev.outdated", {
+      name: q.name,
+      list: o.items.map((i) => i.name + " → " + i.level).join(", "),
+      src: o.source,
+    })
   );
 }
 function sharedPlans(p, x) {
@@ -63,12 +55,24 @@ function sharedPlans(p, x) {
 const CARE_DAYS = 3,
   EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff", goal: "#5bd2a0" },
   EV_LAB = {
-    plan: "Plan-Import",
-    pack: "Sprung: Pack/Ausgleich",
-    bau: "Sprung: Bau",
-    bld: "Gebäude",
-    manual: "Eigenes Ereignis",
-    goal: "Ziel erreicht",
+    get plan() {
+      return _t("ev.lab_plan");
+    },
+    get pack() {
+      return _t("ev.lab_pack");
+    },
+    get bau() {
+      return _t("ev.lab_bau");
+    },
+    get bld() {
+      return _t("ev.lab_bld");
+    },
+    get manual() {
+      return _t("ev.lab_manual");
+    },
+    get goal() {
+      return _t("ev.lab_goal");
+    },
   };
 function activePlan() {
   return s.plans.find((x) => x.id === s.active) || s.plans[0];
@@ -125,7 +129,7 @@ function bldChangeText(ch) {
     unk = ch.filter((c) => !c.name);
   return known
     .map((c) => c.name + " " + c.from + " → " + c.to)
-    .concat(unk.length ? ["unbekanntes Gebäude Nr. " + unk.map((c) => c.id).join(", ")] : [])
+    .concat(unk.length ? [_t("ev.unbekannt_geb", { ids: unk.map((c) => c.id).join(", ") })] : [])
     .join(", ");
 }
 // ab 3.4: Gebäudeziel laut Export erreicht? (Schiffe: nicht erkennbar)
@@ -143,7 +147,7 @@ function bldEvents() {
     out = [];
   for (let i = 1; i < bs.length; i++) {
     const ch = bldChanges(bs[i - 1].snap.bld, bs[i].snap.bld);
-    if (ch.length) out.push({ t: bs[i].t, type: "bld", text: bldChangeText(ch) + " (laut JSON)" });
+    if (ch.length) out.push({ t: bs[i].t, type: "bld", text: bldChangeText(ch) + _t("ev.laut_json") });
   }
   return out;
 }
@@ -152,8 +156,12 @@ function planImportEvents(p) {
     t: new Date(h.at).getTime(),
     type: "plan",
     text:
-      (h.kind || "Import") + (h.progress ? " · " + h.progress.done + "/" + h.progress.total + " Stufen" : ""),
+      histKindLabel(h.kind) + (h.progress ? _t("ev.stufen", { a: h.progress.done, b: h.progress.total }) : ""),
   }));
+}
+// Art des Plan-Imports ist auf Deutsch gespeichert (interner Wert) – nur die Anzeige wird übersetzt
+function histKindLabel(k) {
+  return { Import: _t("ev.kind_import"), Fortschreibung: _t("ev.kind_fort"), Ausgangsstand: _t("ev.kind_base") }[k || "Import"] || k;
 }
 function manualEvents() {
   return (Array.isArray(s.events) ? s.events : []).map((e) => ({
@@ -170,10 +178,9 @@ function goalEvents() {
     t: new Date(g.at).getTime(),
     type: "goal",
     text:
-      g.name +
-      " abgeschlossen" +
-      (g.since ? " – geplant seit " + d(g.since) : "") +
-      (g.eta ? (g.since ? ", " : " – ") + "letzte Prognose " + d(g.eta) : ""),
+      _t("ev.goal_text", { name: g.name }) +
+      (g.since ? _t("ev.geplant_seit", { d: d(g.since) }) : "") +
+      (g.eta ? (g.since ? ", " : " – ") + _t("ev.letzte_prognose", { d: d(g.eta) }) : ""),
   }));
 }
 // ab 5.0: Treffsicherheit – Abweichung in Tagen (+ = später erreicht als prognostiziert)
@@ -195,7 +202,7 @@ function renderGoals() {
   if (!el) return;
   const gs = (Array.isArray(s.goals) ? s.goals : []).slice().sort((a, b) => new Date(b.at) - new Date(a.at)),
     d = (x) => (x ? new Date(x).toLocaleDateString(LOC()) : "–"),
-    day = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n) + (Math.abs(n) === 1 ? " Tag" : " Tage"),
+    day = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n) + " " + _t(Math.abs(n) === 1 ? "common.tag" : "common.tage"),
     cell = (g, eta) => {
       const dv = goalDev(g, eta);
       return dv == null
@@ -205,36 +212,36 @@ function renderGoals() {
     A = goalAccuracy(gs),
     card = (t, v, n) => `<div class="tsCard"><div class="muted">${t}</div><div class="tsVal">${v}</div><div class="muted">${n}</div></div>`;
   $("goalPanel").classList.toggle("goalEmpty", !gs.length);
-  $("goalCount").textContent = gs.length ? gs.length + (gs.length === 1 ? " Ziel" : " Ziele") : "";
-  const few = "zu wenig Daten",
-    fewN = "Aussagekräftig ab 2 Zielen mit gespeicherter Prognose",
-    tend = A.midMean == null ? few : A.midMean > 1 ? "meist zu optimistisch" : A.midMean < -1 ? "meist zu vorsichtig" : "ausgewogen";
+  $("goalCount").textContent = gs.length ? _t(gs.length === 1 ? "ev.ziele_1" : "ev.ziele_n", { n: gs.length }) : "";
+  const few = _t("common.zu_wenig_daten"),
+    fewN = _t("ev.aussagekraeftig"),
+    tend = A.midMean == null ? few : A.midMean > 1 ? _t("ev.tend_opt") : A.midMean < -1 ? _t("ev.tend_vors") : _t("ev.tend_ausg");
   el.innerHTML = gs.length
     ? `<div class="tsCards">${card(
-        "Treffsicherheit bei 50 % der Bauzeit",
-        A.midAbs == null ? few : "Ø ± " + Math.round(A.midAbs) + " Tage",
-        A.midAbs == null ? fewN : A.mid.length + " Ziele · Prognose, als die Hälfte der Zeit um war",
+        _t("ev.treff50"),
+        A.midAbs == null ? few : _t("ev.avg_tage", { n: Math.round(A.midAbs) }),
+        A.midAbs == null ? fewN : _t("ev.ziele_haelfte", { n: A.mid.length }),
       )}${card(
-        "Tendenz",
+        _t("ev.tendenz"),
         tend,
         A.midMean == null
           ? fewN
           : Math.abs(A.midMean) > 1
-            ? `Ziele wurden im Schnitt ${Math.round(Math.abs(A.midMean))} Tage ${A.midMean > 0 ? "später" : "früher"} erreicht als bei 50 % prognostiziert`
-            : "Im Schnitt keine Vorzugsrichtung der Abweichung",
+            ? _t(A.midMean > 0 ? "ev.im_schnitt_spaeter" : "ev.im_schnitt_frueher", { n: Math.round(Math.abs(A.midMean)) })
+            : _t("ev.keine_richtung"),
       )}${card(
-        "Prognose bei Planstart",
-        A.startAbs == null ? few : "Ø ± " + Math.round(A.startAbs) + " Tage",
-        A.startAbs == null ? fewN : "Je früher, desto ungenauer – das ist normal",
+        _t("ev.prog_start"),
+        A.startAbs == null ? few : _t("ev.avg_tage", { n: Math.round(A.startAbs) }),
+        A.startAbs == null ? fewN : _t("ev.je_frueher"),
       )}</div>
-      <table class="histTable" style="width:100%"><thead><tr><th>Ziel</th><th>Erreicht am</th><th>Prognose bei Planstart</th><th>Prognose bei 50 %</th><th>Prognose kurz vor Ende</th><th></th></tr></thead><tbody id="goalRows">${gs
+      <table class="histTable" style="width:100%"><thead><tr><th>${_t("ev.th_ziel")}</th><th>${_t("ev.th_erreicht")}</th><th>${_t("ev.prog_start")}</th><th>${_t("ev.th_p50")}</th><th>${_t("ev.th_pend")}</th><th></th></tr></thead><tbody id="goalRows">${gs
         .map(
           (g) =>
-            `<tr><td>${escAttr(g.name)}<br><span class="muted">geplant seit ${d(g.since)}</span></td><td>${d(g.at)}</td>${cell(g, g.fc && g.fc.start)}${cell(g, g.fc && g.fc.mid)}${cell(g, g.eta)}<td style="white-space:nowrap"><button class="btn" data-goalshare="${escAttr(g.id)}" title="Als Bild teilen">Bild</button> <button class="evDel" data-goal="${escAttr(g.id)}" title="Eintrag löschen">✕</button></td></tr>`,
+            `<tr><td>${escAttr(g.name)}<br><span class="muted">${_t("ev.geplant_seit2", { d: d(g.since) })}</span></td><td>${d(g.at)}</td>${cell(g, g.fc && g.fc.start)}${cell(g, g.fc && g.fc.mid)}${cell(g, g.eta)}<td style="white-space:nowrap"><button class="btn" data-goalshare="${escAttr(g.id)}" title="${_t("common.als_bild")}">${_t("common.bild")}</button> <button class="evDel" data-goal="${escAttr(g.id)}" title="${_t("ev.eintrag_loeschen")}">✕</button></td></tr>`,
         )
         .join("")}</tbody></table>
-      <p class="muted" style="margin-top:10px">Abweichung = tatsächliches Erreichen − damalige Prognose (+ = später als prognostiziert). Prognosen zu Planstart und 50 % werden erst bei neu abgeschlossenen Zielen gespeichert.</p>`
-    : '<p class="muted">Noch kein Ziel abgeschlossen.</p>';
+      <p class="muted" style="margin-top:10px">${_t("ev.abw_note")}</p>`
+    : `<p class="muted">${_t("ev.kein_ziel")}</p>`;
   el.querySelectorAll("[data-goalshare]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -246,9 +253,9 @@ function renderGoals() {
     (b) =>
       (b.onclick = () => {
         const g = s.goals.find((x) => x.id === b.dataset.goal);
-        if (!g || !confirm("Eintrag „Ziel erreicht: " + g.name + "“ löschen? Der Plan kommt dadurch nicht zurück.")) return;
+        if (!g || !confirm(_t("ev.confirm_goal_del", { name: g.name }))) return;
         s.goals = s.goals.filter((x) => x !== g);
-        s.logs.push("Eintrag „Ziel erreicht“ gelöscht: " + g.name);
+        s.logs.push(_t("ev.goal_del_log", { name: g.name }));
         save();
       }),
   );
@@ -290,21 +297,21 @@ function renderEvents() {
       z = (n) => String(n).padStart(2, "0");
     $("evDate").value = d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
   }
-  $("evCount").textContent = ev.length ? ev.length + " Ereignis" + (ev.length === 1 ? "" : "se") : "";
+  $("evCount").textContent = ev.length ? _t(ev.length === 1 ? "ev.ereignisse_1" : "ev.ereignisse_n", { n: ev.length }) : "";
   el.innerHTML = ev.length
     ? ev
         .map(
           (e) =>
-            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="Ereignis löschen">✕</button>` : ""}</td></tr>`,
+            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="${_t("ev.ereignis_loeschen")}">✕</button>` : ""}</td></tr>`,
         )
         .join("")
-    : '<tr><td colspan="4" class="muted">Noch keine Ereignisse.</td></tr>';
+    : `<tr><td colspan="4" class="muted">${_t("ev.keine_ereignisse")}</td></tr>`;
   el.querySelectorAll("[data-ev]").forEach(
     (b) =>
       (b.onclick = () => {
         const e = (s.events || []).find((x) => x.id === b.dataset.ev);
         s.events = (s.events || []).filter((x) => x.id !== b.dataset.ev);
-        if (e) s.logs.push("Ereignis gelöscht: " + e.text);
+        if (e) s.logs.push(_t("ev.ereignis_geloescht", { t: e.text }));
         save();
       }),
   );

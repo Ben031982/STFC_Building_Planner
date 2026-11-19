@@ -5,17 +5,18 @@
 
 // "var": renderWif() kann vor dem Ausführen dieser Datei laufen
 var tdPlanId;
+// Texte als Getter: werden erst beim Anzeigen in der gewählten Sprache geholt
 const TD_LV = {
-  1: { t: "reicht sicher", cls: "t1" },
-  2: { t: "reicht", cls: "t2" },
-  3: { t: "knapp", cls: "t3" },
-  4: { t: "reicht nicht", cls: "t4" },
+  1: { get t() { return _t("td.lv1"); }, cls: "t1" },
+  2: { get t() { return _t("td.lv2"); }, cls: "t2" },
+  3: { get t() { return _t("td.lv3"); }, cls: "t3" },
+  4: { get t() { return _t("td.lv4"); }, cls: "t4" },
 };
 const TD_VERDICT = {
-  1: ["Erreichbar", "auch im konservativen Szenario"],
-  2: ["Erreichbar", "im realistischen Szenario"],
-  3: ["Knapp", "nur im optimistischen Szenario"],
-  4: ["Nicht erreichbar", "bei keinem Szenario"],
+  get 1() { return [_t("td.erreichbar"), _t("td.v1")]; },
+  get 2() { return [_t("td.erreichbar"), _t("td.v2")]; },
+  get 3() { return [_t("td.knapp"), _t("td.v3")]; },
+  get 4() { return [_t("td.nicht_erreichbar"), _t("td.v4")]; },
 };
 
 // Ende des gewählten Tages in Ortszeit
@@ -28,10 +29,10 @@ function tdEnd(dateStr) {
 
 function targetCheck(p, dateStr) {
   const fc = p && p.hasPlanData ? planForecast(p) : null;
-  if (!fc) return { err: "Der Plan ist nicht aktiv – erst Plandaten importieren und bestätigen." };
+  if (!fc) return { err: _t("td.err_inaktiv") };
   const end = tdEnd(dateStr);
-  if (end == null) return { err: "Bitte ein Datum wählen." };
-  if (end <= Date.now()) return { err: "Das Datum liegt nicht in der Zukunft." };
+  if (end == null) return { err: _t("td.err_datum") };
+  if (end <= Date.now()) return { err: _t("td.err_zukunft") };
   const days = (end - fc.base) / 864e5;
   let worst = 0,
     crit = null;
@@ -59,12 +60,12 @@ function tdPlans() {
 
 function tdVerdict(r) {
   return r.yard
-    ? ["Nicht bewertbar", "Schiffswerft " + r.yard.yard + " fehlt", "t3"]
+    ? [_t("td.nicht_bewertbar"), _t("common.werft_fehlt", { n: r.yard.yard }), "t3"]
     : r.allDone
-    ? ["Erreichbar", "alles schon gedeckt", "t1"]
+    ? [_t("td.erreichbar"), _t("td.alles_gedeckt"), "t1"]
     : r.lvl
       ? TD_VERDICT[r.lvl].concat(TD_LV[r.lvl].cls)
-      : ["Nicht bewertbar", "zu wenig Daten", "t3"];
+      : [_t("td.nicht_bewertbar"), _t("common.zu_wenig_daten"), "t3"];
 }
 
 // Plan-Karten wie im Dashboard: je Plan ein eigenes „Fertig bis“, Bewertung direkt auf der Karte
@@ -73,15 +74,15 @@ function renderTdCards(sel) {
     .map((p) => {
       const act = calcPlanStatus(p) === "active";
       let state;
-      if (!act) state = "<span>nicht aktiv – erst Plandaten bestätigen</span>";
-      else if (!p.targetDate) state = "<span>Datum wählen</span>";
+      if (!act) state = `<span>${_t("td.nicht_aktiv")}</span>`;
+      else if (!p.targetDate) state = `<span>${_t("td.datum_waehlen")}</span>`;
       else {
         const r = targetCheck(p, p.targetDate);
         state = r.err
           ? `<span>${escAttr(r.err)}</span>`
-          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>${r.yard ? tdVerdict(r)[1] : "noch " + Math.max(0, Math.floor(r.days)) + " Tage"}</span>`;
+          : `<span class="tdV ${tdVerdict(r)[2]}">${tdVerdict(r)[0]}</span><span>${r.yard ? tdVerdict(r)[1] : _t("td.noch_tage", { n: Math.max(0, Math.floor(r.days)) })}</span>`;
       }
-      return `<article class="plan${act && p.id === sel ? " active" : ""}${act ? "" : " off"}" data-td="${escAttr(p.id)}"><div class="pt"><img src="${ART[artKey(p)]}" alt=""><div><h3>${escAttr(p.name)}${p.isMain ? '<span class="mainStar"> ★</span>' : ""}</h3><span class="muted">${isShip(p) ? shipLabel(p) : "Level " + p.start + " → " + p.target}</span></div></div><div class="tdRow"><span>Fertig bis</span>${act ? `<input type="date" data-tdd="${escAttr(p.id)}" value="${escAttr(p.targetDate || "")}">` : "<span>–</span>"}</div><div class="tdState">${state}</div></article>`;
+      return `<article class="plan${act && p.id === sel ? " active" : ""}${act ? "" : " off"}" data-td="${escAttr(p.id)}"><div class="pt"><img src="${ART[artKey(p)]}" alt=""><div><h3>${escAttr(p.name)}${p.isMain ? '<span class="mainStar"> ★</span>' : ""}</h3><span class="muted">${isShip(p) ? shipLabel(p) : _t("common.level_von_bis", { a: p.start, b: p.target })}</span></div></div><div class="tdRow"><span>${_t("td.fertig_bis")}</span>${act ? `<input type="date" data-tdd="${escAttr(p.id)}" value="${escAttr(p.targetDate || "")}">` : "<span>–</span>"}</div><div class="tdState">${state}</div></article>`;
     })
     .join("");
   $("tdCards")
@@ -121,23 +122,23 @@ function renderTarget() {
   if (!s.plans.length) {
     $("tdCards").innerHTML = "";
     $("tdSel").textContent = "";
-    out.innerHTML = '<p class="muted tdMsg">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    out.innerHTML = `<p class="muted tdMsg">${_t("td.braucht_aktiv")}</p>`;
     return;
   }
   renderTdCards(tdPlanId);
   if (!plans.length) {
     $("tdSel").textContent = "";
-    out.innerHTML = '<p class="muted tdMsg">Braucht einen aktiven Plan mit bestätigten Plandaten.</p>';
+    out.innerHTML = `<p class="muted tdMsg">${_t("td.braucht_aktiv")}</p>`;
     return;
   }
   const p = plans.find((x) => x.id === tdPlanId),
     fc = planForecast(p);
   $("tdSel").innerHTML =
-    `Details für <b>${escAttr(p.name)}</b>` +
-    (fc ? " · Prognose heute: " + fcRealTxt(fc, p) : "") +
-    (plans.length > 1 ? " · auf einen anderen Plan klicken, um seine Details zu sehen" : "");
+    _t("td.details", { name: escAttr(p.name) }) +
+    (fc ? _t("td.prognose_heute", { v: fcRealTxt(fc, p) }) : "") +
+    (plans.length > 1 ? _t("td.anderer_plan") : "");
   if (!p.targetDate) {
-    out.innerHTML = '<p class="muted tdMsg">Wunschdatum wählen, dann siehst du, ob dein Einkommen reicht.</p>';
+    out.innerHTML = `<p class="muted tdMsg">${_t("td.wunsch")}</p>`;
     return;
   }
   const r = targetCheck(p, p.targetDate);
@@ -151,21 +152,21 @@ function renderTarget() {
     sg = (v) => (v > 0 ? "+" : "") + fmt(v),
     ct = (p.planData || {}).construction;
   out.innerHTML =
-    `<div class="wifSum tdSum"><div><span class="muted">Rechnerische Bewertung</span><b><span class="tdV ${vcls}">${V[0]}</span></b><span class="muted">${V[1]}</span></div>` +
-    `<div><span class="muted">Verbleibende Tage</span><b>${Math.max(0, Math.floor(r.days))}</b><span class="muted">ab Datenstand ${new Date(r.fc.base).toLocaleDateString(LOC())}</span></div>` +
-    `<div><span class="muted">Kritisch</span><b>${c ? escAttr(c.m) : "–"}</b><span class="muted">${c ? "braucht " + sg(c.need) + "/Tag, bisher " + sg(c.h) + "/Tag (" + sg(c.diff) + ")" : r.noData.length ? "zu wenig Daten für: " + r.noData.map(escAttr).join(", ") : "nichts offen"}</span></div></div>` +
-    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Fehlt</th><th>Benötigt pro Tag</th><th>Bisher pro Tag</th><th>Differenz</th><th>Bewertung</th></tr></thead><tbody id="tdRows">` +
+    `<div class="wifSum tdSum"><div><span class="muted">${_t("td.bewertung")}</span><b><span class="tdV ${vcls}">${V[0]}</span></b><span class="muted">${V[1]}</span></div>` +
+    `<div><span class="muted">${_t("td.verbleibend")}</span><b>${Math.max(0, Math.floor(r.days))}</b><span class="muted">${_t("td.ab_stand", { d: new Date(r.fc.base).toLocaleDateString(LOC()) })}</span></div>` +
+    `<div><span class="muted">${_t("td.kritisch")}</span><b>${c ? escAttr(c.m) : "–"}</b><span class="muted">${c ? _t("td.braucht", { a: sg(c.need), b: sg(c.h), d: sg(c.diff) }) : r.noData.length ? _t("td.zu_wenig_fuer", { list: r.noData.map(escAttr).join(", ") }) : _t("td.nichts_offen")}</span></div></div>` +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>${_t("common.material")}</th><th>${_t("pk.th_fehlt")}</th><th>${_t("td.th_ben")}</th><th>${_t("td.th_bisher")}</th><th>${_t("td.th_diff")}</th><th>${_t("td.th_bew")}</th></tr></thead><tbody id="tdRows">` +
     r.rows
       .map((x) =>
         x.kind === "common"
-          ? `<tr class="muted"><td>${escAttr(x.m)} (zählt nicht)</td><td>${fmt(x.miss)}</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>`
+          ? `<tr class="muted"><td>${escAttr(x.m)} (${_t("fc.zaehlt_nicht")})</td><td>${fmt(x.miss)}</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>`
           : x.kind === "done"
-            ? `<tr><td>${escAttr(x.m)}</td><td>0</td><td>–</td><td>–</td><td>–</td><td><span class="tdV t1">gedeckt</span></td></tr>`
+            ? `<tr><td>${escAttr(x.m)}</td><td>0</td><td>–</td><td>–</td><td>–</td><td><span class="tdV t1">${_t("common.gedeckt")}</span></td></tr>`
             : x.kind === "data"
-              ? `<tr><td>${escAttr(x.m)}</td><td>${fmt(x.miss)}</td><td>${sg(x.need)}</td><td>–</td><td>–</td><td class="muted">zu wenig Daten</td></tr>`
+              ? `<tr><td>${escAttr(x.m)}</td><td>${fmt(x.miss)}</td><td>${sg(x.need)}</td><td>–</td><td>–</td><td class="muted">${_t("common.zu_wenig_daten")}</td></tr>`
               : `<tr><td>${escAttr(x.m)}</td><td>${fmt(x.miss)}</td><td>${sg(x.need)}</td><td>${sg(x.h)}</td><td class="${x.diff >= 0 ? "green" : "red"}">${sg(x.diff)}</td><td><span class="tdV ${TD_LV[x.lv].cls}">${TD_LV[x.lv].t}</span></td></tr>`,
       )
       .join("") +
     `</tbody></table></div>` +
-    `<div class="chartNote" style="margin-top:8px">Benötigt pro Tag = Fehlt ÷ verbleibende Tage. Bisher = realistisches Einkommen der letzten 6 Wochen wie in der Prognose. „Reicht sicher“: auch das konservative Einkommen genügt, „knapp“: nur das optimistische. Die Bauzeit ist nicht berücksichtigt${ct && ct.cost ? " (laut Plan " + fmtDuration(ct.cost) + ")" : ""}, die Stellschrauben oben auch nicht. Rechnerische Bewertung, keine Garantie.</div>`;
+    `<div class="chartNote" style="margin-top:8px">${_t("td.note", { bz: ct && ct.cost ? _t("td.laut_plan", { d: fmtDuration(ct.cost) }) : "" })}</div>`;
 }

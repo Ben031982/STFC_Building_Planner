@@ -32,21 +32,21 @@ function renderNextCard(p) {
     parts = [
       [
         "requiredBuildings",
-        "Pflichtgebäude",
-        ((p.planData && p.planData.requiredBuildings) || []).length + " Gebäude",
+        _t("seq.pflichtgebaeude"),
+        _t("dash.n_gebaeude", { n: ((p.planData && p.planData.requiredBuildings) || []).length }),
       ],
-      ["resourceCosts", "Ressourcen", "aus Total resources"],
-      ["buildTime", "Bauzeit", "aus Total resources"],
-      ["efficiencies", "Effizienzen", "für alle Materialien mit Bedarf"],
-      ["confirm", "Bestätigung", "durch dich"],
+      ["resourceCosts", _t("dash.ressourcen"), _t("dash.aus_total")],
+      ["buildTime", _t("dash.bauzeit"), _t("dash.aus_total")],
+      ["efficiencies", _t("dash.effizienzen"), _t("dash.fuer_alle_mat")],
+      ["confirm", _t("dash.bestaetigung"), _t("dash.durch_dich")],
     ];
   const T = {
-    draft: ["Nächster Schritt: Upgrade-Plan importieren", "Upgrade-Plan importieren"],
-    incomplete: ["Nächster Schritt: fehlende Plandaten importieren", "Upgrade-Plan importieren"],
-    review: ["Nächster Schritt: Daten prüfen und bestätigen", "Daten prüfen & bestätigen"],
+    draft: [_t("dash.next_draft"), _t("care.upgrade_importieren")],
+    incomplete: [_t("dash.next_incomplete"), _t("care.upgrade_importieren")],
+    review: [_t("dash.next_review"), _t("dash.pruefen_bestaetigen")],
     stale: isOutdated(p)
-      ? ["Nächster Schritt: Plandaten aktualisieren", "Upgrade-Plan importieren"]
-      : ["Nächster Schritt: Upgrade-Plan für das neue Ziel importieren", "Neu importieren"],
+      ? [_t("dash.next_outdated"), _t("care.upgrade_importieren")]
+      : [_t("dash.next_stale"), _t("imp.neu_importieren")],
   }[p.status] || ["", ""];
   $("nextTitle").textContent = T[0];
   $("nextBtn").textContent = T[1];
@@ -59,7 +59,7 @@ function renderNextCard(p) {
     .map(([k, l, sub]) => {
       const done =
         k === "confirm" ? false : k === "requiredBuildings" ? c.requiredBuildings && !c.targetMismatch : c[k];
-      return `<div class="nextStep ${done ? "done" : "open"}"><span class="chip ${done ? "ok" : "todo"}">${done ? "✓ erledigt" : "offen"}</span><b>${l}</b><span class="muted">${done ? sub : k === "requiredBuildings" && c.targetMismatch ? "passt nicht zum Ziel" : "fehlt noch"}</span></div>`;
+      return `<div class="nextStep ${done ? "done" : "open"}"><span class="chip ${done ? "ok" : "todo"}">${done ? _t("dash.chip_erledigt") : _t("common.offen")}</span><b>${l}</b><span class="muted">${done ? sub : k === "requiredBuildings" && c.targetMismatch ? _t("dash.passt_nicht") : _t("dash.fehlt_noch")}</span></div>`;
     })
     .join("");
 }
@@ -70,19 +70,19 @@ function fmtDuration(sec) {
     h = Math.floor((sec % 86400) / 3600),
     m = Math.floor((sec % 3600) / 60);
   return y
-    ? y + " J. " + d + " T."
+    ? _t("dur.yd", { y, d })
     : d
-      ? d + " T. " + h + " Std."
+      ? _t("dur.dh", { d, h })
       : h
-        ? h + " Std. " + m + " Min."
-        : m + " Min.";
+        ? _t("dur.hm", { h, m })
+        : _t("dur.m", { m });
 }
 function resGroups(rows) {
   return [
-    ["Σ-ROHSTOFFE", (r) => /^Σ/.test(r[0])],
+    [_t("dash.grp_sigma"), (r) => /^Σ/.test(r[0])],
     ["7★ RARE", (r) => /Rare/.test(r[0])],
     ["7★ UNCOMMON", (r) => /Uncommon/.test(r[0])],
-    ["7★ COMMON · ZÄHLT NICHT (PER LATINUM KAUFBAR)", (r) => /Common/.test(r[0])],
+    [_t("dash.grp_common"), (r) => /Common/.test(r[0])],
   ]
     .map(([h, f]) => [h, rows.filter(f)])
     .filter((x) => x[1].length);
@@ -106,19 +106,18 @@ function resTableHtml(p, rows, bn, eff) {
         com = /Common/.test(r[0]),
         isB = !!(bn && !bn.none && bn.name === r[0]),
         e = eff ? ((p.planData || {}).efficiencies || {})[r[0]] : null;
-      h += `<tr class="${com ? "resCommon" : ""}${isB ? " resBn" : slow.has(r[0]) ? " resSlow" : ""}"><td>${r[0]}${isB ? ' <span class="bnTag">ENGPASS</span>' : ""}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td class="${m ? (isB ? "amber" : "") : "green"}">${m ? fmt(m) : "gedeckt"}</td><td>${eff ? (Number.isFinite(e) ? fx(e) + " %" : "–") : rate(r[0])}</td><td><span class="prog${m ? "" : " done"}"><i style="width:${pc}%"></i></span> ${pc}%</td></tr>`;
+      h += `<tr class="${com ? "resCommon" : ""}${isB ? " resBn" : slow.has(r[0]) ? " resSlow" : ""}"><td>${r[0]}${isB ? ` <span class="bnTag">${_t("dash.engpass_tag")}</span>` : ""}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td class="${m ? (isB ? "amber" : "") : "green"}">${m ? fmt(m) : _t("common.gedeckt")}</td><td>${eff ? (Number.isFinite(e) ? fx(e) + " %" : "–") : rate(r[0])}</td><td><span class="prog${m ? "" : " done"}"><i style="width:${pc}%"></i></span> ${pc}%</td></tr>`;
     }
   }
   return h;
 }
 function renderEmpty() {
   $("plans").innerHTML =
-    '<div class="noPlansHint">Noch keine Zielpläne. Leg deinen ersten Plan mit „+ Neuer Plan“ an.</div>';
+    `<div class="noPlansHint">${_t("dash.keine_plaene")}</div>`;
   $("lastImport").textContent = s.snapshots.length
-    ? "Letzter Import: " +
-      fdt(s.snapshots.at(-1).createdAt) +
-      (latestSnapshot() ? "\nNeuester Exportstand: " + fdt(snapTime(latestSnapshot())) : "")
-    : "Noch kein Snapshot importiert.";
+    ? _t("dash.letzter_import", { d: fdt(s.snapshots.at(-1).createdAt) }) +
+      (latestSnapshot() ? "\n" + _t("dash.neuester_export", { d: fdt(snapTime(latestSnapshot())) }) : "")
+    : _t("imp.kein_snapshot");
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderSnaps();
   renderBackup();
@@ -143,13 +142,13 @@ function render() {
     s.plans
       .map(
         (x, xi) =>
-          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="Nach links"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="Nach rechts"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? '<span class="mainStar"> ★ Hauptplan</span>' : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : "Level " + x.start + " → " + x.target}</span>${validAfter(x) ? `<br><span class="chain">⛓ nach ${escAttr(validAfter(x).name)}</span>` : ""}</div></div>${(() => {
-            if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>Schiff</span><b></b></div>`;
+          `<article class="plan ${x.id === p.id ? "active" : ""}" data-id="${x.id}" draggable="true"><div class="cardMove"><button data-mv="-1" data-mid="${x.id}" aria-label="${_t("seq.nach_links")}"${xi === 0 ? " disabled" : ""}>◀</button><button data-mv="1" data-mid="${x.id}" aria-label="${_t("seq.nach_rechts")}"${xi === s.plans.length - 1 ? " disabled" : ""}>▶</button></div><div class="pt"><img src="${ART[artKey(x)]}"><div><h3>${escAttr(x.name)}${x.isMain ? `<span class="mainStar"> ★ ${_t("common.hauptplan")}</span>` : ""}</h3><span class="muted">${isShip(x) ? shipLabel(x) : _t("common.level_von_bis", { a: x.start, b: x.target })}</span>${validAfter(x) ? `<br><span class="chain">⛓ ${_t("dash.nach", { name: escAttr(validAfter(x).name) })}</span>` : ""}</div></div>${(() => {
+            if (isShip(x)) return `<div class="bar"><i style="width:0%"></i></div><div class="meta"><span>${_t("dash.schiff")}</span><b></b></div>`;
             const pr = planProgress(x),
               d = pr ? pr.done : x.done,
               t = pr ? pr.total : x.total,
               pc = pr ? pr.pct : Math.round((100 * x.done) / x.total);
-            return `<div class="bar"><i style="width:${pc}%"></i></div><div class="meta"><span>${d}/${t}${pr ? " Stufen" : ""}</span><b>${pc}%</b></div>`;
+            return `<div class="bar"><i style="width:${pc}%"></i></div><div class="meta"><span>${d}/${t}${pr ? " " + _t("dash.stufen_suffix") : ""}</span><b>${pc}%</b></div>`;
           })()}<span class="statusBadge status-${calcPlanStatus(x)}">${statusLabel(calcPlanStatus(x))}</span></article>`,
       )
       .join("") + "";
@@ -228,59 +227,48 @@ function render() {
   $("pStatusDot").className = "sd-" + p.status;
   $("pImg").src = ART[artKey(p)];
   $("pName").textContent = isShip(p) ? p.name : p.name.replace(/\s\d+$/, "");
-  $("pLevel").textContent = isShip(p) ? shipLabel(p) : `Level ${p.start} → ${p.target}`;
+  $("pLevel").textContent = isShip(p) ? shipLabel(p) : _t("common.level_von_bis", { a: p.start, b: p.target });
   const pr = planProgress(p);
   $("pProg").textContent = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + " %";
   $("pBar").style.width = (pr ? pr.pct : Math.round((100 * p.done) / p.total)) + "%";
   $("heroMain").style.display = p.isMain ? "" : "none";
   $("pDone").textContent = isShip(p)
-    ? (shipReqHtml(p.ship.yard).cls === "no" ? "Schiffswerft " + p.ship.yard + " noch nicht erreicht" : p.ship.name)
+    ? (shipReqHtml(p.ship.yard).cls === "no" ? _t("dash.werft_nicht", { n: p.ship.yard }) : p.ship.name)
     : pr
-      ? `${pr.done} von ${pr.total} Stufen` +
-        (pr.since ? " seit " + new Date(pr.since).toLocaleDateString(LOC()) : "")
-      : `${p.done} von ${p.total}`;
-  $("bottleneckValue").textContent = bottleneck ? bottleneck.name : "Nicht berechenbar";
+      ? _t("dash.von_stufen", { a: pr.done, b: pr.total }) +
+        (pr.since ? _t("dash.seit", { d: new Date(pr.since).toLocaleDateString(LOC()) }) : "")
+      : _t("dash.von", { a: p.done, b: p.total });
+  $("bottleneckValue").textContent = bottleneck ? bottleneck.name : _t("dash.nicht_berechenbar");
   $("bottleneckValue").className = bottleneck ? (bottleneck.none ? "green" : "amber") : "";
   $("bottleneckDetail").textContent = bottleneck
     ? bottleneck.none
-      ? "Alle Rare-, Uncommon- und Σ-Ressourcen gedeckt"
-      : fmt(bottleneck.missing) +
-        " fehlen" +
-        (bottleneck.fc
-          ? " · bremst die Fertigstellung"
-          : " (" + Math.round(100 * bottleneck.share) + " %) · vorläufig, noch keine Prognose")
-    : "Keine Kostengrundlage für diesen Zielplan";
+      ? _t("dash.alle_gedeckt")
+      : _t("dash.fehlen", { n: fmt(bottleneck.missing) }) +
+        (bottleneck.fc ? _t("dash.bremst") : _t("dash.vorlaeufig", { p: Math.round(100 * bottleneck.share) }))
+    : _t("dash.keine_kosten");
   renderBottleneckCard(p);
   const ct = p.hasPlanData ? (p.planData || {}).construction : null;
-  $("buildTimeValue").textContent = isShip(p) ? "–" : ct ? fmtDuration(ct.cost) : "Nicht berechenbar";
+  $("buildTimeValue").textContent = isShip(p) ? "–" : ct ? fmtDuration(ct.cost) : _t("dash.nicht_berechenbar");
   $("buildTimeDetail").textContent = isShip(p)
-    ? "Bei Schiffen nicht berücksichtigt"
+    ? _t("dash.bei_schiffen")
     : ct
     ? ct.needed > 0
-      ? "Speedups fehlen: " + fmtDuration(ct.needed)
-      : "Speedups ausreichend (laut Spock's Club)"
-    : "Keine Bauzeitdaten vorhanden";
+      ? _t("dash.speedups_fehlen", { d: fmtDuration(ct.needed) })
+      : _t("dash.speedups_ok")
+    : _t("dash.keine_bauzeit");
   $("buildTimeDetail").className = isShip(p) ? "muted" : ct ? (ct.needed > 0 ? "amber" : "green") : "muted";
   $("planDataNotice").textContent = p.hasPlanData
     ? ""
     : isOutdated(p)
-      ? outdatedText(p) + " Bis dahin wird der Plan nicht berechnet."
+      ? outdatedText(p) + " " + _t("dash.bis_dahin")
       : ({
-          draft: "Für " + p.name + " wurde noch kein eigener Upgrade-Plan importiert.",
-          incomplete:
-            "Die Plandaten für " +
-            p.name +
-            " sind unvollständig. Bitte den Upgrade-Plan vollständig importieren.",
-          review:
-            "Die Plandaten für " +
-            p.name +
-            " sind vollständig, aber noch nicht bestätigt (Plandaten verwalten → Bestätigung).",
-          stale:
-            "Die Plandaten für " +
-            p.name +
-            " passen nicht mehr zum Ziel. Bitte den Upgrade-Plan für das aktuelle Ziel neu importieren.",
+          draft: _t("dash.pd_draft", { name: p.name }),
+          incomplete: _t("dash.pd_incomplete", { name: p.name }),
+          review: _t("dash.pd_review", { name: p.name }),
+          stale: _t("dash.pd_stale", { name: p.name }),
         }[p.status] || "") +
-        " Ressourcenbedarf, Engpass, Bauzeit, Meilensteine und Bedarfslinie werden deshalb erst nach Import und Bestätigung berechnet.";
+        " " +
+        _t("dash.pd_deshalb");
   renderNextCard(p);
   const seq = orderedSequence(p);
   const openN = seq.filter((x) => !x.done).length;
@@ -291,19 +279,13 @@ function render() {
   $("seqRows").innerHTML = seq.length
     ? seqRowsHtml(seq, 0, false, true, (x) => sharedPlans(p, x), cover)
     : isShip(p)
-      ? '<tr><td colspan="6" class="muted">Schiffe haben keine Bau-Reihenfolge – hier zählt nur der Tier-Aufstieg bzw. der Bau des Schiffs.</td></tr>'
-      : '<tr><td colspan="6" class="muted">Keine Pflichtgebäude vorhanden. Bitte den Upgrade-Plan importieren.</td></tr>';
+      ? `<tr><td colspan="6" class="muted">${_t("dash.schiffe_keine_seq")}</td></tr>`
+      : `<tr><td colspan="6" class="muted">${_t("dash.keine_pflicht")}</td></tr>`;
   $("seqCount").textContent = seq.length
-    ? seq.length -
-      openN +
-      " von " +
-      seq.length +
-      " Schritten erledigt" +
+    ? _t("dash.schritte", { a: seq.length - openN, b: seq.length }) +
       (p.status === "active"
         ? ""
-        : " · Plan " +
-          statusLabel(p.status) +
-          (p.status === "stale" ? " – Daten gehören zum alten Ziel" : ""))
+        : _t("dash.plan_status", { st: statusLabel(p.status) }) + (p.status === "stale" ? _t("dash.altes_ziel") : ""))
     : "";
   $("allStepsBtn").style.display = seq.length > 6 ? "" : "none";
   $("seqRows")
@@ -360,7 +342,7 @@ function render() {
     });
   $("seqReset").onclick = () => {
     delete p.planData.customOrder;
-    s.logs.push("Bau-Reihenfolge zurückgesetzt: " + p.name);
+    s.logs.push(_t("dash.reset_log", { name: p.name }));
     save();
   };
   renderResMerged(p, planRows, bottleneck);
@@ -369,41 +351,36 @@ function render() {
     cc = p.hasPlanData ? (p.planData || {}).construction : null;
   (() => {
     const h = (p.planData || {}).history || [];
-    $("histCount").textContent = h.length ? h.length + " Messpunkt" + (h.length === 1 ? "" : "e") : "";
+    $("histCount").textContent = h.length ? _t(h.length === 1 ? "dash.messpunkte1" : "dash.messpunkte", { n: h.length }) : "";
     $("histRows").innerHTML = h.length
       ? [...h]
           .reverse()
           .map((x) => {
             const r = x.resources || {},
               v = (k) => (r[k] ? fmt(r[k].onHand) : "–");
-            return `<tr><td>${fdt(x.at)}</td><td>${escAttr(x.kind)}</td><td>${x.progress ? x.progress.done + " / " + x.progress.total : "–"}</td><td>${v("Σ-Parsteel")}</td><td>${v("Σ-Tritanium")}</td><td>${v("Σ-Dilithium")}</td></tr>`;
+            return `<tr><td>${fdt(x.at)}</td><td>${escAttr(histKindLabel(x.kind))}</td><td>${x.progress ? x.progress.done + " / " + x.progress.total : "–"}</td><td>${v("Σ-Parsteel")}</td><td>${v("Σ-Tritanium")}</td><td>${v("Σ-Dilithium")}</td></tr>`;
           })
           .join("")
-      : '<tr><td colspan="6" class="muted">Noch keine Messpunkte. Der erste entsteht beim nächsten Import des Upgrade-Plans.</td></tr>';
+      : `<tr><td colspan="6" class="muted">${_t("dash.keine_messpunkte")}</td></tr>`;
   })();
   $("effConstr").textContent = cc
-    ? "Bauzeit: " +
-      fmtDuration(cc.cost) +
-      " (Base " +
-      fmtDuration(cc.base) +
-      ")" +
-      (Number.isFinite(ce) ? " · Effizienz Σ-Construction Time " + fx(ce) + " %" : "")
+    ? _t("dash.bauzeit_eff", { a: fmtDuration(cc.cost), b: fmtDuration(cc.base) }) +
+      (Number.isFinite(ce) ? _t("dash.eff_ct", { v: fx(ce) }) : "")
     : "";
   $("mileRows").innerHTML =
     seq.length && p.hasPlanData
       ? openN
         ? seqRowsHtml(seq, 6, true)
-        : '<tr><td colspan="4" class="green">Alle Bauschritte erledigt.</td></tr>'
-      : '<tr><td colspan="4" class="muted">Keine planabhängigen Bauschritte vorhanden.</td></tr>';
+        : `<tr><td colspan="4" class="green">${_t("dash.alle_erledigt")}</td></tr>`
+      : `<tr><td colspan="4" class="muted">${_t("dash.keine_schritte")}</td></tr>`;
   $("lastImport").textContent = s.snapshots.length
-    ? "Letzter Import: " +
-      fdt(s.snapshots.at(-1).createdAt) +
+    ? _t("dash.letzter_import", { d: fdt(s.snapshots.at(-1).createdAt) }) +
       (latestSnapshot()
-        ? "\nNeuester Exportstand: " +
-          fdt(snapTime(latestSnapshot())) +
-          (snapHasExport(latestSnapshot()) ? "" : " (keine Exportzeit im Dateinamen, Importzeit)")
+        ? "\n" +
+          _t("dash.neuester_export", { d: fdt(snapTime(latestSnapshot())) }) +
+          (snapHasExport(latestSnapshot()) ? "" : _t("dash.keine_exportzeit"))
         : "")
-    : "Noch kein Snapshot importiert.";
+    : _t("imp.kein_snapshot");
   $("log").innerHTML = s.logs.slice(-4).reverse().map(escAttr).join("<br>");
   renderForecast(p);
   // ab 3.4: grüner Kasten, wenn der Export das Gebäudeziel zeigt
@@ -412,7 +389,7 @@ function render() {
       el = $("goalBox");
     el.hidden = !gb;
     el.innerHTML = gb
-      ? `<span><b>✓ Ziel erreicht:</b> Laut Export vom ${new Date(gb.at).toLocaleDateString(LOC())} steht ${escAttr(gb.name)} auf Stufe ${gb.level}. Schließe den Plan ab, dann erscheint er unter „Erreichte Ziele“ und im Wochenbericht.</span><button class="btn completeBtn" id="goalBoxBtn">Plan abschließen</button>`
+      ? `<span><b>${_t("dash.ziel_erreicht_box")}</b> ${_t("dash.ziel_erreicht_text", { d: new Date(gb.at).toLocaleDateString(LOC()), name: escAttr(gb.name), n: gb.level })}</span><button class="btn completeBtn" id="goalBoxBtn">${_t("dash.plan_abschliessen")}</button>`
       : "";
     if (gb) $("goalBoxBtn").onclick = () => completePlan(p);
   }
@@ -424,31 +401,29 @@ function render() {
     if (!pc && shipPackMissingText(p)) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent =
-        p.ship && p.ship.key === "other" ? "Für „Anderes Schiff“ gibt es keinen Pack" : "Schiffs-Pack unter Daten & Import › Schiffs-Packs pflegen";
+        p.ship && p.ship.key === "other" ? _t("dash.anderes_kein_pack") : _t("dash.schiffspack_pflegen");
     } else if (!pc) {
       $("packsValue").textContent = "–";
       $("packsDetail").textContent = p.hasPlanData
         ? packEmpty()
-          ? "Stationspack unter Daten & Import › Stationspack pflegen"
-          : "nicht berechenbar"
-        : "erst wenn der Plan aktiv ist";
+          ? _t("dash.station_pflegen")
+          : _t("wif.nicht_berechenbar")
+        : _t("dash.erst_aktiv");
     } else if (!pc.total) {
-      $("packsValue").textContent = "Keine nötig";
-      $("packsDetail").textContent = "alle relevanten Ressourcen gedeckt";
+      $("packsValue").textContent = _t("dash.keine_noetig");
+      $("packsDetail").textContent = _t("dash.alle_relevanten");
     } else {
-      $("packsValue").textContent = (pc.approx ? "ca. " : "") + fx(pc.total) + " Packs";
+      $("packsValue").textContent = (pc.approx ? _t("common.ca") + " " : "") + _t("dash.n_packs", { n: fx(pc.total) });
       $("packsDetail").textContent =
-        (pc.approx ? "ca. " : "") +
-        fx(pc.total * pc.pack.priceEUR) +
-        " € · bestimmt durch " +
-        pc.driver.replace("7★ ", "") +
+        (pc.approx ? _t("common.ca") + " " : "") +
+        _t("dash.bestimmt", { p: fx(pc.total * pc.pack.priceEUR), m: pc.driver.replace("7★ ", "") }) +
         (isShip(p) ? " · " + pc.pack.name : "") +
         (packInclText(p) ? " · " + packInclText(p) : "");
     }
   }
   $("packSum").innerHTML = $("packsValue").textContent === "–"
     ? ""
-    : "Packs bis zum Ziel: <b>" + escAttr($("packsValue").textContent) + "</b> · " + escAttr($("packsDetail").textContent) + " – Details weiter unten";
+    : _t("dash.packsum", { v: escAttr($("packsValue").textContent), d: escAttr($("packsDetail").textContent) });
   renderSnaps();
   renderChart();
   renderBackup();
@@ -467,16 +442,16 @@ function renderSnaps() {
         .reverse()
         .map(
           (x) =>
-            `<div class="snapItem"><b>Export: ${fdt(snapTime(x))}${snapHasExport(x) ? "" : " (Importzeit)"}</b><br><span class="muted">importiert ${fdt(x.createdAt)}</span><br><span class="muted" style="font-size:11px;word-break:break-all">${escAttr(x.fileName)}</span><button data-del="${x.id}" class="snapDel" title="Snapshot löschen">Löschen</button></div>`,
+            `<div class="snapItem"><b>${_t("dash.snap_export", { d: fdt(snapTime(x)) })}${snapHasExport(x) ? "" : _t("dash.importzeit")}</b><br><span class="muted">${_t("dash.importiert", { d: fdt(x.createdAt) })}</span><br><span class="muted" style="font-size:11px;word-break:break-all">${escAttr(x.fileName)}</span><button data-del="${x.id}" class="snapDel" title="${_t("dash.snap_loeschen")}">${_t("common.loeschen")}</button></div>`,
         )
         .join("")
-    : "Noch keine Snapshots";
+    : _t("dash.keine_snaps");
   $("snapList")
     .querySelectorAll("[data-del]")
     .forEach(
       (b) =>
         (b.onclick = () => {
-          if (confirm("Snapshot löschen?")) {
+          if (confirm(_t("dash.snap_loeschen_q"))) {
             s.snapshots = s.snapshots.filter((x) => x.id !== b.dataset.del);
             syncResources();
             save();
@@ -496,7 +471,7 @@ function renderSnaps() {
     if ($("compare").onclick) $("compare").onclick();
   } else
     $("compareResult").innerHTML =
-      '<p class="muted">Für einen Vergleich braucht es mindestens zwei Snapshots.</p>';
+      `<p class="muted">${_t("dash.zwei_snaps")}</p>`;
 }
 function renderChart() {
   if ($("resourceSelect").options.length !== trackedMats().length) {

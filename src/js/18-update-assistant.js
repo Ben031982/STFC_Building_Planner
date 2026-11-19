@@ -20,9 +20,9 @@ function renderUpdateBars() {
     }
     el.hidden = false;
     el.innerHTML =
-      `<span><b>${list.length === 1 ? "1 Plan braucht" : list.length + " Pläne brauchen"} ein Update:</b> ` +
+      `<span><b>${list.length === 1 ? _t("upd.braucht1") : _t("upd.braucht", { n: list.length })}</b> ` +
       list.map((p) => escAttr(p.name)).join(", ") +
-      `</span><button class="btn" data-upd="1">${list.length === 1 ? "Jetzt aktualisieren" : "Nacheinander aktualisieren"}</button>`;
+      `</span><button class="btn" data-upd="1">${list.length === 1 ? _t("upd.jetzt") : _t("upd.nacheinander")}</button>`;
     el.querySelector("[data-upd]").onclick = () => updStart(list.map((p) => p.id));
   }
 }
@@ -39,7 +39,7 @@ function updOpen() {
   render();
   openManage();
   openImport();
-  $("impQueue").textContent = "UPDATE " + (updQueue.pos + 1) + " VON " + updQueue.ids.length;
+  $("impQueue").textContent = _t("upd.von", { a: updQueue.pos + 1, b: updQueue.ids.length });
   $("impQueue").hidden = false;
   $("impSkip").hidden = updQueue.ids.length < 2;
   updQueue.inWizard = true;
@@ -66,8 +66,8 @@ function updNext() {
   } else
     toast(
       need.size
-        ? "Update-Assistent beendet. Noch offen: " + need.size + (need.size === 1 ? " Plan." : " Pläne.")
-        : "Alle Pläne sind aktualisiert.",
+        ? _t(need.size === 1 ? "upd.beendet_offen1" : "upd.beendet_offen", { n: need.size })
+        : _t("upd.alle"),
     );
 }
 
@@ -78,11 +78,11 @@ $("applyOcr").addEventListener("click", () => {
   updClear();
   const p = s.plans.find((x) => x.id === managingPlanId);
   if (p && calcPlanStatus(p) === "active") {
-    toast(p.name + ": aktualisiert, der Plan bleibt aktiv.");
+    toast(_t("upd.aktiv", { name: p.name }));
     updNext();
   } else {
     updQueue.awaitManage = true;
-    toast((p ? p.name : "Plan") + ": übernommen. Bitte prüfen und bestätigen.");
+    toast(_t("upd.uebernommen", { name: p ? p.name : _t("iw.sum_plan") }));
   }
 });
 const updManageClosed = () => {
@@ -96,7 +96,7 @@ const updStop = () => {
   if (!updQueue || !updQueue.inWizard || $("ocrModal").classList.contains("on")) return;
   updQueue = null;
   updClear();
-  toast("Update-Assistent beendet.");
+  toast(_t("upd.beendet"));
 };
 ["closeOcr", "discardOcr"].forEach((id) => $(id).addEventListener("click", updStop));
 $("ocrModal").addEventListener("click", updStop);

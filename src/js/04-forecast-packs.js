@@ -6,28 +6,30 @@ const FC_WINDOW_DAYS = 42,
   // Ab 2.1: Über 1 Jahr nur noch Monat und Jahr („ca. Mai 2032“), über 100 Jahre „nicht absehbar“
   // (Schutz vor unsinnigen Werten wie „Invalid Date“).
   FC_YEAR = 365.25,
-  FC_MAX_DAYS = 100 * FC_YEAR,
-  FC_FAR_TXT = "nicht absehbar";
+  FC_MAX_DAYS = 100 * FC_YEAR;
 function fcTooFar(days) {
   return days != null && !(Number.isFinite(days) && days <= FC_MAX_DAYS);
 }
+function fcYearsN(days) {
+  return Math.max(1, Math.round((days / FC_YEAR) * 2) / 2);
+}
 function fcYears(days) {
-  const y = Math.max(1, Math.round((days / FC_YEAR) * 2) / 2);
-  return y.toLocaleString(LOC()) + (y === 1 ? " Jahr" : " Jahre");
+  const y = fcYearsN(days);
+  return _t(y === 1 ? "fc.jahr" : "fc.jahre", { n: y.toLocaleString(LOC()) });
 }
 // Datum eines Termins: bis 1 Jahr Tagesdatum, darüber „ca. Mai 2032“
 function fcDate(base, days) {
   const d = new Date(base + days * 864e5);
   return days > FC_YEAR
-    ? "ca. " + d.toLocaleDateString(LOC(), { month: "long", year: "numeric" })
+    ? _t("fc.ca_monat", { d: d.toLocaleDateString(LOC(), { month: "long", year: "numeric" }) })
     : d.toLocaleDateString(LOC());
 }
 // Dauer: „9 Tage“, „~12 Wochen“, „~5,5 Jahre“
 function fcDur(days) {
   return days < 14
-    ? Math.ceil(days) + (Math.ceil(days) === 1 ? " Tag" : " Tage")
+    ? _t(Math.ceil(days) === 1 ? "fc.dur_tag" : "fc.dur_tage", { n: Math.ceil(days) })
     : days <= FC_YEAR
-      ? "~" + Math.round(days / 7) + " Wochen"
+      ? _t("fc.dur_wochen", { n: Math.round(days / 7) })
       : "~" + fcYears(days);
 }
 function quant(arr, q) {
@@ -201,14 +203,14 @@ function planForecast(p) {
 // Gesamtprognose (realistisch) als Text – „zu wenig Daten“ statt „nicht absehbar“, solange Daten fehlen
 function fcRealTxt(fc, p) {
   const yb = p && typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
-  if (yb) return "Schiffswerft " + yb.yard + " fehlt";
+  if (yb) return _t("common.werft_fehlt", { n: yb.yard });
   const o = fc.overall;
-  return o.real == null && !o.realFar && o.missingData.length ? "zu wenig Daten" : fmtEta(o.real, fc.base, o.realFar);
+  return o.real == null && !o.realFar && o.missingData.length ? _t("common.zu_wenig_daten") : fmtEta(o.real, fc.base, o.realFar);
 }
 function fmtEta(days, base, far) {
-  if (days == null) return far ? FC_FAR_TXT : "nicht absehbar";
-  if (fcTooFar(days)) return FC_FAR_TXT;
-  if (days <= 0) return "gedeckt";
+  if (days == null) return _t("fc.far");
+  if (fcTooFar(days)) return _t("fc.far");
+  if (days <= 0) return _t("common.gedeckt");
   return fcDate(base, days) + " (" + fcDur(days) + ")";
 }
 // Prognose-Qualität (ab 1.4): nach Zahl der zählenden Abschnitte und abgedecktem Zeitraum.
@@ -229,11 +231,13 @@ function fcQuality(fc) {
   return {
     lvl,
     cls: { vorläufig: "qv", brauchbar: "qb", stabil: "qs" }[lvl],
+    // lvl bleibt der interne (deutsche) Wert, label ist die Anzeige
+    label: _t({ vorläufig: "q.vorlaeufig", brauchbar: "q.brauchbar", stabil: "q.stabil" }[lvl]),
     seg: { vorläufig: 1, brauchbar: 2, stabil: 3 }[lvl],
     n,
     days,
-    have: `${n} Abschnitt${n === 1 ? "" : "e"} über ${days} Tag${days === 1 ? "" : "e"}`,
-    next: goal ? `${lvl === "vorläufig" ? "brauchbar" : "stabil"} ab ${goal.n} Abschnitten über ${goal.days} Tage` : "",
+    have: _t("q.have", { a: _t(n === 1 ? "q.abschnitt1" : "q.abschnitte", { n }), b: _t(days === 1 ? "fc.dur_tag" : "fc.dur_tage", { n: days }) }),
+    next: goal ? _t("q.next", { l: _t(lvl === "vorläufig" ? "q.brauchbar" : "q.stabil"), n: goal.n, d: goal.days }) : "",
   };
 }
 function qualityHtml(q, withText) {
@@ -247,7 +251,7 @@ function renderQuality(fc) {
   b.hidden = l.hidden = !q;
   if (!q) return null;
   b.className = "qBadge " + q.cls;
-  b.textContent = q.lvl.toUpperCase();
+  b.textContent = q.label.toUpperCase();
   l.innerHTML = qualityHtml(q);
   return q;
 }
@@ -255,10 +259,10 @@ function renderForecast(p) {
   const fc = planForecast(p),
     sg = (v) => (v > 0 ? "+" : "") + fmt(v);
   if (!fc) {
-    $("etaValue").textContent = "Nicht berechenbar";
-    $("etaDetail").textContent = "Keine Kostengrundlage";
+    $("etaValue").textContent = _t("dash.nicht_berechenbar");
+    $("etaDetail").textContent = _t("fc.keine_kosten");
     renderQuality(null);
-    $("fcSummary").innerHTML = '<p class="muted">Keine Prognose – der Plan ist nicht aktiv.</p>';
+    $("fcSummary").innerHTML = `<p class="muted">${_t("fc.nicht_aktiv")}</p>`;
     $("fcRows").innerHTML = "";
     $("fcIntervals").innerHTML = "";
     $("fcBuild").textContent = "";
@@ -267,41 +271,42 @@ function renderForecast(p) {
   const o = fc.overall;
   let val, det;
   if (o.real === 0) {
-    val = "Gedeckt";
-    det = "Alle Rare-, Uncommon- und Σ-Ressourcen vorhanden";
+    val = _t("fc.gedeckt_val");
+    det = _t("fc.alle_vorhanden");
   } else if (o.real == null) {
-    val = "Offen";
+    val = _t("fc.offen_val");
     det = o.missingData.length
-      ? "Noch zu wenig Daten (" + o.minN + "/" + FC_MIN + " Abschnitte)"
+      ? _t("fc.zu_wenig", { n: o.minN, min: FC_MIN })
       : o.negative.length
-        ? "Keine positive Rate: " + o.negative.join(", ")
+        ? _t("fc.negativ", { list: o.negative.join(", ") })
         : o.far.length
-          ? "Über 100 Jahre bei der jetzigen Rate: " + o.far.join(", ")
-          : "Szenario nicht berechenbar";
+          ? _t("fc.ueber100", { list: o.far.join(", ") })
+          : _t("fc.szen_nicht");
   } else {
     val = fcDate(fc.base, o.real);
     det =
       (o.real < 14
-        ? "in " + Math.ceil(o.real) + (Math.ceil(o.real) === 1 ? " Tag" : " Tagen")
+        ? _t(Math.ceil(o.real) === 1 ? "fc.in_tag" : "fc.in_tagen", { n: Math.ceil(o.real) })
         : o.real <= FC_YEAR
-          ? "in ca. " + Math.round(o.real / 7) + " Wochen"
-          : "in ca. " + fcYears(o.real).replace(/Jahre$/, "Jahren")) +
-      " · konservativ " +
-      (o.cons == null ? (o.consFar ? "über 100 Jahre" : "offen") : fcDate(fc.base, o.cons)) +
-      " · optimistisch " +
-      (o.opt == null ? "offen" : fcDate(fc.base, o.opt));
+          ? _t("fc.in_wochen", { n: Math.round(o.real / 7) })
+          : _t(fcYearsN(o.real) === 1 ? "fc.in_jahr" : "fc.in_jahren", { n: fcYearsN(o.real).toLocaleString(LOC()) })) +
+      " · " +
+      _t("wif.kons_opt", {
+        a: o.cons == null ? (o.consFar ? _t("fc.ueber100_kurz") : _t("common.offen")) : fcDate(fc.base, o.cons),
+        b: o.opt == null ? _t("common.offen") : fcDate(fc.base, o.opt),
+      });
   }
   if (typeof chainAncestors === "function" && chainAncestors(p).some((q) => calcPlanStatus(q) === "active"))
-    det += " · nach " + chainAncestors(p).map((q) => q.name).join(" → ");
+    det += " · " + _t("dash.nach", { name: chainAncestors(p).map((q) => q.name).join(" → ") });
   // ab 3.0: Schiff ohne nötige Schiffswerft – kein Fertigdatum, nur wann die Ressourcen gedeckt sind
   const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   if (yb) {
-    val = "Schiffswerft " + yb.yard + " fehlt";
+    val = _t("common.werft_fehlt", { n: yb.yard });
     det =
       (o.real === 0
-        ? "Ressourcen bereits gedeckt"
+        ? _t("fc.res_gedeckt")
         : o.real != null
-          ? "Ressourcen voraussichtlich " + (o.real > FC_YEAR ? "" : "am ") + fcDate(fc.base, o.real) + " gedeckt"
+          ? _t(o.real > FC_YEAR ? "fc.res_vorauss" : "fc.res_vorauss_am", { d: fcDate(fc.base, o.real) })
           : det) +
       " · " +
       shipYardHint(yb);
@@ -313,7 +318,7 @@ function renderForecast(p) {
   if (o.real === 0 && !yb) {
     $("etaDetail").insertAdjacentHTML(
       "beforeend",
-      '<span class="etaGoal">Sobald gebaut: <a href="#" id="etaGoalLink">Plandaten verwalten › Ziel erreicht</a> – dann erscheint der Plan als erreicht im Wochenbericht.</span>',
+      `<span class="etaGoal">${_t("fc.sobald_gebaut")} <a href="#" id="etaGoalLink">${_t("fc.link_ziel")}</a> ${_t("fc.dann_erscheint")}</span>`,
     );
     $("etaGoalLink").onclick = (e) => {
       e.preventDefault();
@@ -324,27 +329,27 @@ function renderForecast(p) {
   }
   const q = renderQuality(fc),
     // fehlen Daten, ist das Szenario offen – nicht „nicht absehbar“ (das heißt: über 100 Jahre)
-    card = (d, far) => (d == null && !far && o.missingData.length ? "zu wenig Daten" : fmtEta(d, fc.base, far));
+    card = (d, far) => (d == null && !far && o.missingData.length ? _t("common.zu_wenig_daten") : fmtEta(d, fc.base, far));
   if (yb) $("fcQBadge").hidden = $("fcQLine").hidden = true;
   $("fcSummary").innerHTML =
     (yb
-      ? `<div class="yardBlock"><b>Schiffswerft ${yb.yard} fehlt</b> (bei dir ${yb.have}). Die Termine unten zeigen nur, wann die Ressourcen gedeckt sind – bauen kannst du erst danach. ${escAttr(shipYardHint(yb))}.</div>`
+      ? `<div class="yardBlock"><b>${_t("common.werft_fehlt", { n: yb.yard })}</b> ${_t("fc.yard_block", { n: yb.have })} ${escAttr(shipYardHint(yb))}.</div>`
       : "") +
     (q
-      ? `<div class="fcQuality"><div><span class="muted">Prognose-Qualität</span><span class="qBadge ${q.cls}">${q.lvl.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><details class="fcNote"><summary>So wird die Qualität bewertet</summary><p class="muted">Gezählt wird beim Material mit den wenigsten Daten. Stufen: vorläufig unter ${FC_Q.brauchbar.n} Abschnitten oder ${FC_Q.brauchbar.days} Tagen, brauchbar ab ${FC_Q.brauchbar.n} Abschnitten über ${FC_Q.brauchbar.days} Tage, stabil ab ${FC_Q.stabil.n} Abschnitten über ${FC_Q.stabil.days} Tage. Längere Abschnitte zählen mehr als kurze. Mehr Exporte verbessern die Prognose bis zum Zeitfenster von 6 Wochen; ältere Abschnitte fallen dann heraus, die Prognose bleibt aktuell.</p></details></div>`
+      ? `<div class="fcQuality"><div><span class="muted">${_t("fc.qualitaet")}</span><span class="qBadge ${q.cls}">${q.label.toUpperCase()}</span></div><p>${qualityHtml(q)}.</p><details class="fcNote"><summary>${_t("fc.so_bewertet")}</summary><p class="muted">${_t("fc.q_erkl", { bn: FC_Q.brauchbar.n, bd: FC_Q.brauchbar.days, sn: FC_Q.stabil.n, sd: FC_Q.stabil.days })}</p></details></div>`
       : "") +
-    `<div class="fcCard"><div><span class="muted">Konservativ</span><b>${card(o.cons, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">Realistisch</span><b>${card(o.real, o.realFar)}</b><span class="muted">${o.realDriver ? "bestimmt durch " + escAttr(o.realDriver) : ""}</span></div><div><span class="muted">Optimistisch</span><b>${card(o.opt, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
+    `<div class="fcCard"><div><span class="muted">${_t("fc.card_kons")}</span><b>${card(o.cons, o.consFar)}</b><span class="muted">${o.consDriver ? escAttr(o.consDriver) : ""}</span></div><div class="real"><span class="muted">${_t("fc.card_real")}</span><b>${card(o.real, o.realFar)}</b><span class="muted">${o.realDriver ? _t("fc.bestimmt", { m: escAttr(o.realDriver) }) : ""}</span></div><div><span class="muted">${_t("fc.card_opt")}</span><b>${card(o.opt, o.optFar)}</b><span class="muted">${o.optDriver ? escAttr(o.optDriver) : ""}</span></div></div>` +
     (o.missingData.length
-      ? `<p class="muted">Noch zu wenig Daten für: ${o.missingData.map(escAttr).join(", ")} (mindestens ${FC_MIN} Abschnitte mit je ≥ ${FC_GAP_H} Stunden Abstand nötig).</p>`
+      ? `<p class="muted">${_t("fc.zu_wenig_fuer", { list: o.missingData.map(escAttr).join(", "), n: FC_MIN, h: FC_GAP_H })}</p>`
       : "") +
-    `<p class="muted" style="font-size:11px">Ausgangspunkt: Datenstand vom ${fdt(fc.base)}.</p>`;
+    `<p class="muted" style="font-size:11px">${_t("fc.ausgang", { d: fdt(fc.base) })}</p>`;
   $("fcRows").innerHTML = fc.res
     .map((x) => {
       const st = x.st,
         dq = st.rows.length
-          ? `${st.n} von ${st.rows.length}${st.rows.length - st.n ? " (" + (st.rows.length - st.n) + " markiert)" : ""}`
-          : "keine";
-      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ' <span class="muted">(zählt nicht)</span>' : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/Tag" : "–"}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "–" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "zu wenig Daten" : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? "gedeckt" : x.status === "data" ? "–" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
+          ? _t("dash.von", { a: st.n, b: st.rows.length }) + (st.rows.length - st.n ? _t("fc.markiert", { n: st.rows.length - st.n }) : "")
+          : _t("fc.keine");
+      return `<tr${x.common ? ' class="muted"' : ""}><td>${x.m}${x.common ? ` <span class="muted">(${_t("fc.zaehlt_nicht")})</span>` : ""}</td><td>${fmt(x.miss)}</td><td>${st.n >= FC_MIN ? sg(st.real) + "/" + _t("common.tag") : "–"}</td><td>${x.status === "done" ? _t("common.gedeckt") : x.status === "data" ? "–" : fmtEta(x.eta.cons, fc.base, x.far.cons)}</td><td>${x.status === "done" ? _t("common.gedeckt") : x.status === "data" ? _t("common.zu_wenig_daten") : fmtEta(x.eta.real, fc.base, x.far.real)}</td><td>${x.status === "done" ? _t("common.gedeckt") : x.status === "data" ? "–" : fmtEta(x.eta.opt, fc.base, x.far.opt)}</td><td>${dq}</td></tr>`;
     })
     .join("");
   const ivs = new Map();
@@ -363,16 +368,16 @@ function renderForecast(p) {
         .map((v) => {
           const mk =
               [
-                v.pack.length ? "vermutlich Pack/Ausgleich: " + v.pack.join(", ") : "",
-                v.bau.length ? "vermutlich Bau: " + v.bau.join(", ") : "",
+                v.pack.length ? _t("fc.verm_pack", { list: v.pack.join(", ") }) : "",
+                v.bau.length ? _t("fc.verm_bau", { list: v.bau.join(", ") }) : "",
               ]
                 .filter(Boolean)
                 .join(" · ") || "–",
             o = ov[v.key] || "auto";
-          return `<tr><td>${new Date(v.from).toLocaleDateString(LOC())} – ${new Date(v.to).toLocaleDateString(LOC())}</td><td>${v.days.toFixed(1).replace(".", ",")}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>Automatisch</option><option value="include"${o === "include" ? " selected" : ""}>Immer mitrechnen</option><option value="exclude"${o === "exclude" ? " selected" : ""}>Nicht mitrechnen</option></select></td></tr>`;
+          return `<tr><td>${new Date(v.from).toLocaleDateString(LOC())} – ${new Date(v.to).toLocaleDateString(LOC())}</td><td>${v.days.toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>${_t("fc.ov_auto")}</option><option value="include"${o === "include" ? " selected" : ""}>${_t("fc.ov_incl")}</option><option value="exclude"${o === "exclude" ? " selected" : ""}>${_t("fc.ov_excl")}</option></select></td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="4" class="muted">Noch keine Abschnitte. Es braucht mindestens zwei JSON-Snapshots mit ' + FC_GAP_H + ' Stunden Abstand.</td></tr>';
+    : `<tr><td colspan="4" class="muted">${_t("fc.keine_abschnitte", { h: FC_GAP_H })}</td></tr>`;
   $("fcIntervals")
     .querySelectorAll("[data-ov]")
     .forEach(
@@ -386,13 +391,10 @@ function renderForecast(p) {
     );
   const ct = (p.planData || {}).construction;
   $("fcBuild").textContent = ct
-    ? "Bauzeit: " +
-      fmtDuration(ct.cost) +
+    ? _t("fc.build_bauzeit", { d: fmtDuration(ct.cost) }) +
       " · " +
-      (ct.needed > 0
-        ? "Speedups fehlen: " + fmtDuration(ct.needed)
-        : "Speedups ausreichend (laut Spock's Club)") +
-      " – wird separat betrachtet und nicht in die Ressourcenprognose eingerechnet."
+      (ct.needed > 0 ? _t("dash.speedups_fehlen", { d: fmtDuration(ct.needed) }) : _t("dash.speedups_ok")) +
+      _t("fc.build")
     : "";
 }
 function packEmpty() {
@@ -446,24 +448,24 @@ function renderPacks(p) {
   const pc = packCalc(p),
     card = $("packCard");
   if (isShip(p) && (!p.ship || p.ship.key === "other")) {
-    card.innerHTML = '<span class="muted">Packs bis zum Ziel: Für „Anderes Schiff“ gibt es keinen Pack.</span>';
+    card.innerHTML = `<span class="muted">${_t("pk.anderes")}</span>`;
     return;
   }
   if (!pc && isShip(p) && p.hasPlanData) {
-    card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>Packs bis zum Ziel:</b> <span class="muted">Der Pack für ${SHIP_CLASSES[p.ship.cls].label} (${escAttr(planPack(p).name)}) ist noch nicht gepflegt. Trag einmal ein, was er enthält.</span></span><button class="miniBtn" id="packFillBtn">Schiffs-Pack pflegen</button></div>`;
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>${_t("pk.bis_ziel")}</b> <span class="muted">${_t("pk.schiff_leer", { k: SHIP_CLASSES[p.ship.cls].label, name: escAttr(planPack(p).name) })}</span></span><button class="miniBtn" id="packFillBtn">${_t("pk.schiff_pflegen")}</button></div>`;
     $("packFillBtn").onclick = () => openPackFor(p);
     return;
   }
   if (!pc) {
     if (p.hasPlanData && packEmpty()) {
       card.innerHTML =
-        '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>Packs bis zum Ziel:</b> <span class="muted">Dein Stationspack ist noch nicht gepflegt. Trag einmal ein, was ein Pack enthält (im Spiel ablesen – der Inhalt hängt von deiner OPS-Stufe ab), dann rechnet der Planner die Packs bis zum Ziel.</span></span><button class="miniBtn" id="packFillBtn">Stationspack pflegen</button></div>';
+        `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span><b>${_t("pk.bis_ziel")}</b> <span class="muted">${_t("pk.station_leer")}</span></span><button class="miniBtn" id="packFillBtn">${_t("care.station_pflegen")}</button></div>`;
       $("packFillBtn").onclick = openPacks;
-    } else card.innerHTML = '<span class="muted">Packs bis zum Ziel: erst wenn der Plan aktiv ist.</span>';
+    } else card.innerHTML = `<span class="muted">${_t("pk.erst_aktiv")}</span>`;
     return;
   }
   const pk = pc.pack;
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">Packs bis zum Ziel</span><div class="big">${pc.total ? (pc.approx ? "ca. " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? "ca. " : "") + fx(pc.total * pk.priceEUR) + " €" : "Kein Pack nötig"}</div><span class="muted">${pc.driver ? "bestimmt durch " + escAttr(pc.driver) : "alle relevanten Ressourcen gedeckt"}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? " · nicht im Pack enthalten: " + pc.uncovered.map(escAttr).join(", ") : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">Pack bearbeiten</button><div class="muted" style="font-size:11px;margin-top:4px">Inhalt gültig ab ${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"} · ${fx(pk.priceEUR)} € pro Pack</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel nicht absehbar</div>` : pc.weekly ? `<div style="margin-top:6px">Mit <b>1 Pack pro Woche</b> (${fx(pk.priceEUR)} € pro Woche): Ziel ${pc.weekly.days > FC_YEAR ? "" : "ca. am "}<b>${fcDate(pc.weekly.base, pc.weekly.days)}</b> (realistisch), insgesamt ca. ${fx(Math.ceil(pc.weekly.days / 7))} Packs = ${fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR)} €</div>` : '<div class="muted" style="margin-top:6px;font-size:11px">„Mit 1 Pack pro Woche“ erscheint, sobald die Prognose genügend Daten hat.</div>'}<table class="histTable" style="margin-top:8px"><thead><tr><th>Material</th><th>Fehlt</th><th>Inhalt pro Pack</th><th>Packs nötig</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? "ca. " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? "gedeckt" : x.n == null ? "nicht im Pack" : (x.approx ? "ca. " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="muted">${_t("pk.titel")}</span><div class="big">${pc.total ? (pc.approx ? _t("common.ca") + " " : "") + fx(pc.total) + " " + escAttr(packPlural(pk.name, pc.total)) + " · " + (pc.approx ? _t("common.ca") + " " : "") + _t("pk.eur", { p: fx(pc.total * pk.priceEUR) }) : _t("pk.kein_noetig")}</div><span class="muted">${pc.driver ? _t("fc.bestimmt", { m: escAttr(pc.driver) }) : _t("dash.alle_relevanten")}${packInclText(p) ? " · " + escAttr(packInclText(p)) : ""}${pc.uncovered.length ? _t("pk.nicht_im_pack", { list: pc.uncovered.map(escAttr).join(", ") }) : ""}</span></div><div style="text-align:right"><button class="miniBtn" id="packEditBtn">${_t("pk.bearbeiten")}</button><div class="muted" style="font-size:11px;margin-top:4px">${_t("pk.gueltig", { d: pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–", p: fx(pk.priceEUR) })}</div></div></div>${pc.weekly && pc.weekly.far ? `<div style="margin-top:6px">${_t("pk.woche_far", { p: fx(pk.priceEUR) })}</div>` : pc.weekly ? `<div style="margin-top:6px">${_t(pc.weekly.days > FC_YEAR ? "pk.woche" : "pk.woche_am", { p: fx(pk.priceEUR), d: fcDate(pc.weekly.base, pc.weekly.days), n: fx(Math.ceil(pc.weekly.days / 7)), e: fx(Math.ceil(pc.weekly.days / 7) * pk.priceEUR) })}</div>` : `<div class="muted" style="margin-top:6px;font-size:11px">${_t("pk.woche_spaeter")}</div>`}<table class="histTable" style="margin-top:8px"><thead><tr><th>${_t("common.material")}</th><th>${_t("pk.th_fehlt")}</th><th>${_t("pk.th_inhalt")}</th><th>${_t("pk.th_noetig")}</th></tr></thead><tbody>${pc.rows.map((x) => `<tr${x.m === pc.driver ? ' style="color:#ffd993;font-weight:700"' : ""}><td>${x.m}</td><td>${fmt(x.miss)}</td><td>${x.amt ? (x.approx ? _t("common.ca") + " " : "") + fx(x.amt) : "–"}</td><td>${x.miss <= 0 ? _t("common.gedeckt") : x.n == null ? _t("pk.nicht_im") : (x.approx ? _t("common.ca") + " " : "") + fx(x.n)}</td></tr>`).join("")}</tbody></table>`;
   $("packEditBtn").onclick = () => openPackFor(p);
 }
 // Stationspack oder (ab 3.2) Schiffs-Pack einer Klasse bearbeiten
@@ -473,13 +475,13 @@ function openPacks(cls) {
   if (packEditCls) ensureShipPacks();
   const pk = packEditCls ? s.shipPacks[packEditCls] : (s.packs || [])[0],
     mats = packEditCls ? shipPackMats(packEditCls) : MATERIALS;
-  $("packTitle").textContent = packEditCls ? "Schiffs-Pack pflegen: " + SHIP_CLASSES[packEditCls].label : "Stationspack pflegen";
+  $("packTitle").textContent = packEditCls ? _t("pk.titel_schiff", { k: SHIP_CLASSES[packEditCls].label }) : _t("care.station_pflegen");
   $("packSub").textContent = packEditCls
-    ? "Gilt für alle " + SHIP_CLASSES[packEditCls].label + "-Pläne."
-    : "Gilt für alle Gebäudepläne.";
+    ? _t("pk.gilt_klasse", { k: SHIP_CLASSES[packEditCls].label })
+    : _t("pk.gilt_gebaeude");
   $("packIntro").textContent = packEditCls
-    ? "Trag ein, was der Pack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Erfasst werden Σ-Tritanium, die 7★ Materialien und die 7★ Teile der Klasse. „ca.“ markiert gerundete Werte aus dem Spiel (etwa „14,3 Tsd.“). Latinum, Parstahl, Dilithium und niedrigere Sterne zählen nicht. 7★ Common Erz, Gas und Kristall zählen nicht für die Pack-Berechnung (per Latinum kaufbar)."
-    : "Trag ein, was dein Stationspack im Spiel enthält – der Inhalt hängt von deiner OPS-Stufe ab, also nach einem OPS-Aufstieg hier aktualisieren. Menge pro Pack für die Materialien deiner Pläne. „ca.“ markiert gerundete Werte aus dem Spiel. Latinum, normales Parsteel/Tritanium/Dilithium und 6★ zählen nicht und werden hier nicht erfasst. 7★ Common zählt nicht für die Pack-Berechnung (per Latinum kaufbar).";
+    ? _t("pk.intro_schiff")
+    : _t("pk.intro_station");
   $("packNameLab").hidden = !packEditCls;
   $("packName").value = packEditCls ? pk.name : "";
   $("packRows").innerHTML = mats.map((m) => {
@@ -523,7 +525,7 @@ function renderBottleneckCard(p) {
   $("bottleneckDetail").hidden = !classic;
   list.hidden = classic;
   list.closest(".heroCards").classList.toggle("bnWide", !classic);
-  $("bottleneckLbl").textContent = classic ? "Engpass" : "Engpass · was zuletzt gedeckt ist";
+  $("bottleneckLbl").textContent = classic ? _t("common.engpass") : _t("bn.lbl");
   if (classic) {
     list.innerHTML = "";
     return;
@@ -533,11 +535,11 @@ function renderBottleneckCard(p) {
       t > FC_YEAR
         ? fcDate(bn.fc.base, t)
         : new Date(bn.fc.base + t * 864e5).toLocaleDateString(LOC(), { day: "numeric", month: "numeric" }),
-    inT = (t) => (t > FC_YEAR ? "~" + fcYears(t) : Math.ceil(t) + " T.");
+    inT = (t) => (t > FC_YEAR ? "~" + fcYears(t) : _t("bn.t", { n: Math.ceil(t) }));
   let h = bn.rows
     .map(
       (x, i) =>
-        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">gedeckt in ${inT(x.eta.real)} · ${day(x.eta.real)}</span></div>`,
+        `<div class="bnRow${i === 0 ? " first" : ""}"><b>${escAttr(x.m)}</b><div class="bnBar"><i style="width:${Math.max(4, Math.round((100 * x.eta.real) / max))}%"></i></div><span class="bnNum">${_t("bn.gedeckt_in", { a: inT(x.eta.real), b: day(x.eta.real) })}</span></div>`,
     )
     .join("");
   const pe = packEffect(p),
@@ -546,22 +548,22 @@ function renderBottleneckCard(p) {
   if (shipPackMissingText(p))
     foot =
       escAttr(shipPackMissingText(p)) +
-      (p.ship && p.ship.key !== "other" ? ' <button class="miniBtn" id="bnPackBtn">Schiffs-Pack pflegen</button>' : "");
+      (p.ship && p.ship.key !== "other" ? ` <button class="miniBtn" id="bnPackBtn">${_t("pk.schiff_pflegen")}</button>` : "");
   else if (!pe)
     foot =
-      'Trag deinen Stationspack ein, dann siehst du hier, was ein Pack bringt. <button class="miniBtn" id="bnPackBtn">Stationspack pflegen</button>';
+      `${_t("bn.eintragen")} <button class="miniBtn" id="bnPackBtn">${_t("care.station_pflegen")}</button>`;
   else {
     const n = pe.save,
       when = pe.when;
     if (n < 1) {
       const close = bn.rows.filter((x) => max - x.eta.real < 1).map((x) => x.m.replace("7★ ", ""));
       foot =
-        "Mit 1 " + escAttr(packLabel(p)) + ': <b class="flat">kein ganzer Tag früher</b>' +
-        (close.length > 1 ? " – " + close.join(", ") + " sind fast gleichzeitig gedeckt." : ".");
+        _t("bn.kein_tag", { k: escAttr(packLabel(p)) }) +
+        (close.length > 1 ? _t("bn.gleichzeitig", { list: close.join(", ") }) : ".");
     } else
       foot =
-        `Mit 1 ${escAttr(packLabel(p))}: fertig <b>${n} ${n === 1 ? "Tag" : "Tage"} früher</b> (${when})` +
-        (pe.next && pe.next !== driver ? " – danach bremst " + escAttr(pe.next) + "." : " – " + escAttr(driver) + " bleibt der Engpass.");
+        _t(n === 1 ? "bn.frueher1" : "bn.frueher", { k: escAttr(packLabel(p)), n, d: when }) +
+        (pe.next && pe.next !== driver ? _t("bn.danach_bremst", { m: escAttr(pe.next) }) : _t("bn.bleibt", { m: escAttr(driver) }));
   }
   h += `<div class="bnFoot">${foot}</div>`;
   list.innerHTML = h;

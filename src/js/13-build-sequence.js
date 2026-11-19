@@ -54,23 +54,31 @@ function buildSequence(p) {
   };
   if (ops) {
     for (let N = ops.start + 1; N <= ops.target; N++) {
-      const ph = "Bis OPS " + N;
+      const ph = _t("seq.bis_ops", { n: N });
       take(core, N - 1, ph);
       take(block, N - 1, ph);
       out.push({ name: ops.name, from: N - 1, to: N, kind: "ops", phase: ph, i: ops.i });
     }
   }
-  const after = ops ? "Nach OPS " + ops.target : "Pflichtgebäude";
+  const after = ops ? _t("seq.nach_ops", { n: ops.target }) : _t("seq.pflichtgebaeude");
   take(core, Infinity, after);
   take(block, Infinity, after);
-  final.sort(coreSort).forEach((x) => out.push({ ...x, phase: tgtName ? "Zielgebäude" : after }));
+  final.sort(coreSort).forEach((x) => out.push({ ...x, phase: tgtName ? _t("seq.zielgebaeude") : after }));
   return out;
 }
 const KIND_LABEL = {
-  step: "Kerngebäude",
-  block: "Ressourcen-Block",
-  ops: "OPS-Stufe",
-  target: "Zielgebäude",
+  get step() {
+    return _t("kind.step");
+  },
+  get block() {
+    return _t("kind.block");
+  },
+  get ops() {
+    return _t("kind.ops");
+  },
+  get target() {
+    return _t("seq.zielgebaeude");
+  },
 };
 function seqRowsHtml(seq, limit, onlyOpen, ctl, share, cover) {
   let html = "",
@@ -89,10 +97,10 @@ function seqRowsHtml(seq, limit, onlyOpen, ctl, share, cover) {
     }
     const part =
       x.kind === "block" && Number.isFinite(x.now) && x.now > x.from && x.now < x.to
-        ? ` <span class="muted">(jetzt ${x.now})</span>`
+        ? ` <span class="muted">(${_t("seq.jetzt", { n: x.now })})</span>`
         : "";
     html +=
-      `<tr class="${x.kind === "ops" || x.kind === "target" ? "seqOps" : ""}${x.done ? " seqDone" : ""}"><td>${x.done ? "✓" : n}</td><td>${escAttr(x.name)}${share && !x.done ? ((o) => (o.length ? `<span class="seqShare">auch in: ${escAttr(o.join(", "))}</span>` : ""))(share(x)) : ""}</td><td>${x.from} → ${x.to}${part}</td><td>${x.done ? "erledigt" : KIND_LABEL[x.kind]}</td>${ctl ? coverCell(x, cover) : ""}${ctl ? `<td class="seqMv"><button data-sm="-1" data-k="${escAttr(seqKey(x))}" aria-label="Nach oben"${n === 1 ? " disabled" : ""}>↑</button><button data-sm="1" data-k="${escAttr(seqKey(x))}" aria-label="Nach unten"${n === seq.length ? " disabled" : ""}>↓</button></td>` : ""}</tr>`.replace(
+      `<tr class="${x.kind === "ops" || x.kind === "target" ? "seqOps" : ""}${x.done ? " seqDone" : ""}"><td>${x.done ? "✓" : n}</td><td>${escAttr(x.name)}${share && !x.done ? ((o) => (o.length ? `<span class="seqShare">${_t("seq.auch_in", { list: escAttr(o.join(", ")) })}</span>` : ""))(share(x)) : ""}</td><td>${x.from} → ${x.to}${part}</td><td>${x.done ? _t("common.erledigt") : KIND_LABEL[x.kind]}</td>${ctl ? coverCell(x, cover) : ""}${ctl ? `<td class="seqMv"><button data-sm="-1" data-k="${escAttr(seqKey(x))}" aria-label="${_t("seq.nach_oben")}"${n === 1 ? " disabled" : ""}>↑</button><button data-sm="1" data-k="${escAttr(seqKey(x))}" aria-label="${_t("seq.nach_unten")}"${n === seq.length ? " disabled" : ""}>↓</button></td>` : ""}</tr>`.replace(
         "<tr class=",
         ctl ? `<tr draggable="true" data-sk="${escAttr(seqKey(x))}" class=` : "<tr class=",
       );
@@ -169,21 +177,21 @@ function coverMap(p, seq) {
 }
 const COVER_ICON = { ok: "✓", warn: "!", bad: "✗" };
 function coverDate(base, d) {
-  return Number.isFinite(d) ? (fcTooFar(d) ? FC_FAR_TXT : fcDate(base, Math.ceil(d))) : null;
+  return Number.isFinite(d) ? (fcTooFar(d) ? _t("fc.far") : fcDate(base, Math.ceil(d))) : null;
 }
 function coverCell(x, cover) {
   if (x.done || !cover) return '<td class="cvr"></td>';
   const v = cover.m.get(seqKey(x));
   if (!v) return '<td class="cvr"></td>';
-  if (v.c === "ok") return '<td class="cvr cvr-ok" title="Mit deinem Bestand gedeckt (Schätzung)">✓</td>';
+  if (v.c === "ok") return `<td class="cvr cvr-ok" title="${_t("cvr.ok")}">✓</td>`;
   const mid = Number.isFinite(v.dMin) && Number.isFinite(v.dMax) ? (v.dMin + v.dMax) / 2 : Infinity,
     dt = coverDate(cover.base, mid),
     a = coverDate(cover.base, Math.max(0, v.dMin)),
     b = coverDate(cover.base, v.dMax),
     tip =
-      (v.c === "warn" ? "Hier reicht dein Bestand vermutlich nicht mehr" : "Bestand reicht nicht mehr") +
-      (dt ? "; gedeckt ab " + (a === b || !b ? a : a + " bis " + b) : "; ohne bekanntes Einkommen nicht absehbar") +
-      (v.drv ? " (Engpass: " + v.drv + ")" : "") +
-      " – Schätzung";
-  return `<td class="cvr cvr-${v.c}" title="${escAttr(tip)}">${COVER_ICON[v.c]}<span class="cvrD">${dt ? "ab " + dt : "–"}</span></td>`;
+      _t(v.c === "warn" ? "cvr.warn" : "cvr.bad") +
+      (dt ? _t("cvr.ab", { d: a === b || !b ? a : _t("cvr.bis", { a, b }) }) : _t("cvr.nicht_absehbar")) +
+      (v.drv ? _t("cvr.engpass", { m: v.drv }) : "") +
+      _t("cvr.schaetzung");
+  return `<td class="cvr cvr-${v.c}" title="${escAttr(tip)}">${COVER_ICON[v.c]}<span class="cvrD">${dt ? _t("cvr.ab_kurz", { d: dt }) : "–"}</span></td>`;
 }

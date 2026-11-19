@@ -134,7 +134,7 @@ async function doBackup(mode) {
   await bkLoadDir();
   if (mode === "auto" && !bkDir) {
     s.backup.lastErr =
-      "Der Backup-Ordner ist nicht mehr verbunden. Bitte „Backup jetzt speichern“ klicken und ihn neu wählen.";
+      _t("bk.nicht_verbunden");
     s.backup.folder = null;
     persist();
     renderBackup();
@@ -142,7 +142,7 @@ async function doBackup(mode) {
   }
   if (!bkDir && mode === "manual" && bkCanPick()) {
     if (!(await bkPickDir())) {
-      bkMsg = "Abgebrochen – kein Backup gespeichert.";
+      bkMsg = _t("bk.abgebrochen");
       renderBackup();
       return false;
     }
@@ -163,11 +163,11 @@ async function doBackup(mode) {
         bkDone(d, name, "folder");
         return true;
       } catch (e) {
-        s.backup.lastErr = "Backup konnte nicht in den Ordner geschrieben werden (" + e.message + ").";
+        s.backup.lastErr = _t("bk.schreibfehler", { e: e.message });
         persist();
       }
     } else {
-      s.backup.lastErr = "Zugriff auf den Backup-Ordner wurde nicht erlaubt.";
+      s.backup.lastErr = _t("bk.kein_zugriff");
       persist();
     }
     if (mode === "auto") {
@@ -191,29 +191,23 @@ function renderStoreUsage() {
   if (!el) return;
   const u = storeUsage();
   if (!u) {
-    el.innerHTML = '<span class="red">Der Browser erlaubt keinen Zugriff auf den Speicher.</span>';
+    el.innerHTML = `<span class="red">${_t("bk.kein_speicher")}</span>`;
     return;
   }
   const pct = Math.min(100, Math.round(u.pct * 100)),
     warn = u.pct >= STORE_WARN;
   let h =
-    '<div class="storeHead"><span>Browser-Speicher</span><b>' +
-    fmtMB(u.total) +
-    " von ca. 5 MB · " +
-    pct +
-    ' %</b></div><div class="prog' +
+    `<div class="storeHead"><span>${_t("bk.browser_speicher")}</span><b>${_t("bk.belegt", { a: fmtMB(u.total), p: pct })}</b></div><div class="prog` +
     (warn ? " warn" : "") +
     '"><i style="width:' +
     Math.max(pct, 1) +
     '%"></i></div>';
   if (u.total - u.own > 0.1 * u.total && u.total - u.own > 1e5)
     h +=
-      '<div class="muted">Davon Planner: ' +
-      fmtMB(u.own) +
-      ". Den Rest belegen andere lokal geöffnete Dateien im selben Browser.</div>";
+      `<div class="muted">${_t("bk.davon", { a: fmtMB(u.own) })}</div>`;
   if (warn)
     h +=
-      '<div class="amber">Der Speicher wird knapp. Sichere ein Backup und lösche alte Snapshots, die du nicht mehr brauchst (Snapshot-Historie).</div>';
+      `<div class="amber">${_t("bk.knapp")}</div>`;
   el.innerHTML = h;
 }
 function renderStoreAlert() {
@@ -225,13 +219,11 @@ function renderStoreAlert() {
     return;
   }
   el.innerHTML =
-    "<div><b>Speichern im Browser fehlgeschlagen.</b> " +
-    (storeError === "voll"
-      ? "Der Browser-Speicher ist voll."
-      : "Der Browser erlaubt dieser Seite gerade keinen Speicherzugriff.") +
-    " Deine letzten Änderungen gehen beim Schließen der Seite verloren. Sichere sie jetzt als Backup" +
-    (storeError === "voll" ? " und lösche danach alte Snapshots in der Snapshot-Historie." : ".") +
-    '</div><button id="storeAlertBackup" class="btn">Backup jetzt speichern</button>';
+    `<div><b>${_t("bk.fehlgeschlagen")}</b> ` +
+    (storeError === "voll" ? _t("bk.voll") : _t("bk.kein_zugriff_seite")) +
+    " " +
+    _t(storeError === "voll" ? "bk.verloren_voll" : "bk.verloren") +
+    `</div><button id="storeAlertBackup" class="btn">${_t("bk.jetzt_speichern")}</button>`;
   el.hidden = false;
   $("storeAlertBackup").onclick = async () => {
     await doBackup("manual");
@@ -247,31 +239,32 @@ function renderBackup() {
     age = b.lastAt ? Math.floor((Date.now() - new Date(b.lastAt).getTime()) / 864e5) : null;
   let h = "";
   h += b.lastAt
-    ? "Letztes Backup: " +
-      fdt(b.lastAt) +
-      (age === 0 ? " (heute)" : age === 1 ? " (gestern)" : " (vor " + age + " Tagen)") +
-      (b.lastWhere === "download" ? " · als Download" : "")
-    : "Noch kein Backup gespeichert.";
+    ? _t("bk.letztes", { d: fdt(b.lastAt) }) +
+      " (" +
+      (age === 0 ? _t("common.heute") : age === 1 ? _t("common.gestern") : _t("common.vor_tagen", { n: age })) +
+      ")" +
+      (b.lastWhere === "download" ? _t("bk.als_download") : "")
+    : _t("bk.noch_keins");
   if (b.folder)
     h +=
-      "<br>Ordner: <b>" +
-      escAttr(b.folder) +
-      "</b> · automatisch nach jedem Import, die letzten " +
-      BK_KEEP +
-      ' bleiben.<br><button id="bkChange" class="miniBtn">Ordner ändern</button>';
+      "<br>" +
+      _t("bk.ordner", { f: escAttr(b.folder), n: BK_KEEP }) +
+      `<br><button id="bkChange" class="miniBtn">${_t("exp.ordner_aendern")}</button>`;
   else if (bkCanPick())
     h +=
-      '<br><span class="muted">Beim ersten Speichern wählst du den Ordner. Danach sichert die App nach jedem Import automatisch.</span>';
+      `<br><span class="muted">${_t("bk.erstes")}</span>`;
   else
     h +=
-      '<br><span class="muted">Dieser Browser kann sich keinen Ordner merken. Das Backup wird als Download gespeichert.</span>';
+      `<br><span class="muted">${_t("bk.kein_ordner")}</span>`;
   if (days >= BK_DAYS)
     h +=
       '<div class="red" style="margin-top:4px">' +
       (b.lastAt
-        ? "Das letzte Backup ist " + Math.floor(days) + " Tage her."
-        : "Seit " + Math.floor(days) + " Tagen kein Backup.") +
-      " Bitte jetzt sichern.</div>";
+        ? _t("bk.tage_her", { n: Math.floor(days) })
+        : _t("bk.seit_tagen", { n: Math.floor(days) })) +
+      " " +
+      _t("bk.bitte_sichern") +
+      "</div>";
   if (b.lastErr) h += '<div class="red" style="margin-top:4px">' + escAttr(b.lastErr) + "</div>";
   if (bkMsg) h += '<div class="muted" style="margin-top:4px">' + escAttr(bkMsg) + "</div>";
   el.innerHTML = h;
@@ -281,7 +274,7 @@ function renderBackup() {
       if (await bkPickDir()) {
         s.backup.lastErr = null;
         persist();
-        bkMsg = "Neuer Ordner gewählt. Das nächste Backup landet dort.";
+        bkMsg = _t("bk.neuer_ordner");
       }
       renderBackup();
     };
@@ -291,13 +284,13 @@ function parseBackup(text, f) {
   try {
     j = JSON.parse(text);
   } catch (_) {
-    throw Error("Die Datei ist kein gültiges JSON.");
+    throw Error(_t("bk.kein_json"));
   }
   if (j && Array.isArray(j.resources) && Array.isArray(j.buildings) && !j.plans)
-    throw Error("Das ist ein Spock's-Club-Export, kein Backup. Bitte über „Daten importieren“ einlesen.");
+    throw Error(_t("bk.ist_export"));
   const st = j && j.type === "backup" && j.state ? j.state : j;
   if (!st || typeof st !== "object" || !(Array.isArray(st.plans) || Array.isArray(st.snapshots)))
-    throw Error("Die Datei ist kein Backup des Planners.");
+    throw Error(_t("bk.kein_backup"));
   return {
     state: st,
     fileName: (f && f.name) || "Backup",
@@ -316,18 +309,18 @@ function restoreInfoHtml(r) {
     .sort()
     .pop();
   return (
-    '<table><tbody><tr><td class="muted">Datei</td><td>' +
+    `<table><tbody><tr><td class="muted">${_t("bk.info_datei")}</td><td>` +
     escAttr(r.fileName) +
-    '</td></tr><tr><td class="muted">Erstellt</td><td>' +
-    (r.createdAt ? fdt(r.createdAt) : "unbekannt") +
-    '</td></tr><tr><td class="muted">App-Version</td><td>' +
-    (r.version ? escAttr(r.version) : "älter als 1.7.2") +
-    '</td></tr><tr><td class="muted">Zielpläne</td><td>' +
+    `</td></tr><tr><td class="muted">${_t("bk.info_erstellt")}</td><td>` +
+    (r.createdAt ? fdt(r.createdAt) : _t("common.unbekannt")) +
+    `</td></tr><tr><td class="muted">${_t("bk.info_version")}</td><td>` +
+    (r.version ? escAttr(r.version) : _t("bk.info_aelter")) +
+    `</td></tr><tr><td class="muted">${_t("bk.info_plaene")}</td><td>` +
     pl.length +
     (pl.length ? " (" + pl.map((p) => escAttr(p.name || "Plan")).join(", ") + ")" : "") +
     '</td></tr><tr><td class="muted">Snapshots</td><td>' +
     sn.length +
-    (last ? " · neuester Stand " + fdt(last) : "") +
+    (last ? _t("bk.neuester", { d: fdt(last) }) : "") +
     "</td></tr></tbody></table>"
   );
 }

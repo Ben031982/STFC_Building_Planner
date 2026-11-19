@@ -70,7 +70,7 @@ function timelineRows(now) {
         a: predEnd || now,
         b: null,
         kind: "wait",
-        note: pred ? "wartet auf " + pred.name : blocked ? "wartet auf Schiffswerft " + blocked.yard : "noch nicht aktiv",
+        note: pred ? _t("vz.wartet", { name: pred.name }) : blocked ? _t("vz.wartet_werft", { n: blocked.yard }) : _t("vz.nicht_aktiv"),
       });
     }
   }
@@ -83,7 +83,7 @@ function renderTimeline() {
     D = vzDay(),
     rows = timelineRows(now);
   if (!rows.length) {
-    el.innerHTML = '<p class="muted">Noch keine Ziele oder Pläne.</p>';
+    el.innerHTML = `<p class="muted">${_t("vz.keine")}</p>`;
     return;
   }
   // Zeitraum: bis zum spätesten Fertigdatum (ohne Band), höchstens 3 Jahre – spätere Termine werden abgeschnitten
@@ -116,21 +116,21 @@ function renderTimeline() {
       xb = r.b != null ? X(Math.min(r.b, t1)) : xa + 90;
     g += `<text x="${L - 12}" y="${y + 22}" class="vzName${r.kind === "done" ? " dim" : ""}" text-anchor="end">${escAttr(r.name)}</text>`;
     if (r.kind === "done")
-      g += `<rect x="${xa}" y="${y + 8}" width="${Math.max(xb - xa, 8)}" height="20" rx="6" class="vzDone"/><text x="${xb + 8}" y="${y + 23}" class="vzOk">✓</text><text x="${xb + 26}" y="${y + 23}" class="vzAx">erreicht ${vzFmtDY(r.b)}</text>`;
+      g += `<rect x="${xa}" y="${y + 8}" width="${Math.max(xb - xa, 8)}" height="20" rx="6" class="vzDone"/><text x="${xb + 8}" y="${y + 23}" class="vzOk">✓</text><text x="${xb + 26}" y="${y + 23}" class="vzAx">${_t("vz.erreicht", { d: vzFmtDY(r.b) })}</text>`;
     else if (r.kind === "active") {
       if (r.lo != null && r.hi != null)
         g += `<rect x="${X(Math.min(r.lo, t1))}" y="${y + 31}" width="${Math.max(X(Math.min(r.hi, t1)) - X(Math.min(r.lo, t1)), 4)}" height="6" rx="3" class="vzBand"/>${r.hi > t1 ? `<text x="${X(t1) + 4}" y="${y + 38}" class="vzAx">…</text>` : ""}`;
       const w = Math.max(xb - xa, 8),
         pc = r.pct == null ? 0 : r.pct / 100;
-      g += `<rect x="${xa}" y="${y + 8}" width="${w}" height="20" rx="6" class="vzAct"/><rect x="${xa}" y="${y + 8}" width="${w * pc}" height="20" rx="6" class="vzActFill"/><text x="${xb + 8}" y="${y + 23}" class="vzLbl">${cut ? "erst " : "voraussichtlich "}${vzFmtDY(r.b)}</text>`;
+      g += `<rect x="${xa}" y="${y + 8}" width="${w}" height="20" rx="6" class="vzAct"/><rect x="${xa}" y="${y + 8}" width="${w * pc}" height="20" rx="6" class="vzActFill"/><text x="${xb + 8}" y="${y + 23}" class="vzLbl">${_t(cut ? "vz.erst" : "vz.vorauss", { d: vzFmtDY(r.b) })}</text>`;
     } else
       g += `<rect x="${xa}" y="${y + 8}" width="90" height="20" rx="6" class="vzWait"/><text x="${xa + 98}" y="${y + 23}" class="vzAx">${escAttr(r.note)}</text>`;
   });
-  g += `<line x1="${X(now)}" x2="${X(now)}" y1="${T - 8}" y2="${H - 26}" class="vzNow"/><text x="${X(now)}" y="${H - 8}" class="vzNowT" text-anchor="middle">heute</text>`;
+  g += `<line x1="${X(now)}" x2="${X(now)}" y1="${T - 8}" y2="${H - 26}" class="vzNow"/><text x="${X(now)}" y="${H - 8}" class="vzNowT" text-anchor="middle">${_t("common.heute")}</text>`;
   el.innerHTML =
     vzSvgOpen(W, H) +
     g +
-    '</svg><p class="muted" style="margin:6px 0 0;font-size:12px">Jeder Plan ist einzeln gerechnet – so, als bekäme er dein gesamtes Einkommen. Mehrere Pläne nacheinander dauern entsprechend länger.</p>';
+    `</svg><p class="muted" style="margin:6px 0 0;font-size:12px">${_t("vz.einzeln")}</p>`;
 }
 
 // ---------------------------------------------------------------- Verlauf der Prognose
@@ -141,7 +141,7 @@ function renderFcHistory() {
     L = ((s.fcLog || {})[p && p.id] || []).filter((x) => x.eta != null && Number.isFinite(x.eta) && x.eta > 0);
   if (!p || L.length < 2) {
     el.innerHTML =
-      '<p class="muted">Der Verlauf entsteht, sobald die Prognose an mindestens zwei verschiedenen Tagen berechnet wurde (ein Eintrag pro Tag, solange der Planner geöffnet wird).</p>';
+      `<p class="muted">${_t("vz.fh_leer")}</p>`;
     return;
   }
   const D = vzDay(),
@@ -175,9 +175,9 @@ function renderFcHistory() {
   g += `<polyline points="${L.map((x) => X(tOf(x)) + "," + Y(x.eta)).join(" ")}" class="vzLine"/>`;
   // Marker: Plan-Importe und geänderte Packs
   const marks = [];
-  for (const e of planImportEvents(p)) if (e.t >= tmin && e.t <= tmax + D) marks.push({ t: e.t, l: "Plan-Import" });
+  for (const e of planImportEvents(p)) if (e.t >= tmin && e.t <= tmax + D) marks.push({ t: e.t, l: _t("ev.lab_plan") });
   for (let i = 1; i < L.length; i++)
-    if (L[i].packs != null && L[i - 1].packs != null && L[i].packs !== L[i - 1].packs) marks.push({ t: tOf(L[i]), l: L[i].packs + " Packs" });
+    if (L[i].packs != null && L[i - 1].packs != null && L[i].packs !== L[i - 1].packs) marks.push({ t: tOf(L[i]), l: _t("dash.n_packs", { n: L[i].packs }) });
   marks.sort((a, b) => a.t - b.t);
   let lastX = -99;
   for (const m of marks) {
@@ -193,17 +193,17 @@ function renderFcHistory() {
     diff = wk ? Math.round((wk.eta - last.eta) / D) : null,
     sub =
       diff == null
-        ? "noch kein Wert von vor 7 Tagen"
+        ? _t("vz.kein_wert")
         : diff > 0
-          ? diff + (diff === 1 ? " Tag" : " Tage") + " früher als vor 7 Tagen"
+          ? _t(diff === 1 ? "vz.frueher1" : "vz.frueher", { n: diff })
           : diff < 0
-            ? -diff + (diff === -1 ? " Tag" : " Tage") + " später als vor 7 Tagen"
-            : "unverändert gegenüber vor 7 Tagen";
+            ? _t(diff === -1 ? "vz.spaeter1" : "vz.spaeter", { n: -diff })
+            : _t("vz.unveraendert");
   g += `<circle cx="${X(tOf(last))}" cy="${Y(last.eta)}" r="5" class="vzDot"/>`;
   el.innerHTML =
     vzSvgOpen(W, H) +
     g +
-    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Aktuell (realistisch)</span><b>${new Date(last.eta).toLocaleDateString(LOC())}</b><span class="muted">${sub}</span></div><div><span class="muted">Früheste / späteste Prognose</span><b>${vzFmtD(Math.min(...L.map((x) => x.eta)))} – ${vzFmtD(Math.max(...L.map((x) => x.eta)))}</b><span class="muted">im gezeigten Zeitraum</span></div><div><span class="muted">Einträge</span><b>${L.length}</b><span class="muted">seit ${new Date(tOf(L[0])).toLocaleDateString(LOC())}</span></div></div>`;
+    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">${_t("vz.aktuell")}</span><b>${new Date(last.eta).toLocaleDateString(LOC())}</b><span class="muted">${sub}</span></div><div><span class="muted">${_t("vz.frueh_spaet")}</span><b>${vzFmtD(Math.min(...L.map((x) => x.eta)))} – ${vzFmtD(Math.max(...L.map((x) => x.eta)))}</b><span class="muted">${_t("vz.zeitraum")}</span></div><div><span class="muted">${_t("vz.eintraege")}</span><b>${L.length}</b><span class="muted">${_t("vz.seit", { d: new Date(tOf(L[0])).toLocaleDateString(LOC()) })}</span></div></div>`;
 }
 
 // ---------------------------------------------------------------- Einkommen je Woche
@@ -282,7 +282,7 @@ function renderIncomeWeeks() {
   const m = incomeSel,
     W6 = p && p.hasPlanData ? weeklyIncome(p, m).slice(-8) : [];
   if (W6.length < 2) {
-    el.innerHTML = '<p class="muted">Zu wenig Daten – es braucht Snapshots aus mindestens zwei Wochen.</p>';
+    el.innerHTML = `<p class="muted">${_t("vz.zu_wenig")}</p>`;
     return;
   }
   const D = vzDay(),
@@ -296,7 +296,7 @@ function renderIncomeWeeks() {
     X = (i) => Lm + ((i + 0.5) * (W - Lm - Rm)) / W6.length,
     Y = (v) => T + ((mx - v) / mx) * (H - T - B),
     bw = ((W - Lm - Rm) / W6.length) * 0.55,
-    fv = (v) => (Math.abs(v) >= 1e6 ? (v / 1e6).toLocaleString(LOC(), { maximumFractionDigits: 2 }) + " Mio." : Math.round(v).toLocaleString(LOC()));
+    fv = (v) => (Math.abs(v) >= 1e6 ? _t("vz.mio", { n: (v / 1e6).toLocaleString(LOC(), { maximumFractionDigits: 2 }) }) : Math.round(v).toLocaleString(LOC()));
   let g = "";
   for (let k = 0; k <= 4; k++) {
     const v = (mx * k) / 4;
@@ -307,10 +307,10 @@ function renderIncomeWeeks() {
       cls = w.unsure ? "vzBarX" : last ? "vzBarNow" : "vzBar";
     g += `<rect x="${X(i) - bw / 2}" y="${Y(Math.max(w.rate, 0))}" width="${bw}" height="${Math.max(Y(0) - Y(Math.max(w.rate, 0)), 1)}" rx="4" class="${cls}" data-wk="${w.t}"/><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) - 6}" class="vzAx" text-anchor="middle">${fv(w.rate)}</text>`;
     if (w.unsure)
-      g += `<text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 18}" class="vzAx" text-anchor="middle">Nebengebäude</text><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 31}" class="vzAx" text-anchor="middle">Wert unsicher</text>`;
+      g += `<text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 18}" class="vzAx" text-anchor="middle">${_t("vz.nebengeb")}</text><text x="${X(i)}" y="${Y(Math.max(w.rate, 0)) + 31}" class="vzAx" text-anchor="middle">${_t("vz.unsicher")}</text>`;
     if (w.rel)
       g += `<line x1="${X(i) - bw / 2 - 8}" x2="${X(i) - bw / 2 - 8}" y1="${T - 20}" y2="${H - B}" class="vzMarkG"/><text x="${X(i) - bw / 2 - 4}" y="${T - 10}" class="vzMarkGT">${escAttr(bldChangeText(w.rel))}</text>`;
-    g += `<text x="${X(i)}" y="${H - 12}" class="vzAx" text-anchor="middle">KW ${isoWeek(w.t)}</text>`;
+    g += `<text x="${X(i)}" y="${H - 12}" class="vzAx" text-anchor="middle">${_t("vz.kw", { n: isoWeek(w.t) })}</text>`;
   });
   const ok = W6.filter((w) => !w.unsure),
     avg = ok.length ? ok.reduce((a, w) => a + w.rate * w.incDays, 0) / ok.reduce((a, w) => a + w.incDays, 0) : null,
@@ -319,7 +319,7 @@ function renderIncomeWeeks() {
   el.innerHTML =
     vzSvgOpen(W, H) +
     g +
-    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">Diese Woche</span><b>${fv(cur.rate)}/Tag</b><span class="muted">bisher ${Math.round(cur.incDays)} ${Math.round(cur.incDays) === 1 ? "Tag" : "Tage"}${cur.unsure ? " · Nebengebäude" : ""}</span></div><div><span class="muted">Ø ${W6.length} Wochen</span><b>${avg == null ? "–" : fv(avg) + "/Tag"}</b><span class="muted">${ok.length} von ${W6.length} Wochen${W6.length - ok.length ? ", " + (W6.length - ok.length) + " ausgelassen" : ""}</span></div><div><span class="muted">Trend</span><b>${tr == null ? "zu wenig Daten" : (tr > 0 ? "+" : "") + Math.round(tr) + " %"}</b><span class="muted">erste → letzte Woche (ohne unsichere)</span></div></div>`;
+    `</svg><div class="wkCards" style="margin-top:10px"><div><span class="muted">${_t("vz.diese_woche")}</span><b>${fv(cur.rate)}/${_t("common.tag")}</b><span class="muted">${_t(Math.round(cur.incDays) === 1 ? "vz.bisher1" : "vz.bisher", { n: Math.round(cur.incDays) })}${cur.unsure ? " · " + _t("vz.nebengeb") : ""}</span></div><div><span class="muted">${_t("vz.avg_wochen", { n: W6.length })}</span><b>${avg == null ? "–" : fv(avg) + "/" + _t("common.tag")}</b><span class="muted">${_t("vz.von_wochen", { a: ok.length, b: W6.length })}${W6.length - ok.length ? _t("vz.ausgelassen", { n: W6.length - ok.length }) : ""}</span></div><div><span class="muted">${_t("common.trend")}</span><b>${tr == null ? _t("common.zu_wenig_daten") : (tr > 0 ? "+" : "") + Math.round(tr) + " %"}</b><span class="muted">${_t("vz.erste_letzte")}</span></div></div>`;
   el.querySelectorAll("rect.vzBarX").forEach((r) => {
     r.style.cursor = "pointer";
     r.onclick = () => {

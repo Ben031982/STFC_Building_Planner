@@ -76,7 +76,7 @@ $("savePack").onclick = () => {
     if (document.querySelector(`[data-pa="${i.dataset.pm}"]`).checked) c[i.dataset.pm].approx = true;
   });
   if (bad) {
-    alert("Bitte nur ganze, nicht negative Zahlen eingeben.");
+    alert(_t("w.ganze_zahlen"));
     return;
   }
   pk.contents = c;
@@ -85,7 +85,7 @@ $("savePack").onclick = () => {
     if (pv !== "") {
       const n = +pv;
       if (!Number.isFinite(n) || n < 0) {
-        alert("Bitte einen gültigen Preis in € eingeben.");
+        alert(_t("w.preis"));
         return;
       }
       pk.priceEUR = n;
@@ -93,7 +93,7 @@ $("savePack").onclick = () => {
   }
   pk.validFrom = $("packValid").value || pk.validFrom;
   if (ship && $("packName").value.trim()) pk.name = $("packName").value.trim();
-  s.logs.push(ship ? "Schiffs-Pack aktualisiert: " + SHIP_CLASSES[ship].label : "Stationspack aktualisiert");
+  s.logs.push(ship ? _t("w.schiffspack_log", { k: SHIP_CLASSES[ship].label }) : _t("w.station_log"));
   $("packModal").classList.remove("on");
   save();
 };
@@ -101,7 +101,7 @@ $("compare").onclick = () => {
   let a = s.snapshots.find((x) => x.id === $("from").value),
     b = s.snapshots.find((x) => x.id === $("to").value);
   if (!a || !b || a.id === b.id) {
-    $("compareResult").innerHTML = "<p>Bitte zwei unterschiedliche Snapshots wählen.</p>";
+    $("compareResult").innerHTML = `<p>${_t("w.zwei_snaps")}</p>`;
     return;
   }
   const days = (new Date(snapTime(b)) - new Date(snapTime(a))) / 864e5;
@@ -111,8 +111,8 @@ $("compare").onclick = () => {
     " → " +
     fdt(snapTime(b)) +
     " (" +
-    Math.abs(days).toFixed(1).replace(".", ",") +
-    ' Tage)</p><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Stand A</th><th>Stand B</th><th>Veränderung</th></tr></thead><tbody>' +
+    _t("w.cmp_tage", { n: Math.abs(days).toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) +
+    `)</p><table class="histTable" style="width:100%"><thead><tr><th>${_t("common.material")}</th><th>${_t("w.stand_a")}</th><th>${_t("w.stand_b")}</th><th>${_t("wk.veraenderung")}</th></tr></thead><tbody>` +
     trackedMats()
       .map((n) => {
         const ok = Number.isFinite(b.values[n]) && Number.isFinite(a.values[n]),
@@ -139,7 +139,7 @@ $("chartBigSelect").onchange = () => {
   renderChart();
 };
 $("reset").onclick = () => {
-  if (confirm("Alles löschen?")) {
+  if (confirm(_t("w.alles_loeschen"))) {
     const ks = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -172,7 +172,7 @@ $("evAdd").onclick = () => {
   }
   s.events = Array.isArray(s.events) ? s.events : [];
   s.events.push({ id: "ev-" + Date.now(), at: new Date(d + "T12:00:00").toISOString(), text: t });
-  s.logs.push("Ereignis eingetragen: " + t);
+  s.logs.push(_t("w.ev_log", { t }));
   $("evText").value = "";
   save();
 };
@@ -191,7 +191,7 @@ $("restoreFile").onchange = async (e) => {
     $("restoreInfo").innerHTML = restoreInfoHtml(r);
     $("restoreModal").classList.add("on");
   } catch (err) {
-    alert("Wiederherstellen nicht möglich: " + err.message);
+    alert(_t("w.restore_nicht", { e: err.message }));
   }
 };
 $("restoreCancel").onclick = () => {
@@ -207,18 +207,18 @@ $("restoreOk").onclick = async () => {
   st.backup = s.backup;
   st.exportScan = s.exportScan;
   st.logs = Array.isArray(st.logs) ? st.logs : [];
-  st.logs.push("Backup wiederhergestellt: " + r.fileName);
+  st.logs.push(_t("w.restore_log", { f: r.fileName }));
   capLogs(st);
   const err = storeWrite(K, JSON.stringify(st));
   if (err) {
     $("restoreOk").disabled = false;
     $("restoreInfo").insertAdjacentHTML(
       "beforeend",
-      '<div class="red" style="margin-top:8px">Wiederherstellen fehlgeschlagen: ' +
-        (err === "voll"
-          ? "Das Backup passt nicht in den Browser-Speicher. Lösche andere lokal gespeicherte Daten oder alte Snapshots und versuche es erneut."
-          : "Der Browser erlaubt keinen Speicherzugriff.") +
-        " Deine bisherigen Daten sind unverändert.</div>",
+      `<div class="red" style="margin-top:8px">${_t("w.restore_fail")} ` +
+        (err === "voll" ? _t("w.restore_voll") : _t("w.restore_zugriff")) +
+        " " +
+        _t("w.unveraendert") +
+        "</div>",
     );
     return;
   }

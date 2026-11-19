@@ -5,6 +5,7 @@
 ### Neu
 - **Mehrsprachigkeit, Etappe 1 (Fundament):** Sprachdatei mit Textfunktion, Erkennung der Browsersprache, Umschalter unter „Daten & Import“ (erscheint, sobald mehr als eine Sprache fertig ist) und Datum/Zahlen nach Sprache. Noch ohne sichtbare Änderung: Es gilt weiterhin Deutsch, die englischen Texte folgen in den nächsten Etappen.
 - **Mehrsprachigkeit, Etappe 2 (Oberfläche):** Alle festen Texte der Oberfläche (Menü, Überschriften, Knöpfe, Hinweise) stammen jetzt aus den Sprachdateien, englische Übersetzung liegt bereit. Texte, die der Planner erst beim Rechnen erzeugt (Dashboard, Prognose, Dialoge, Bildkarten), folgen in den nächsten Etappen. Deutsch sieht unverändert aus (per Pixelvergleich geprüft); Test sichert ab, dass jeder Schlüssel Deutsch und Englisch hat.
+- **Mehrsprachigkeit, Etappe 3 (Texte aus dem Programm):** Alle Texte, die der Planner beim Rechnen erzeugt – Dashboard, Prognose, Bau-Reihenfolge, Wochenbericht, Was-wäre-wenn, Zieltermin, Effizienzen, Verlauf, Protokoll, Hinweise, Dialoge, Meldungen, Import-Prüfungen, Einführung, Begriffserklärungen und die Bildkarten – kommen jetzt aus den Sprachdateien (rund 1.200 Texte, Deutsch und Englisch). Datum und Zahlen folgen der Sprache. Gespeicherte Einträge (Protokoll, Plannamen, Pack-Namen) bleiben in der Sprache, in der sie entstanden sind. Englisch ist weiterhin noch nicht wählbar.
 
 ## [5.1.0] – 2026-11-19
 

@@ -23,9 +23,9 @@ function wifBonusInit(force) {
   box.innerHTML = [0, 1, 2]
     .map(
       (i) =>
-        `<div class="wifBonus"><select data-wb="${i}"><option value="">– Material –</option>${wifMats()
+        `<div class="wifBonus"><select data-wb="${i}"><option value="">– ${_t("common.material")} –</option>${wifMats()
           .map((m) => `<option>${m}</option>`)
-          .join("")}</select><input data-wv="${i}" type="number" min="0" step="1" placeholder="Menge"></div>`,
+          .join("")}</select><input data-wv="${i}" type="number" min="0" step="1" placeholder="${_t("common.menge")}"></div>`,
     )
     .join("");
   box.querySelectorAll("select,input").forEach((e) => (e.oninput = e.onchange = renderWif));
@@ -104,24 +104,24 @@ function wifCalc(p, inp) {
   return out;
 }
 function wifDate(start, d) {
-  return d == null ? "offen" : d === 0 ? "gedeckt" : fcTooFar(d) ? FC_FAR_TXT : fcDate(start, d);
+  return d == null ? _t("common.offen") : d === 0 ? _t("common.gedeckt") : fcTooFar(d) ? _t("fc.far") : fcDate(start, d);
 }
 function wifGain(a, b) {
   if (a == null || b == null) return "–";
   const g = Math.round(a - b);
   return g === 0
-    ? "±0 Tage"
-    : `<span class="${g > 0 ? "wifGain" : "wifLoss"}">${g > 0 ? g + " Tage früher" : -g + " Tage später"}</span>`;
+    ? _t("wif.null_tage")
+    : `<span class="${g > 0 ? "wifGain" : "wifLoss"}">${g > 0 ? _t("wif.tage_frueher", { n: g }) : _t("wif.tage_spaeter", { n: -g })}</span>`;
 }
 function renderWif() {
   if (typeof renderTarget === "function") renderTarget();
   const p = activePlan(),
     inp = wifInput(),
     w = wifCalc(p, inp);
-  $("wifPlan").textContent = p ? "Plan: " + p.name + " (" + statusLabel(calcPlanStatus(p)) + ")" : "";
+  $("wifPlan").textContent = p ? _t("wif.planlabel", { name: p.name, st: statusLabel(calcPlanStatus(p)) }) : "";
   if (!w) {
     $("wifSummary").innerHTML =
-      '<p class="muted">Was-wäre-wenn braucht einen aktiven Plan mit bestätigten Plandaten. Wähle im Dashboard einen aktiven Plan aus.</p>';
+      `<p class="muted">${_t("wif.braucht_plan")}</p>`;
     $("wifRows").innerHTML = "";
     $("wifNote").textContent = "";
     return;
@@ -131,39 +131,38 @@ function renderWif() {
     weeks = S.d != null ? Math.ceil(S.d / 7) : null,
     cost = inp.now * w.price + (inp.week && weeks != null ? inp.week * weeks * w.price : 0);
   $("wifSummary").innerHTML =
-    `<div class="wifSum"><div><span class="muted">Heute (realistisch)</span><b>${wifDate(w.start, B.d)}</b><span class="muted">${B.driver ? "Engpass " + escAttr(B.driver.replace("7★ ", "")) : B.d === 0 ? "alles vorhanden" : "zu wenig Daten für eine Prognose"}</span></div><div><span class="muted">Szenario (realistisch)</span><b>${wifDate(w.start, S.d)}</b><span class="muted">${S.driver ? "Engpass " + escAttr(S.driver.replace("7★ ", "")) : S.d === 0 ? "sofort gedeckt" : "nicht berechenbar"} · konservativ ${wifDate(w.start, w.scen.cons.d)} · optimistisch ${wifDate(w.start, w.scen.opt.d)}</span></div><div><span class="muted">Gewinn · Kosten</span><b>${B.d != null && S.d != null ? wifGain(B.d, S.d) : "–"}</b><span class="muted">${cost ? "≈ " + fx(cost) + " € (" + (inp.now ? inp.now + " sofort" : "") + (inp.now && inp.week ? " + " : "") + (inp.week ? inp.week + " pro Woche" + (weeks != null ? " × " + weeks + " Wochen" : "") : "") + ")" : "keine Packs"}</span></div></div>`;
+    `<div class="wifSum"><div><span class="muted">${_t("wif.heute_real")}</span><b>${wifDate(w.start, B.d)}</b><span class="muted">${B.driver ? _t("common.engpass_x", { m: escAttr(B.driver.replace("7★ ", "")) }) : B.d === 0 ? _t("wif.alles_vorhanden") : _t("wif.zu_wenig_daten")}</span></div><div><span class="muted">${_t("wif.szenario_real")}</span><b>${wifDate(w.start, S.d)}</b><span class="muted">${S.driver ? _t("common.engpass_x", { m: escAttr(S.driver.replace("7★ ", "")) }) : S.d === 0 ? _t("wif.sofort_gedeckt") : _t("wif.nicht_berechenbar")} · ${_t("wif.kons_opt", { a: wifDate(w.start, w.scen.cons.d), b: wifDate(w.start, w.scen.opt.d) })}</span></div><div><span class="muted">${_t("wif.gewinn_kosten")}</span><b>${B.d != null && S.d != null ? wifGain(B.d, S.d) : "–"}</b><span class="muted">${cost ? "≈ " + fx(cost) + " € (" + (inp.now ? _t("wif.sofort", { n: inp.now }) : "") + (inp.now && inp.week ? " + " : "") + (inp.week ? _t("wif.pro_woche", { n: inp.week }) + (weeks != null ? _t("wif.x_wochen", { n: weeks }) : "") : "") + ")" : _t("wif.keine_packs")}</span></div></div>`;
   $("wifRows").innerHTML = w.rows
     .map(
       (x) =>
-        `<tr><td>${escAttr(x.m)}</td><td>${x.miss > 0 ? fmt(x.miss) : "gedeckt"}</td><td>${x.miss <= 0 ? "–" : x.rem > 0 ? fmt(x.rem) : "gedeckt"}${x.miss > 0 && x.approx && x.amt && (inp.now || inp.week) ? ' <span class="muted">(ca.)</span>' : ""}</td><td>${wifDate(w.start, x.base.real)}</td><td>${wifDate(w.start, x.scen.real)}${x.packsOnly ? " *" : ""}</td><td>${x.miss > 0 ? wifGain(x.base.real, x.scen.real) : "–"}</td></tr>`,
+        `<tr><td>${escAttr(x.m)}</td><td>${x.miss > 0 ? fmt(x.miss) : _t("common.gedeckt")}</td><td>${x.miss <= 0 ? "–" : x.rem > 0 ? fmt(x.rem) : _t("common.gedeckt")}${x.miss > 0 && x.approx && x.amt && (inp.now || inp.week) ? ` <span class="muted">(${_t("common.ca")})</span>` : ""}</td><td>${wifDate(w.start, x.base.real)}</td><td>${wifDate(w.start, x.scen.real)}${x.packsOnly ? " *" : ""}</td><td>${x.miss > 0 ? wifGain(x.base.real, x.scen.real) : "–"}</td></tr>`,
     )
     .join("");
   const notes = [];
   if (w.packsOnly)
     notes.push(
-      "* Noch zu wenig Daten für eine Einkommensrate: Datum nur aus den Packs pro Woche, ohne dein normales Einkommen – also eher zu spät.",
+      _t("wif.note_packsonly"),
     );
   if (B.d == null && B.missing)
     notes.push(
-      "Für eine Prognose fehlen noch Abschnitte (mindestens " + FC_MIN + " mit je " + FC_GAP_H + " Stunden Abstand).",
+      _t("common.fehlen_abschnitte", { n: FC_MIN, h: FC_GAP_H }),
     );
   if (w.rows.some((x) => x.miss > 0 && !x.amt && (inp.now || inp.week)))
-    notes.push("Materialien ohne Packinhalt profitieren nicht von Packs.");
+    notes.push(_t("wif.ohne_packinhalt"));
   notes.push(
-    "Gewinn = Unterschied im realistischen Szenario (Median). Packinhalt laut Daten & Import › " +
-      (isShip(p) ? "Schiffs-Packs (" + packLabel(p) + ")" : "Stationspack") +
-      (inp.pct ? ", hier " + (inp.pct > 0 ? "+" : "") + inp.pct + " %" : "") +
-      ". Preis " +
-      fx(w.price) +
-      " € pro Pack.",
+    _t("wif.note_gewinn", {
+      src: isShip(p) ? _t("wif.schiffs_packs", { k: packLabel(p) }) : _t("common.stationspack"),
+      pct: inp.pct ? _t("wif.hier_pct", { v: (inp.pct > 0 ? "+" : "") + inp.pct }) : "",
+      p: fx(w.price),
+    }),
   );
   const yb = typeof shipYardBlock === "function" ? shipYardBlock(p) : null;
   $("wifNote").textContent = isShip(p)
-    ? (yb ? "Schiffswerft " + yb.yard + " fehlt – die Termine zeigen nur, wann die Ressourcen gedeckt sind. " : "") +
+    ? (yb ? _t("wif.werft_fehlt", { n: yb.yard }) + " " : "") +
       (shipPackMissingText(p)
-        ? shipPackMissingText(p) + " Die Pack-Stellschrauben haben deshalb keine Wirkung; einmalige Zuwächse (z. B. Event-Belohnungen) wirken weiter."
+        ? shipPackMissingText(p) + " " + _t("wif.keine_wirkung")
         : notes.join(" "))
     : (packEmpty()
-      ? "Hinweis: Dein Stationspack ist noch nicht gepflegt (Daten & Import › Stationspack) – Stationspacks haben deshalb hier noch keine Wirkung. "
+      ? _t("wif.station_leer") + " "
       : "") + notes.join(" ");
 }

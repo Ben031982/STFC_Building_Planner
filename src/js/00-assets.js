@@ -17,11 +17,17 @@ const ART_LAB = {
   operations: "Operations",
   academy: "Academy",
   research: "R&D Department",
-  ship: "Shipyard / Schiffswerft",
-  defense: "Verteidigung (Defense Platforms u. a.)",
+  get ship() {
+    return _t("art.ship");
+  },
+  get defense() {
+    return _t("art.defense");
+  },
   dock: "Dock",
   gen: "Generator / Warehouse / Vault",
-  std: "Standard (z. B. Refinery)",
+  get std() {
+    return _t("art.std");
+  },
 };
 function artKey(p) {
   if (isShip(p)) return "ship_" + (SHIP_CLASSES[p.ship.cls] ? p.ship.cls : "explorer");
@@ -29,7 +35,7 @@ function artKey(p) {
 }
 function artOptions() {
   return (
-    '<option value="auto">Automatisch</option>' +
+    `<option value="auto">${_t("fc.ov_auto")}</option>` +
     Object.keys(ART_LAB)
       .map((k) => `<option value="${k}">${ART_LAB[k]}</option>`)
       .join("")
@@ -37,7 +43,7 @@ function artOptions() {
 }
 function autoArtLabel(sel, p) {
   const o = sel && sel.querySelector("option[value=auto]");
-  if (o) o.textContent = "Automatisch (erkannt: " + ART_LAB[autoArt(p)] + ")";
+  if (o) o.textContent = _t("art.erkannt", { v: ART_LAB[autoArt(p)] });
 }
 function autoArt(p) {
   const n = String(
@@ -91,10 +97,11 @@ const MATERIALS = [
   // ---- ab 3.0: Schiffe ----
   // Schiffsteile je Klasse; Nummern im Spock's-Export am 27.10.2026 mit Bens Daten exakt zugeordnet
   SHIP_CLASSES = {
-    battleship: { label: "Kampfschiff", en: "Battleship" },
-    interceptor: { label: "Abfangjäger", en: "Interceptor" },
-    explorer: { label: "Forschungsschiff", en: "Explorer" },
-    survey: { label: "Miner", en: "Survey" },
+    // label als Getter (Anzeige in der gewählten Sprache), en ist der feste Name im Spock's-Export
+    battleship: { get label() { return _t("cls.battleship"); }, en: "Battleship" },
+    interceptor: { get label() { return _t("cls.interceptor"); }, en: "Interceptor" },
+    explorer: { get label() { return _t("cls.explorer"); }, en: "Explorer" },
+    survey: { get label() { return _t("cls.survey"); }, en: "Survey" },
   },
   SHIP_PART_IDS = {
     "7★ Common Battleship Parts": 1859064055,
@@ -256,6 +263,10 @@ const MATERIALS = [
   ];
 
 // ---- ab 3.0: Hilfsfunktionen Schiffe ----
+// Fraktion ist intern deutsch gespeichert – nur die Anzeige wird übersetzt
+function factionLabel(f) {
+  return _t({ Neutral: "fac.Neutral", Föderation: "fac.Foederation", Klingonen: "fac.Klingonen", Romulaner: "fac.Romulaner" }[f] || f);
+}
 function isShip(p) {
   return !!(p && p.type === "ship" && p.ship);
 }
@@ -281,5 +292,5 @@ function trackedMats() {
 function shipLabel(p) {
   if (!isShip(p)) return "";
   const c = SHIP_CLASSES[p.ship.cls];
-  return (p.ship.build ? "Bau → Tier " + p.target : "Tier " + p.start + " → " + p.target) + (c ? " · " + c.label : "");
+  return (p.ship.build ? _t("ship.bau_tier", { n: p.target }) : "Tier " + p.start + " → " + p.target) + (c ? " · " + c.label : "");
 }

@@ -10,17 +10,17 @@ function shipyardLevel() {
     if (isShip(q)) continue;
     const cur = currentLevels(q),
       k = Object.keys(cur).find((n) => /^(shipyard|schiffswerft)$/i.test(n));
-    if (k && Number.isFinite(cur[k])) return { level: cur[k], src: "Plan " + q.name };
+    if (k && Number.isFinite(cur[k])) return { level: cur[k], src: _t("ship.src_plan", { name: q.name }) };
   }
   return null;
 }
 function shipReqHtml(yard) {
-  if (!Number.isFinite(yard)) return { cls: "unk", txt: "Nötige Schiffswerft-Stufe eintragen, dann prüft der Planner die Voraussetzung." };
+  if (!Number.isFinite(yard)) return { cls: "unk", txt: _t("ship.yard_eintragen") };
   const y = shipyardLevel();
-  if (!y) return { cls: "unk", txt: "Schiffswerft " + yard + " nötig – deine Stufe ist noch unbekannt (kommt mit dem nächsten Export)." };
+  if (!y) return { cls: "unk", txt: _t("ship.yard_unbekannt", { n: yard }) };
   return y.level >= yard
-    ? { cls: "ok", txt: "✔ Voraussetzung erfüllt: Schiffswerft " + yard + " (bei dir " + y.level + ", laut " + y.src + ")" }
-    : { cls: "no", txt: "✖ Voraussetzung noch nicht erfüllt: Schiffswerft " + yard + " (bei dir " + y.level + ", laut " + y.src + ")" };
+    ? { cls: "ok", txt: _t("ship.ok", { n: yard, l: y.level, src: y.src }) }
+    : { cls: "no", txt: _t("ship.no", { n: yard, l: y.level, src: y.src }) };
 }
 
 // ---------------------------------------------------------------- Dialog „Neuen Zielplan anlegen“
@@ -29,7 +29,8 @@ function shipDraftReset() {
   draftType = "building";
   draftCls = "explorer";
   const sel = $("draftShip");
-  if (!sel.options.length) {
+  if (!sel.options.length || sel.dataset.lang !== curLang()) {
+    sel.dataset.lang = curLang();
     const groups = {};
     for (const sh of SHIPS) (groups[sh.yard] = groups[sh.yard] || []).push(sh);
     sel.innerHTML =
@@ -37,16 +38,16 @@ function shipDraftReset() {
         .sort((a, b) => a - b)
         .map(
           (y) =>
-            `<optgroup label="Schiffswerft ${y}">` +
+            `<optgroup label="${_t("ship.werft_grp", { n: y })}">` +
             groups[y]
               .map(
                 (sh) =>
-                  `<option value="${sh.key}">${escAttr(sh.name)} – ${sh.faction} · ${SHIP_CLASSES[sh.cls].label} · ab Schiffswerft ${sh.yard}</option>`,
+                  `<option value="${sh.key}">${escAttr(sh.name)} – ${factionLabel(sh.faction)} · ${SHIP_CLASSES[sh.cls].label} · ${_t("ship.ab_werft", { n: sh.yard })}</option>`,
               )
               .join("") +
             "</optgroup>",
         )
-        .join("") + '<option value="other">Anderes Schiff …</option>';
+        .join("") + `<option value="other">${_t("ship.anderes")}</option>`;
   }
   sel.value = "praefortis";
   $("draftBuild").checked = false;
@@ -87,15 +88,15 @@ function shipDraftRender() {
   const build = $("draftBuild").checked;
   $("draftTierFrom").disabled = build;
   if (build) $("draftTierFrom").value = "";
-  $("draftTierFrom").placeholder = build ? "Neubau" : "z. B. 7";
+  $("draftTierFrom").placeholder = build ? _t("ship.neubau") : _t("ship.zb7");
   const yard = other ? +$("draftYard").value || NaN : sh ? sh.yard : NaN,
     r = ship ? shipReqHtml(yard) : null;
   $("draftReq").className = "dReq " + (r ? r.cls : "");
   $("draftReq").textContent = r ? r.txt : "";
   if (typeof chainDraftRender === "function") chainDraftRender();
   $("draftHint").textContent = ship
-    ? "Danach wie gewohnt importieren: im Spock's-Upgrade-Planer das Schiffsziel anlegen und „Total resources“ sowie „Cost efficiencies“ kopieren."
-    : "Der Plan bleibt gesperrt, bis Pflichtgebäude, Ressourcenbedarf, Bauzeit und Effizienzen vollständig vorliegen und bestätigt wurden.";
+    ? _t("ship.hint_ship")
+    : _t("ship.hint_bld");
 }
 // Gibt true zurück, wenn ein Schiffsplan angelegt wurde (sonst übernimmt der Gebäude-Dialog)
 function shipDraftSave() {
@@ -111,10 +112,10 @@ function shipDraftSave() {
   if (!shipName || !Number.isFinite(to) || to < 1 || (!build && (!Number.isFinite(from) || from < 1 || to <= from))) {
     alert(
       key === "other" && !shipName
-        ? "Bitte einen Plannamen für das Schiff eingeben."
+        ? _t("ship.err_name")
         : build
-          ? "Bitte das Ziel-Tier eingeben."
-          : "Bitte Tier von und Tier bis eingeben (Ziel höher als Start).",
+          ? _t("ship.err_tier")
+          : _t("ship.err_tiers"),
     );
     return true;
   }
@@ -137,7 +138,7 @@ function shipDraftSave() {
     ...($("draftAfter").value ? { after: $("draftAfter").value } : {}),
   });
   s.active = id;
-  s.logs.push("Schiffsplan als Entwurf angelegt: " + name);
+  s.logs.push(_t("ship.entwurf_log", { name }));
   closeDraft();
   save();
   return true;
@@ -175,6 +176,6 @@ function shipYardBlock(p) {
 }
 function shipYardHint(b) {
   return b.pending
-    ? "Ein Fertigdatum gibt es, sobald „" + b.pending.name + "“ bestätigt ist"
-    : "Für ein Fertigdatum: Plan „Schiffswerft " + b.yard + "“ anlegen und unter „Schiffswerft-Plan“ wählen";
+    ? _t("ship.hint_pending", { name: b.pending.name })
+    : _t("ship.hint_anlegen", { n: b.yard });
 }

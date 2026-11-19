@@ -13,20 +13,15 @@ function renderPackSummary() {
   const pk = (s.packs || [])[0];
   if (packEmpty()) {
     el.innerHTML =
-      "Noch nicht gepflegt. Trag einmal ein, was dein Stationspack enthält – der Inhalt hängt von deiner OPS-Stufe ab. Ohne Inhalt gibt es keine Pack-Rechnung.";
+      _t("imp.pack_leer");
     return;
   }
   const n = Object.values(pk.contents || {}).filter((c) => +c.amount > 0).length;
   el.innerHTML =
-    "Gepflegt: " +
-    n +
-    " Material" +
-    (n === 1 ? "" : "ien") +
-    " · " +
-    fx(pk.priceEUR || 100) +
-    " € pro Pack" +
-    (pk.validFrom ? " · gültig ab " + new Date(pk.validFrom).toLocaleDateString(LOC()) : "") +
-    "<br>Nach einem OPS-Aufstieg den Inhalt prüfen.";
+    _t(n === 1 ? "imp.pack_gepflegt1" : "imp.pack_gepflegt", { n, p: fx(pk.priceEUR || 100) }) +
+    (pk.validFrom ? _t("imp.gueltig_ab", { d: new Date(pk.validFrom).toLocaleDateString(LOC()) }) : "") +
+    "<br>" +
+    _t("imp.nach_ops_pruefen");
 }
 function renderImportPage() {
   const el = $("impPlans");
@@ -47,21 +42,21 @@ function renderImportPage() {
             `<tr><td>${fdt(snapTime(x))}</td><td class="muted" style="white-space:normal">${escAttr(x.fileName || "")}</td></tr>`,
         )
         .join("")
-    : '<tr><td class="muted">Noch kein Snapshot importiert.</td></tr>';
+    : `<tr><td class="muted">${_t("imp.kein_snapshot")}</td></tr>`;
   el.innerHTML = s.plans
     .map((p) => {
       const st = calcPlanStatus(p),
         imp = p.planData && p.planData.importedAt,
         why = isOutdated(p)
           ? '<div class="muted" style="font-size:11px;white-space:normal">' +
-            escAttr(p.planData.outdatedBy.items.map((i) => i.name + " → " + i.level).join(", ")) +
-            " erledigt</div>"
+            _t("imp.erledigt", { list: escAttr(p.planData.outdatedBy.items.map((i) => i.name + " → " + i.level).join(", ")) }) +
+            "</div>"
           : "";
       const btn =
         st === "review"
-          ? `<button class="miniBtn" data-impm="${escAttr(p.id)}">Prüfen & bestätigen</button>`
-          : `<button class="miniBtn" data-impo="${escAttr(p.id)}">${st === "draft" ? "Importieren" : "Neu importieren"}</button>`;
-      return `<tr><td style="white-space:normal"><b>${escAttr(p.name)}</b>${p.isMain ? ' <span class="muted">· Hauptplan</span>' : ""}<div class="muted" style="font-size:11px">${isShip(p) ? shipLabel(p) : "Level " + p.start + " → " + p.target}</div>${why}</td><td><span class="statusBadge status-${st}">${statusLabel(st)}</span></td><td>${imp ? fdt(imp) : "–"}</td><td>${btn}</td></tr>`;
+          ? `<button class="miniBtn" data-impm="${escAttr(p.id)}">${_t("imp.pruefen_bestaetigen")}</button>`
+          : `<button class="miniBtn" data-impo="${escAttr(p.id)}">${st === "draft" ? _t("imp.importieren") : _t("imp.neu_importieren")}</button>`;
+      return `<tr><td style="white-space:normal"><b>${escAttr(p.name)}</b>${p.isMain ? ` <span class="muted">· ${_t("common.hauptplan")}</span>` : ""}<div class="muted" style="font-size:11px">${isShip(p) ? shipLabel(p) : _t("common.level_von_bis", { a: p.start, b: p.target })}</div>${why}</td><td><span class="statusBadge status-${st}">${statusLabel(st)}</span></td><td>${imp ? fdt(imp) : "–"}</td><td>${btn}</td></tr>`;
     })
     .join("");
   el.querySelectorAll("[data-impo]").forEach(

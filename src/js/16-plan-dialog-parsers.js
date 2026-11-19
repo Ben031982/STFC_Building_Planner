@@ -1,6 +1,9 @@
 let managingPlanId = null;
 function openDraft() {
-  if (!$("draftArt").options.length) $("draftArt").innerHTML = artOptions();
+  if (!$("draftArt").options.length || $("draftArt").dataset.lang !== curLang()) {
+    $("draftArt").innerHTML = artOptions();
+    $("draftArt").dataset.lang = curLang();
+  }
   $("draftArt").value = "auto";
   autoArtLabel($("draftArt"), { name: "" });
   $("draftName").oninput = () => autoArtLabel($("draftArt"), { name: $("draftName").value });
@@ -23,7 +26,7 @@ $("saveDraft").onclick = () => {
     start = +$("draftStart").value,
     target = +$("draftTarget").value;
   if (!name || !Number.isFinite(target) || target < 1 || start < 0 || target <= start) {
-    alert("Bitte Planname und eine gültige Levelspanne eingeben.");
+    alert(_t("pd.name_spanne"));
     return;
   }
   let id = "plan-" + Date.now();
@@ -42,21 +45,24 @@ $("saveDraft").onclick = () => {
     confirmation: null,
   });
   s.active = id;
-  s.logs.push("Zielplan als Entwurf angelegt: " + name);
+  s.logs.push(_t("pd.entwurf_log", { name }));
   closeDraft();
   save();
 };
 function openManage() {
   let p = s.plans.find((x) => x.id === s.active);
   managingPlanId = p.id;
-  $("manageTitle").textContent = "Plandaten: " + p.name;
+  $("manageTitle").textContent = _t("pd.manage_title", { name: p.name });
   fillManage(p);
   $("planDataModal").classList.add("on");
 }
 function fillManage(p) {
   p.status = calcPlanStatus(p);
   $("editPlanName").value = p.name;
-  if (!$("editPlanArt").options.length) $("editPlanArt").innerHTML = artOptions();
+  if (!$("editPlanArt").options.length || $("editPlanArt").dataset.lang !== curLang()) {
+    $("editPlanArt").innerHTML = artOptions();
+    $("editPlanArt").dataset.lang = curLang();
+  }
   $("editPlanArt").value = p.art && ART[p.art] ? p.art : "auto";
   autoArtLabel($("editPlanArt"), { name: p.name, planData: p.planData });
   $("editPlanName").oninput = () =>
@@ -66,51 +72,46 @@ function fillManage(p) {
   $("editMainPlan").checked = !!p.isMain;
   if (typeof chainManageFill === "function") chainManageFill(p);
   $("deletePlanBtn").disabled = !!p.isMain;
-  $("deletePlanBtn").title = p.isMain ? "Hauptplan kann nicht gelöscht werden" : "";
+  $("deletePlanBtn").title = p.isMain ? _t("pd.main_nicht_loeschbar") : "";
   $("manageStatus").textContent = statusLabel(p.status);
   $("manageStatus").className = "statusBadge status-" + p.status;
   const ck = planChecks(p),
     pt = (p.planData || {}).target;
   ck.confirmed = !!p.confirmation && ck.confirmationValid;
   let fields = [
-    ["target", "Zielgebäude und Ziellevel"],
-    ["requiredBuildings", "Pflichtgebäude"],
-    ["resourceCosts", "Ressourcenbedarf"],
-    ["buildTime", "Bauzeit"],
-    ["efficiencies", "Effizienzen"],
-    ["confirmed", "Manuell bestätigt"],
+    ["target", _t("pd.f_target")],
+    ["requiredBuildings", _t("seq.pflichtgebaeude")],
+    ["resourceCosts", _t("pd.f_res")],
+    ["buildTime", _t("dash.bauzeit")],
+    ["efficiencies", _t("dash.effizienzen")],
+    ["confirmed", _t("pd.f_confirmed")],
   ];
   $("validationGrid").innerHTML = fields
     .map(([k, l]) => {
       const bad = k === "target" && ck.targetMismatch;
-      return `<div class="checkCard ${ck[k] ? "ok" : "missing"}"><b>${ck[k] ? "✓" : "!"} ${l}</b><span>${ck[k] ? "vorhanden" : bad ? "passt nicht zum Ziel" : "fehlt"}</span></div>`;
+      return `<div class="checkCard ${ck[k] ? "ok" : "missing"}"><b>${ck[k] ? "✓" : "!"} ${l}</b><span>${ck[k] ? _t("pd.vorhanden") : bad ? _t("dash.passt_nicht") : _t("exp.fehlt_wert")}</span></div>`;
     })
     .join("");
   $("activationLock").textContent =
     {
-      active:
-        "Alle Pflichtdaten liegen vor und sind bestätigt. Der Zielplan ist für Berechnungen freigegeben.",
-      review: "Alle Plandaten liegen vor. Bitte prüfen und unten bestätigen.",
-      stale:
-        "Veraltet: Die importierten Plandaten gehören zu " +
-        (pt ? escAttr(pt.building) + " " + pt.start + " → " + pt.target : "einem anderen Stand") +
-        ", das Ziel ist jetzt " +
-        p.start +
-        " → " +
-        p.target +
-        ". Bitte den Upgrade-Plan für das aktuelle Ziel neu importieren.",
-      incomplete:
-        "Aktivierung gesperrt: Es fehlen noch Plandaten (siehe oben). Bitte den Upgrade-Plan vollständig importieren.",
-      draft: "Aktivierung gesperrt: Noch keine Plandaten. Bitte den Upgrade-Plan importieren.",
+      active: _t("pd.lock_active"),
+      review: _t("pd.lock_review"),
+      stale: _t("pd.lock_stale", {
+        alt: pt ? escAttr(pt.building) + " " + pt.start + " → " + pt.target : _t("pd.anderer_stand"),
+        a: p.start,
+        b: p.target,
+      }),
+      incomplete: _t("pd.lock_incomplete"),
+      draft: _t("pd.lock_draft"),
     }[p.status] || "";
   $("sourceList").innerHTML = (p.sources || []).length
     ? p.sources
         .map(
           (x) =>
-            `<div class="sourceItem"><b>${escAttr(x.name)}</b><br><span class="muted">${x.role === "text-import" ? "Textimport" : escAttr(x.type)} · ${new Date(x.addedAt).toLocaleString(LOC())}</span></div>`,
+            `<div class="sourceItem"><b>${x.role === "text-import" ? _t("pd.src_name") : escAttr(x.name)}</b><br><span class="muted">${x.role === "text-import" ? _t("pd.textimport") : escAttr(x.type)} · ${new Date(x.addedAt).toLocaleString(LOC())}</span></div>`,
         )
         .join("")
-    : '<div class="muted">Noch kein Import durchgeführt.</div>';
+    : `<div class="muted">${_t("pd.kein_import")}</div>`;
   $("vConfirmed").checked = p.status === "active";
   $("vConfirmed").disabled = !(p.status === "review" || p.status === "active");
 }
@@ -125,7 +126,7 @@ $("savePlanData").onclick = () => {
     newStart = +$("editPlanStart").value,
     newTarget = +$("editPlanTarget").value;
   if (!newName || newStart < 0 || newTarget <= newStart) {
-    alert("Bitte einen gültigen Namen und eine gültige Levelspanne eingeben.");
+    alert(_t("pd.name_spanne2"));
     return;
   }
   const structural = p.kind !== newKind || p.start !== newStart || p.target !== newTarget,
@@ -136,10 +137,10 @@ $("savePlanData").onclick = () => {
     s.plans.splice(i, 1);
     s.plans.unshift(p);
     s.plans.forEach((x, k) => (x.isMain = k === 0));
-    s.logs.push("Hauptplan gewechselt: " + p.name);
+    s.logs.push(_t("seq.hauptplan_gewechselt", { name: p.name }));
   } else if (!$("editMainPlan").checked && p.isMain) {
     alert(
-      "Ein Hauptplan kann nicht direkt abgewählt werden. Ziehe einen anderen Plan an die erste Stelle oder markiere ihn als Hauptplan.",
+      _t("pd.main_abwaehlen"),
     );
     return;
   }
@@ -147,7 +148,7 @@ $("savePlanData").onclick = () => {
     before = calcPlanStatus(p);
   if (!structural && wantConfirm && !p.confirmation && before !== "review") {
     alert(
-      "Bestätigen ist erst möglich, wenn alle Plandaten vollständig vorliegen und zum Ziel passen (Status „Prüfbereit“).",
+      _t("pd.bestaetigen_erst"),
     );
     return;
   }
@@ -157,7 +158,7 @@ $("savePlanData").onclick = () => {
   {
     const af = isShip(p) ? $("editAfter").value : "";
     if ((af || "") !== (p.after || ""))
-      s.logs.push("Schiffswerft-Plan: " + p.name + " → " + (af ? planById(af).name : "keiner"));
+      s.logs.push(_t("pd.werft_log", { name: p.name, v: af ? planById(af).name : _t("pd.keiner") }));
     if (af) p.after = af;
     else delete p.after;
   }
@@ -168,7 +169,7 @@ $("savePlanData").onclick = () => {
     p.confirmation = null;
     p.status = calcPlanStatus(p);
     p.hasPlanData = false;
-    s.logs.push("Zielstruktur geändert, Bestätigung zurückgesetzt: " + p.name);
+    s.logs.push(_t("pd.struktur_log", { name: p.name }));
   } else {
     if (wantConfirm && !p.confirmation)
       p.confirmation = {
@@ -181,11 +182,7 @@ $("savePlanData").onclick = () => {
     p.status = calcPlanStatus(p);
     p.hasPlanData = p.status === "active";
     s.logs.push(
-      (nameOnly ? "Plan umbenannt: " : "Plandaten aktualisiert: ") +
-        p.name +
-        " (" +
-        statusLabel(p.status) +
-        ")",
+      _t(nameOnly ? "pd.umbenannt" : "pd.aktualisiert", { name: p.name, st: statusLabel(p.status) }),
     );
   }
   $("planDataModal").classList.remove("on");
@@ -195,21 +192,19 @@ $("deletePlanBtn").onclick = () => {
   let p = s.plans.find((x) => x.id === managingPlanId);
   if (!p) return;
   if (p.isMain) {
-    alert("Der Hauptplan kann nicht gelöscht werden. Markiere zuerst einen anderen Plan als Hauptplan.");
+    alert(_t("pd.main_loeschen"));
     return;
   }
   if (
     !confirm(
-      "Zielplan „" +
-        p.name +
-        "“ wirklich vollständig löschen? Importquellen und Plandaten dieses Ziels gehen verloren.",
+      _t("pd.loeschen_q", { name: p.name }),
     )
   )
     return;
   s.plans = s.plans.filter((x) => x.id !== p.id);
   for (const q of s.plans) if (q.after === p.id) delete q.after; // ab 3.0: Verkettung lösen
   s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
-  s.logs.push("Zielplan gelöscht: " + p.name);
+  s.logs.push(_t("pd.geloescht_log", { name: p.name }));
   $("planDataModal").classList.remove("on");
   save();
 };
@@ -242,15 +237,11 @@ function completePlan(p) {
     d = (x) => new Date(x).toLocaleDateString(LOC());
   if (
     !confirm(
-      "„" +
-        p.name +
-        "“ abschließen?\n\nDer Plan wird aus den Zielplänen entfernt. Im Wochenbericht steht danach:\nZiel erreicht: " +
-        p.name +
-        " – am " +
-        d(Date.now()) +
-        (since ? " · geplant seit " + d(since) : "") +
-        (eta ? " · letzte Prognose " + d(eta) : "") +
-        "\n\nSnapshots und Einkommen bleiben erhalten. Rückgängig machen geht nur über ein Backup.",
+      _t("pd.abschliessen_q", {
+        name: p.name,
+        d: d(Date.now()),
+        x: (since ? _t("pd.q_seit", { d: d(since) }) : "") + (eta ? _t("pd.q_prog", { d: d(eta) }) : ""),
+      }),
     )
   )
     return;
@@ -263,10 +254,10 @@ function completePlan(p) {
   if (wasMain && s.plans.length) s.plans.forEach((q, i) => (q.isMain = i === 0));
   if (s.fcLog) delete s.fcLog[p.id];
   s.active = s.plans.length ? (s.plans.find((x) => x.isMain) || s.plans[0]).id : null;
-  s.logs.push("Ziel erreicht: " + p.name);
+  s.logs.push(_t("pd.ziel_log", { name: p.name }));
   $("planDataModal").classList.remove("on");
   save();
-  toast("Ziel erreicht: " + p.name + " – im Wochenbericht eingetragen.");
+  toast(_t("pd.ziel_toast", { name: p.name }));
 }
 $("newPlanModal").onclick = (e) => {
   if (e.target === $("newPlanModal")) closeDraft();
@@ -315,7 +306,7 @@ function parseResourceTable(text) {
     .map((l) => l.replace(/\s+$/, ""))
     .filter((l) => l.trim());
   if (!lines.length) {
-    out.errors.push("Kein Text vorhanden.");
+    out.errors.push(_t("ps.kein_text"));
     return out;
   }
   const split = (l) => (l.includes("\t") ? l.split("\t").map((c) => c.trim()) : l.trim().split(/\s{2,}/));
@@ -325,7 +316,7 @@ function parseResourceTable(text) {
   });
   if (hi < 0) {
     out.errors.push(
-      "Kopfzeile „Resource / Base Cost / Cost / On Hand / Needed“ nicht gefunden. Bitte in Spock's Club bei „Total resources“ auf „Copy“ klicken und den Text komplett einfügen.",
+      _t("ps.kopfzeile"),
     );
     return out;
   }
@@ -341,9 +332,7 @@ function parseResourceTable(text) {
     .map(([k]) => k);
   if (missing.length) {
     out.errors.push(
-      "Spalten in der Kopfzeile nicht gefunden: " +
-        missing.join(", ") +
-        ". Der Text muss tabulatorgetrennt sein (Copy-Button).",
+      _t("ps.spalten", { list: missing.join(", ") }),
     );
     return out;
   }
@@ -352,7 +341,7 @@ function parseResourceTable(text) {
       name = c[0],
       key = mapResourceName(name);
     if (!key) {
-      out.warnings.push("Unbekannte Zeile ignoriert: " + String(l).slice(0, 40));
+      out.warnings.push(_t("ps.unbekannt", { l: String(l).slice(0, 40) }));
       continue;
     }
     if (key === "IGNORE") continue;
@@ -367,29 +356,24 @@ function parseResourceTable(text) {
       nums[f] = +t;
     }
     if (bad) {
-      out.errors.push(name + ": Zahlen nicht lesbar (erwartet: ganze Zahlen ohne Trennzeichen).");
+      out.errors.push(_t("ps.zahlen", { name }));
       continue;
     }
     if (key === "CONSTRUCTION") {
       out.construction = nums;
       continue;
     }
-    if (out.rows[key]) out.warnings.push(key + ": doppelt vorhanden, letzter Wert zählt.");
+    if (out.rows[key]) out.warnings.push(_t("ps.doppelt_letzter", { name: key }));
     const calc = Math.max(0, nums.cost - nums.onHand);
     out.rows[key] = { ...nums, calc, consistent: calc === nums.needed };
     if (!out.rows[key].consistent)
       out.warnings.push(
-        key +
-          ": Needed (" +
-          fx(nums.needed) +
-          ") weicht von Cost − On Hand (" +
-          fx(calc) +
-          ") ab. Wert aus Spock's Club wird übernommen.",
+        _t("ps.needed_weicht", { name: key, a: fx(nums.needed), b: fx(calc) }),
       );
   }
   const absent = ocrMats().filter((n) => !out.rows[n]);
   out.absent = Object.keys(out.rows).length ? absent : [];
-  if (!Object.keys(out.rows).length && !out.errors.length) out.errors.push("Keine Materialzeilen erkannt.");
+  if (!Object.keys(out.rows).length && !out.errors.length) out.errors.push(_t("ps.keine_mat"));
   return out;
 }
 function applyResourcePaste() {
@@ -424,24 +408,17 @@ function applyResourcePaste() {
       ocrState.construction = { base: 0, cost: 0, onHand: 0, needed: 0, assumed: true };
     }
     if (r.absent.length)
-      msg.push("ℹ Nicht im Text, also kein Bedarf (gilt als erfüllt): " + r.absent.join(", ") + ".");
-    if (!r.construction) msg.push("ℹ Keine Σ-Construction-Time-Zeile – Bauzeit gilt als erfüllt (0).");
+      msg.push(_t("ps.nicht_im_text", { list: r.absent.join(", ") }));
+    if (!r.construction) msg.push(_t("ps.keine_ct"));
     const dev = Object.values(r.rows).filter((v) => !v.consistent).length;
     msg.push(
       (dev ? "⚠ " : "✔ ") +
-        n +
-        " Material" +
-        (n === 1 ? "" : "ien") +
-        " aus dem Text übernommen" +
-        (dev
-          ? ", " + dev + " mit abweichendem Needed."
-          : "; Needed stimmt überall mit Cost − On Hand überein."),
+        _t(n === 1 ? "ps.uebernommen1" : "ps.uebernommen", { n }) +
+        (dev ? _t("ps.abweichend", { n: dev }) : _t("ps.stimmt")),
     );
     if (r.construction)
       msg.push(
-        "Σ-Construction Time: Needed " +
-          fx(r.construction.needed) +
-          " s (Wert aus Spock's Club, wird nicht nachgerechnet).",
+        _t("ps.ct_needed", { n: fx(r.construction.needed) }),
       );
     const last = latestSnapshot();
     if (last && last.values) {
@@ -451,24 +428,23 @@ function applyResourcePaste() {
         if (last.values[name] === undefined) continue;
         cmp++;
         if (last.values[name] !== v.onHand)
-          diffs.push(name + ": Text " + fx(v.onHand) + " / Snapshot " + fx(last.values[name]));
+          diffs.push(_t("ps.text_snap", { name, a: fx(v.onHand), b: fx(last.values[name]) }));
       }
       if (cmp) {
         const sevenDiff = diffs.filter((x) => x.startsWith("7★")),
           sigDiff = diffs.filter((x) => x.startsWith("Σ")),
           sigN = Object.keys(r.rows).filter((n) => n.startsWith("Σ") && last.values[n] !== undefined).length;
         if (sevenDiff.length)
-          msg.push("⚠ On Hand weicht vom neuesten JSON-Snapshot ab (anderer Stand?):\n" + diffs.join("\n"));
+          msg.push(_t("ps.onhand_weicht") + "\n" + diffs.join("\n"));
         else {
           msg.push(
-            "✔ On Hand der 7★-Materialien stimmt mit dem neuesten JSON-Snapshot überein (gleicher Stand).",
+            _t("ps.onhand_ok"),
           );
           if (sigN)
             msg.push(
               sigDiff.length
-                ? "⚠ Σ-Selbstkontrolle: Die aus dem JSON berechneten Σ-Werte weichen ab – Token-Zuordnung prüfen:\n" +
-                    sigDiff.join("\n")
-                : "✔ Σ-Selbstkontrolle: Die aus dem JSON berechneten Σ-Werte stimmen exakt mit Spock's Club überein.",
+                ? _t("ps.sigma_weicht") + "\n" + sigDiff.join("\n")
+                : _t("ps.sigma_ok"),
             );
         }
       }
@@ -496,9 +472,9 @@ function renderOcrTables() {
     ocrState.buildings
       .map(
         (b, i) =>
-          `<div class="formGrid" style="margin-bottom:5px"><input data-bn="${i}" value="${escAttr(b.name)}" placeholder="Gebäude"><input data-bs="${i}" type="number" value="${b.start ?? ""}" placeholder="Aktuell"><input data-bt="${i}" type="number" value="${b.target ?? ""}" placeholder="Ziel"><button class="btn danger" data-br="${i}">×</button></div>`,
+          `<div class="formGrid" style="margin-bottom:5px"><input data-bn="${i}" value="${escAttr(b.name)}" placeholder="${_t("ps.ph_geb")}"><input data-bs="${i}" type="number" value="${b.start ?? ""}" placeholder="${_t("chart.aktuell")}"><input data-bt="${i}" type="number" value="${b.target ?? ""}" placeholder="${_t("ev.th_ziel")}"><button class="btn danger" data-br="${i}">×</button></div>`,
       )
-      .join("") || '<div class="muted">Noch keine Pflichtgebäude erkannt.</div>';
+      .join("") || `<div class="muted">${_t("ps.keine_pflicht")}</div>`;
   $("ocrBuildings")
     .querySelectorAll("[data-br]")
     .forEach(
@@ -534,7 +510,7 @@ function parseUpgradesText(text) {
     const pm = line.match(/^([A-Za-z]+)\s*:\s*(.*)$/);
     if (pm) {
       if (pm[1].toLowerCase() !== "building") {
-        out.warnings.push("Nicht unterstützter Eintrag übersprungen (" + pm[1] + "): " + line.slice(0, 45));
+        out.warnings.push(_t("ps.nicht_unterstuetzt", { t: pm[1], l: line.slice(0, 45) }));
         continue;
       }
       rest = pm[2];
@@ -543,19 +519,19 @@ function parseUpgradesText(text) {
       /^(.+?)[\s·•|:\-–—]*Level\s*(\d{1,3})\s*(?:→|->|=>|–|—|-)\s*(?:Level\s*)?(\d{1,3})(?:\s+([A-Za-z].*))?$/i,
     );
     if (!m) {
-      out.warnings.push("Zeile nicht erkannt und ignoriert: " + line.slice(0, 45));
+      out.warnings.push(_t("ps.zeile_nicht", { l: line.slice(0, 45) }));
       continue;
     }
     const name = m[1].replace(/\s+/g, " ").trim(),
       start = +m[2],
       target = +m[3];
     if (!name || target <= start) {
-      out.warnings.push("Ungültige Levelspanne ignoriert: " + line.slice(0, 45));
+      out.warnings.push(_t("ps.spanne", { l: line.slice(0, 45) }));
       continue;
     }
     const k = name.toLowerCase();
     if (seen.has(k)) {
-      out.warnings.push(name + ": doppelt vorhanden, erste Zeile zählt.");
+      out.warnings.push(_t("ps.doppelt_erste", { name }));
       continue;
     }
     seen.add(k);
@@ -565,15 +541,13 @@ function parseUpgradesText(text) {
   }
   if (!out.buildings.length) {
     out.errors.push(
-      "Keine Pflichtgebäude erkannt. Erwartet werden Zeilen wie „Building:Operations · Level 74 → 76“. Bitte den Bereich „Included upgrades“ komplett kopieren.",
+      _t("ps.keine_pflicht_err"),
     );
     return out;
   }
   if (out.sharedCount)
     out.warnings.unshift(
-      "Achtung: Im Spock's-Planer sind mehrere Items (Zusatz „Cost counted under an earlier item“ bei " +
-        out.sharedCount +
-        " Gebäuden). „Total resources“ gilt dann für alle Items zusammen und passt nicht zu diesem Ziel. Bitte im Planer nur dieses eine Item anlegen und die Texte neu kopieren.",
+      _t("ps.mehrere_items", { n: out.sharedCount }),
     );
   // Ziel = Gebäude mit dem höchsten Ziellevel. Steht Operations mit auf diesem Level, ist es nur
   // Voraussetzung (kein Gebäude kann über dem OPS-Level liegen); das Ziel ist dann das andere Gebäude.
@@ -584,11 +558,7 @@ function parseUpgradesText(text) {
   out.target = out.targets[0];
   if (out.targets.length > 1)
     out.warnings.push(
-      "Mehrere mögliche Zielgebäude mit Ziellevel " +
-        mx +
-        " (" +
-        out.targets.map((x) => x.name).join(", ") +
-        "). Bitte das Ziel prüfen.",
+      _t("ps.mehrere_ziele", { n: mx, list: out.targets.map((x) => x.name).join(", ") }),
     );
   return out;
 }
@@ -619,18 +589,12 @@ function applyUpgradesPaste() {
     $("ocrTargetName").value = tg.name;
     $("ocrStartLevel").value = tg.start;
     $("ocrTargetLevel").value = tg.target;
-    msg.push("✔ " + r.buildings.length + " Pflichtgebäude erkannt.");
+    msg.push(_t("ps.pflicht_erkannt", { n: r.buildings.length }));
     msg.push(
-      "Ziel erkannt: " +
-        tg.name +
-        " " +
-        tg.start +
-        " → " +
-        tg.target +
-        " (Gebäude mit dem höchsten Ziellevel, bitte prüfen).",
+      _t("ps.ziel_erkannt", { name: tg.name, a: tg.start, b: tg.target }),
     );
     if (!/^operations$/i.test(tg.name) && r.buildings.some((b) => /^operations$/i.test(b.name) && b.target === tg.target))
-      msg.push("ℹ Operations " + tg.target + " steht auch in der Liste – das ist die Voraussetzung, nicht das Ziel.");
+      msg.push(_t("ps.ops_voraus", { n: tg.target }));
   } else ocrState.buildings = [];
   $("upInfo").textContent = [
     ...r.errors.map((e) => "✖ " + e),
@@ -668,10 +632,10 @@ function parseEfficiencyTable(text) {
     const p = parsePercentDE(cell);
     if (p.err) {
       if (p.err === "englisches Zahlenformat") english = true;
-      else out.warnings.push(key + ": Effizienz „" + cell + "“ nicht lesbar.");
+      else out.warnings.push(_t("ps.eff_nicht_lesbar", { name: key, v: cell }));
       return;
     }
-    if (out.rows[key] !== undefined) out.warnings.push(key + ": doppelt vorhanden, letzter Wert zählt.");
+    if (out.rows[key] !== undefined) out.warnings.push(_t("ps.doppelt_letzter", { name: key }));
     out.rows[key] = p.v;
   };
   for (const l of lines) {
@@ -697,15 +661,15 @@ function parseEfficiencyTable(text) {
       continue;
     }
     if (/^resource\b/i.test(l.trim()) || /^(item costs|cost efficienc)/i.test(l.trim())) continue;
-    out.warnings.push("Zeile ignoriert: " + l.slice(0, 40));
+    out.warnings.push(_t("ps.zeile_ign", { l: l.slice(0, 40) }));
   }
   if (english)
     out.errors.push(
-      "Englisches Zahlenformat erkannt (z. B. „1,998 %“). Aktuell werden nur deutsche Zahlen unterstützt (z. B. „1.998 %“).",
+      _t("ps.englisch"),
     );
   if (!Object.keys(out.rows).length && !out.errors.length)
     out.errors.push(
-      "Keine Effizienzzeilen erkannt. Erwartet wird die Tabelle „Item costs & efficiencies“ mit den Spalten Resource, Base Cost, Cost, Efficiency.",
+      _t("ps.keine_eff"),
     );
   return out;
 }
@@ -729,7 +693,7 @@ function applyEffPaste() {
   ocrState.efficiencies = r.errors.length ? {} : { ...r.rows };
   const missing = ocrEffKeys().filter((k) => r.rows[k] === undefined);
   if (!r.errors.length && n) {
-    msg.push("✔ " + n + " Effizienz" + (n === 1 ? "" : "en") + " erkannt.");
+    msg.push(_t(n === 1 ? "ps.eff_erkannt1" : "ps.eff_erkannt", { n }));
     if (missing.length) {
       const nd = missing.filter((k) => {
           const r = ocrState.resources[k];
@@ -738,8 +702,8 @@ function applyEffPaste() {
             : !(r && r.cost === 0);
         }),
         nn = missing.filter((k) => !nd.includes(k));
-      if (nd.length) msg.push("Es fehlen: " + nd.join(", "));
-      if (nn.length) msg.push("ℹ Ohne Bedarf, daher nicht nötig: " + nn.join(", "));
+      if (nd.length) msg.push(_t("ps.es_fehlen", { list: nd.join(", ") }));
+      if (nn.length) msg.push(_t("ps.ohne_bedarf", { list: nn.join(", ") }));
     }
   }
   $("effInfo").textContent = [
@@ -875,13 +839,13 @@ function importDraft(p) {
 $("applyOcr").onclick = () => {
   let p = s.plans.find((x) => x.id === managingPlanId);
   if (!p) {
-    alert("Kein Zielplan ausgewählt.");
+    alert(_t("ps.kein_zielplan"));
     return;
   }
   syncImportInputs();
   const d = importDraft(p);
   if (d.empty) {
-    alert("Es gibt noch nichts zu übernehmen. Bitte mindestens einen Text einfügen.");
+    alert(_t("ps.nichts"));
     return;
   }
   const oldReq = ((p.planData || {}).requiredBuildings || [])
@@ -915,7 +879,7 @@ $("applyOcr").onclick = () => {
     : null;
   if (oc.keepConfirm) {
     const pr = planProgress(p);
-    s.logs.push("Fortschreibung: " + p.name + " – " + pr.done + " von " + pr.total + " Stufen erledigt");
+    s.logs.push(_t("ps.fort_log", { name: p.name, a: pr.done, b: pr.total }));
   }
   {
     const pd = p.planData;
@@ -943,7 +907,7 @@ $("applyOcr").onclick = () => {
   });
   p.status = calcPlanStatus(p);
   p.hasPlanData = false;
-  s.logs.push("Upgrade-Plan importiert (" + statusLabel(p.status) + "): " + p.name);
+  s.logs.push(_t("ps.import_log", { st: statusLabel(p.status), name: p.name }));
   $("ocrModal").classList.remove("on");
   resetOcr();
   fillManage(p);

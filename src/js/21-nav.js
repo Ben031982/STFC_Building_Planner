@@ -16,7 +16,7 @@ function navSync() {
     full = !!storeError || storeWarn(),
     dot = $("navDataDot");
   dot.classList.toggle("on", due || full);
-  dot.title = full ? "Browser-Speicher knapp" : "Backup fällig";
+  dot.title = full ? _t("nav.speicher_knapp") : _t("nav.backup_faellig");
 }
 document.addEventListener("click", () => setTimeout(navSync, 0));
 $("back").onclick = importPage;

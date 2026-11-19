@@ -31,11 +31,11 @@ function afterCandidates(p, yard) {
 }
 function afterOptionsHtml(p, sel, suggest, yard) {
   return (
-    '<option value="">– keiner –</option>' +
+    `<option value="">– ${_t("pd.keiner")} –</option>` +
     afterCandidates(p, yard)
       .map(
         (q) =>
-          `<option value="${escAttr(q.id)}"${q.id === sel ? " selected" : ""}>${escAttr(q.name)}${q.id === suggest ? " (vorgeschlagen)" : ""}${calcPlanStatus(q) === "active" ? "" : " · noch nicht aktiv"}</option>`,
+          `<option value="${escAttr(q.id)}"${q.id === sel ? " selected" : ""}>${escAttr(q.name)}${q.id === suggest ? _t("ch.vorgeschlagen") : ""}${calcPlanStatus(q) === "active" ? "" : _t("ch.nicht_aktiv")}</option>`,
       )
       .join("")
   );
@@ -50,16 +50,16 @@ function suggestAfterForYard(yard) {
 }
 function afterHint(p, afterId, yard) {
   const q = afterId ? planById(afterId) : null,
-    list = Number.isFinite(yard) ? "Zur Auswahl stehen nur Pläne, die Schiffswerft " + yard + " oder höher erreichen. " : "";
+    list = Number.isFinite(yard) ? _t("ch.auswahl", { n: yard }) + " " : "";
   if (!q)
     return Number.isFinite(yard) && !afterCandidates(p, yard).length
-      ? "Es gibt noch keinen Plan für Schiffswerft " + yard + " oder höher. Ohne Schiffswerft-Plan rechnet das Schiff für sich allein."
-      : list + "Ohne Schiffswerft-Plan rechnet das Schiff für sich allein.";
+      ? _t("ch.kein_plan", { n: yard }) + " " + _t("ch.allein")
+      : list + _t("ch.allein");
   return (
     list +
     (calcPlanStatus(q) === "active"
-      ? "Was „" + q.name + "“ noch braucht, wird zuerst vom Bestand abgezogen; das Schiff rechnet mit dem Rest."
-      : "„" + q.name + "“ ist noch nicht aktiv. Sobald er bestätigt ist, wird er zuerst vom Bestand abgezogen.")
+      ? _t("ch.aktiv", { name: q.name })
+      : _t("ch.inaktiv", { name: q.name }))
   );
 }
 
@@ -85,14 +85,14 @@ function chainDraftRender() {
   sel.value = cur;
   $("draftAfterHint").textContent = !ship
     ? ""
-    : (suggest && cur === suggest ? "Vorgeschlagen, weil das Schiff eine höhere Schiffswerft braucht. " : "") + afterHint(null, cur, yard);
+    : (suggest && cur === suggest ? _t("ch.vorg_weil") + " " : "") + afterHint(null, cur, yard);
   // Schiffswerft zu niedrig und kein Schiffswerft-Plan gewählt: Hinweis, dass es kein Fertigdatum gibt
   const y = ship && Number.isFinite(yard) ? shipyardLevel() : null,
     yh = $("draftYardHint");
   yh.hidden = !(y && y.level < yard && !isShipyardPlan(planById(cur), yard));
   yh.innerHTML = yh.hidden
     ? ""
-    : `Ohne Schiffswerft ${yard} zeigt der Planner kein Fertigdatum. Für ein Datum lege einen Plan <b>Schiffswerft ${yard}</b> an und wähle ihn unter „Schiffswerft-Plan“.`;
+    : _t("ch.ohne_werft", { n: yard });
 }
 function chainManageFill(p) {
   const sel = $("editAfter");
@@ -129,14 +129,11 @@ function renderChainPanel(p) {
     rows = getPlanResources(p);
   el.hidden = false;
   el.innerHTML =
-    `<h3>⛓ ${escAttr(p.name)} nach ${escAttr(names)}</h3>` +
+    `<h3>⛓ ${escAttr(p.name)} ${_t("dash.nach", { name: escAttr(names) })}</h3>` +
     (act.length < anc.length
-      ? `<p class="muted" style="font-size:12px;margin:2px 0 8px">Noch nicht aktiv und deshalb noch nicht abgezogen: ${anc
-          .filter((q) => !act.includes(q))
-          .map((q) => escAttr(q.name))
-          .join(", ")}.</p>`
-      : `<p class="muted" style="font-size:12px;margin:2px 0 8px">Was ${escAttr(act.map((q) => q.name).join(" und "))} kostet, ist vorgemerkt und steht diesem Plan erst danach zur Verfügung.</p>`) +
-    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>Material</th><th>Bestand</th><th>Vorgemerkt</th><th>Verfügbar</th><th>Kosten</th><th>Fehlt (inkl. Schiffswerft)</th><th>Gedeckt ca.</th></tr></thead><tbody id="chainRows">` +
+      ? `<p class="muted" style="font-size:12px;margin:2px 0 8px">${_t("ch.noch_nicht", { list: anc.filter((q) => !act.includes(q)).map((q) => escAttr(q.name)).join(", ") })}</p>`
+      : `<p class="muted" style="font-size:12px;margin:2px 0 8px">${_t("ch.vorgemerkt", { list: escAttr(act.map((q) => q.name).join(_t("ch.und"))) })}</p>`) +
+    `<div class="histWrap"><table class="histTable" style="width:100%"><thead><tr><th>${_t("common.material")}</th><th>${_t("chart.bestand")}</th><th>${_t("ch.th_vorg")}</th><th>${_t("ch.th_verf")}</th><th>${_t("ch.th_kosten")}</th><th>${_t("ch.th_fehlt")}</th><th>${_t("ch.th_gedeckt")}</th></tr></thead><tbody id="chainRows">` +
     rows
       .filter((r) => isNum(r[2]) && r[2] > 0)
       .map((r) => {
@@ -146,14 +143,14 @@ function renderChainPanel(p) {
           eta = !x
             ? "–"
             : miss <= 0
-              ? "gedeckt"
+              ? _t("common.gedeckt")
               : x.common
-                ? "per Latinum"
+                ? _t("ch.latinum")
                 : x.status === "data"
-                  ? "zu wenig Daten"
+                  ? _t("common.zu_wenig_daten")
                   : fmtEta(x.eta.real, fc.base, x.far.real);
-        return `<tr><td>${escAttr(m)}</td><td>${isNum(cur) ? fmt(cur) : "–"}</td><td class="${v ? "res" : ""}">${v ? fmt(v) : "–"}</td><td>${isNum(cur) ? fmt(Math.max(0, cur - v)) : "–"}</td><td>${fmt(cost)}</td><td>${miss > 0 ? fmt(miss) : "gedeckt"}</td><td>${eta}</td></tr>`;
+        return `<tr><td>${escAttr(m)}</td><td>${isNum(cur) ? fmt(cur) : "–"}</td><td class="${v ? "res" : ""}">${v ? fmt(v) : "–"}</td><td>${isNum(cur) ? fmt(Math.max(0, cur - v)) : "–"}</td><td>${fmt(cost)}</td><td>${miss > 0 ? fmt(miss) : _t("common.gedeckt")}</td><td>${eta}</td></tr>`;
       })
       .join("") +
-    `</tbody></table></div><div class="chartNote" style="margin-top:8px">Fehlt = Kosten des Schiffswerft-Plans + Kosten des Schiffs − Bestand. Prognose, Engpass und Zieltermin des Schiffs rechnen mit diesem Wert. Ändern unter „Plandaten verwalten“ › „Schiffswerft-Plan“.</div>`;
+    `</tbody></table></div><div class="chartNote" style="margin-top:8px">${_t("ch.note")}</div>`;
 }
