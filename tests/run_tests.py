@@ -55,10 +55,11 @@ def combined_text():
 class App:
     """Eine Browser-Seite mit dem Planner, festem Datum und Fehlersammlung."""
 
-    def __init__(self, browser, html, tmp, state=None, tutorial_seen=True, extra=None):
-        # Feste Zeitzone, damit die Tests überall gleich laufen (lokal wie in der GitHub-Action)
+    def __init__(self, browser, html, tmp, state=None, tutorial_seen=True, extra=None, locale="de-DE"):
+        # Feste Zeitzone und deutsche Browsersprache, damit die Tests überall gleich laufen (lokal wie in der
+        # GitHub-Action); ab 5.2 erkennt der Planner die Sprache am Browser
         self.ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True,
-                                       timezone_id="Europe/Berlin")
+                                       timezone_id="Europe/Berlin", locale=locale)
         self.p = self.ctx.new_page()
         self.p.set_default_timeout(5000)
         self.html, self.tmp, self.errors = html, tmp, []
@@ -1622,10 +1623,11 @@ def treffsicherheit_ziele_speichern_prognosen(b, html, tmp):
 @test
 def i18n_sprache_erkennen_und_umschalten(b, html, tmp):
     a = App(b, html, tmp)
-    check(a.js("()=>curLang()") == "de" and a.js("()=>LOC()") == "de-DE", "Ohne fertige Übersetzung muss Deutsch gelten")
+    check(a.js("()=>curLang()") == "de" and a.js("()=>LOC()") == "de-DE", "Deutscher Browser muss Deutsch zeigen")
+    check(a.js("()=>document.getElementById('langPanel').style.display") == "", "Sprachwahl fehlt bei zwei fertigen Sprachen")
+    a.js("()=>{I18N().en.meta.complete=false;applyLang()}")
     check(a.js("()=>document.getElementById('langPanel').style.display") == "none", "Sprachwahl darf mit nur einer Sprache nicht erscheinen")
     a.js("()=>{I18N().en.meta.complete=true;applyLang()}")
-    check(a.js("()=>document.getElementById('langPanel').style.display") == "", "Sprachwahl fehlt bei zwei fertigen Sprachen")
     det = a.js("""()=>{const set=l=>Object.defineProperty(navigator,'languages',{get:()=>l,configurable:true});
       const r=[];for(const l of [['de-AT'],['en-GB'],['fr-FR'],['fr-FR','de-DE'],[]]){set(l);r.push(i18nDetect())}return r}""")
     check(det == ["de", "en", "en", "de", "en"], f"Spracherkennung falsch: {det}")
@@ -1686,6 +1688,19 @@ def i18n_effizienzen_und_packnamen_englisch(b, html, tmp):
     a.js("()=>{s.shipPacks.explorer.name='Mein Pack'}")
     a.js("()=>setLang('en')")
     check(a.js("()=>shipPackName('explorer',s.shipPacks.explorer)") == "Mein Pack", "Eigener Packname wurde übersetzt")
+    a.done()
+
+
+@test
+def i18n_englischer_browser_startet_englisch(b, html, tmp):
+    a = App(b, html, tmp, locale="en-US")
+    check(a.js("()=>curLang()") == "en" and a.js("()=>document.documentElement.lang") == "en", "Englischer Browser startet nicht auf Englisch")
+    check(a.text("[data-tab=bld]").strip() == "Build order", "Navigation nicht englisch")
+    a.import_exports(a.make_exports())
+    a.create_active_plan()
+    check("Bottleneck" in a.text("body") or "BOTTLENECK" in a.text("body"), "Dashboard nicht englisch")
+    a.js("()=>setLang('de')")
+    check(a.text("[data-tab=bld]").strip() == "Bau-Reihenfolge", "Manuelle Wahl Deutsch greift nicht")
     a.done()
 
 
