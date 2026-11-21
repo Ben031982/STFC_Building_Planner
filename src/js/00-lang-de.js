@@ -1185,6 +1185,9 @@ function langDe() {
       "pk.name_interceptor": "Ultra-Abfangjäger-Machtpaket",
       "pk.name_explorer": "Ultra-Forschungsschiff-Machtpaket",
       "pk.name_survey": "Ultra-Vermessungsschiffsmachtpaket",
+      "bk.haengt": "Der Backup-Ordner antwortet nicht – die gemerkte Ordnerfreigabe im Browser hängt vermutlich. Bitte „Ordner ändern“ klicken und den Ordner neu wählen.",
+      "bk.als_download_weil": "Als Download gespeichert, weil der Ordner nicht erreichbar war: {e}",
+      "exp.haengt": "Der Exporte-Ordner antwortet nicht – die gemerkte Ordnerfreigabe im Browser hängt vermutlich. Bitte „Ordner ändern“ klicken und den Ordner neu wählen.",
     },
   };
 }

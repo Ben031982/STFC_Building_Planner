@@ -1705,6 +1705,24 @@ def i18n_englischer_browser_startet_englisch(b, html, tmp):
 
 
 @test
+def haengender_ordnerzugriff_meldet_sich(b, html, tmp):
+    """Bens Fund 21.11.2026: gemerkte Ordnerfreigabe hing, beide Knöpfe taten stumm nichts."""
+    a = App(b, html, tmp, state=load_v10_state())
+    a.js("""()=>{FS_TIMEOUT.ms=200;FS_TIMEOUT.perm=300;s.backup.folder='Backup';s.exportScan={folder:'STFC'};
+      const stuck={name:'X',queryPermission:()=>new Promise(()=>{}),requestPermission:()=>new Promise(()=>{})};
+      bkLoadDir=async()=>{bkDir=stuck};expLoadDir=async()=>{expDir=stuck;return stuck};}""")
+    a.click("#ni")
+    a.click("#backup")
+    a.wait_for_timeout(800)
+    check("Ordner ändern" in a.text("body") and "antwortet nicht" in a.js("()=>s.backup.lastErr"), "Hängendes Backup meldet sich nicht")
+    a.js("()=>{expLoadDir=async()=>new Promise(()=>{})}")
+    a.click("#impScan")
+    a.wait_for_timeout(800)
+    check("antwortet nicht" in a.js("()=>scanMsg"), "Hängender Exporte-Ordner meldet sich nicht")
+    a.done()
+
+
+@test
 def kosten_gedeckt_spalte(b, html, tmp):
     a = App(b, html, tmp)
     a.import_exports(a.make_exports())

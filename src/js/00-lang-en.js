@@ -1185,6 +1185,9 @@ function langEn() {
       "pk.name_interceptor": "Interceptor pack",
       "pk.name_explorer": "Explorer pack",
       "pk.name_survey": "Survey pack",
+      "bk.haengt": "The backup folder isn't responding – the browser's remembered folder access is probably stuck. Please click “Change folder” and choose the folder again.",
+      "bk.als_download_weil": "Saved as a download because the folder couldn't be reached: {e}",
+      "exp.haengt": "The exports folder isn't responding – the browser's remembered folder access is probably stuck. Please click “Change folder” and choose the folder again.",
     },
   };
 }

@@ -9,6 +9,9 @@
 - **Mehrsprachigkeit, Etappe 4 (Feinschliff):** Geprüft mit einer englischen Spock's-Kopie: Spock's Club zeigt Prozente auch im englischen Browser mit Punkt als Tausendertrennzeichen („3.370 %“) – der Effizienz-Import funktioniert damit unverändert, Hinweis und Fehlermeldung erklären das jetzt. Die Standardnamen der Schiffs-Packs folgen der Sprache (eigene Namen bleiben), Dateinamen der Bildkarten ebenso. Texte, die der Planner beim Öffnen von Dialogen selbst setzt, werden beim Sprachwechsel nicht mehr überschrieben.
 - **Englisch freigeschaltet:** Der Planner startet in der Sprache des Browsers – Deutsch bei deutschem Browser, sonst Englisch. Umstellen unter Daten & Import › Sprache („Automatisch“, Deutsch, English); die Wahl wird gespeichert. Gebäude- und Materialnamen bleiben englisch wie im Spiel.
 
+### Behoben
+- **Backup und „Neue Exporte einlesen“ blieben stumm hängen**, wenn die im Browser gemerkte Ordnerfreigabe nicht mehr antwortete: kein Dialog, keine Meldung. Jetzt meldet sich der Planner nach kurzer Zeit und empfiehlt „Ordner ändern“. Speichert er ein Backup ersatzweise als Download, nennt er den Grund, statt ihn zu verschlucken.
+
 ## [5.1.0] – 2026-11-19
 
 ### Neu

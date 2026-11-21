@@ -2,6 +2,14 @@ const BK_DB = "bens-stfc-fs",
   BK_KEEP = 10,
   BK_DAYS = 14,
   BK_RE = /^STFC-Planner-Backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(_vor-Wiederherstellung)?\.json$/;
+// ab 5.2: Ordnerzugriff mit Zeitlimit. Hängt der Browser (z. B. bei einer kaputten gemerkten Ordnerfreigabe), meldet sich
+// der Planner, statt stumm stehen zu bleiben (Bens Fund vom 21.11.2026).
+// Rechte-Abfragen bekommen mehr Zeit, weil Chrome dabei auf deine Antwort im Erlaubnis-Fenster wartet.
+const FS_HANG = { hang: true },
+  FS_TIMEOUT = { ms: 5000, perm: 30000 };
+function fsTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((res) => setTimeout(() => res(FS_HANG), ms || FS_TIMEOUT.ms))]);
+}
 let bkDir = null,
   bkMsg = "",
   pendingRestore = null;
@@ -126,12 +134,22 @@ function bkDone(d, name, where) {
   bkMsg = "";
   renderBackup();
 }
+function bkHang(mode) {
+  s.backup.lastErr = _t("bk.haengt");
+  persist();
+  if (mode !== "auto") {
+    bkMsg = s.backup.lastErr;
+    toast(bkMsg);
+  }
+  renderBackup();
+  return false;
+}
 async function doBackup(mode) {
   const d = new Date(),
     name = bkFileName(d, mode === "pre-restore" ? "_vor-Wiederherstellung" : ""),
     text = bkPayload(d);
   if (mode === "auto" && !s.backup.folder) return false;
-  await bkLoadDir();
+  if ((await fsTimeout(bkLoadDir())) === FS_HANG) return bkHang(mode);
   if (mode === "auto" && !bkDir) {
     s.backup.lastErr =
       _t("bk.nicht_verbunden");
@@ -150,13 +168,14 @@ async function doBackup(mode) {
   if (bkDir) {
     let ok = false;
     try {
-      ok = await bkPermission(bkDir);
+      ok = await fsTimeout(bkPermission(bkDir), FS_TIMEOUT.perm);
+      if (ok === FS_HANG) return bkHang(mode);
     } catch (_) {
       ok = false;
     }
     if (ok) {
       try {
-        await bkWrite(bkDir, name, text);
+        if ((await fsTimeout(bkWrite(bkDir, name, text))) === FS_HANG) return bkHang(mode);
         try {
           await bkRotate(bkDir);
         } catch (_) {}
@@ -175,8 +194,14 @@ async function doBackup(mode) {
       return false;
     }
   }
+  const why = s.backup.lastErr;
   bkDownload(name, text);
   bkDone(d, name, "download");
+  // ab 5.2: Grund nicht verschlucken, wenn der Ordner nicht ging und deshalb heruntergeladen wurde
+  if (why) {
+    bkMsg = _t("bk.als_download_weil", { e: why });
+    renderBackup();
+  }
   return true;
 }
 function bkDue() {

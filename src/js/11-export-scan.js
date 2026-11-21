@@ -258,10 +258,17 @@ async function expPick() {
     return false;
   }
 }
+function expHang(quiet) {
+  scanMsg = _t("exp.haengt");
+  renderScan();
+  if (!quiet) toast(scanMsg);
+}
 async function scanExports(change, quiet) {
   scanMsg = "";
   s.exportScan = s.exportScan || {};
-  if (change || !(await expLoadDir())) {
+  const have = change ? null : await fsTimeout(expLoadDir());
+  if (have === FS_HANG) return expHang(quiet);
+  if (change || !have) {
     if (!(await expPick())) {
       scanMsg = _t("exp.abgebrochen");
       renderScan();
@@ -271,13 +278,17 @@ async function scanExports(change, quiet) {
   }
   let ok = false;
   try {
-    ok =
-      !expDir.queryPermission ||
-      (await expDir.queryPermission({ mode: "read" })) === "granted" ||
-      (expDir.requestPermission && (await expDir.requestPermission({ mode: "read" })) === "granted");
+    ok = await fsTimeout(
+      (async () =>
+        !expDir.queryPermission ||
+        (await expDir.queryPermission({ mode: "read" })) === "granted" ||
+        (expDir.requestPermission && (await expDir.requestPermission({ mode: "read" })) === "granted"))(),
+      FS_TIMEOUT.perm,
+    );
   } catch (_) {
     ok = false;
   }
+  if (ok === FS_HANG) return expHang(quiet);
   if (!ok) {
     scanMsg = _t("exp.kein_zugriff");
     renderScan();
