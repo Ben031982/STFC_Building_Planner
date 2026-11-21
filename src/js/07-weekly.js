@@ -98,11 +98,11 @@ function weekData(p, off) {
       const a = s0.x.values[m],
         b = s1.x.values[m];
       if (!isNum(a) || !isNum(b)) continue;
-      const ca = p && p.planData ? planCostAt(p, m, new Date(s0.t)) : null,
-        cb = p && p.planData ? planCostAt(p, m, new Date(s1.t)) : null,
-        built = ca != null && cb != null ? ca - cb : 0,
-        inc = b - a + built;
-      res.push({ m, a, b, delta: b - a, built, inc, perDay: days >= FC_GAP_DAYS ? inc / days : null });
+      // ab 5.3: Verbautes planunabhängig (nur mit Baufortschritt), eingetragene Packkäufe zählen nicht als Einkommen
+      const built = builtBetween(m, s0.t, s1.t),
+        packs = packsBetween(m, s0.t, s1.t),
+        inc = b - a + built - packs;
+      res.push({ m, a, b, delta: b - a, built, packs, inc, perDay: days >= FC_GAP_DAYS ? inc / days : null });
     }
   }
   const hist = ((p && p.planData && p.planData.history) || [])

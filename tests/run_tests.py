@@ -1008,12 +1008,66 @@ def prognose_grenzfaelle_ohne_ungueltige_termine(b, html, tmp):
 
 
 @test
-def ausreisser_durch_pack_wird_markiert_und_nicht_gezaehlt(b, html, tmp):
+def sprung_zaehlt_mit_und_packkauf_wird_abgezogen(b, html, tmp):
+    """Ab 5.3: große Sprünge (Events) zählen als Einkommen; eingetragene Packkäufe werden abgezogen."""
     st = with_rare_ore([30000 + 2000 * i + (60000 if i >= 3 else 0) for i in range(6)])
     a = App(b, html, tmp, state=st)
-    r = a.js("()=>{const x=rateStats(s.plans[0],'7★ Rare Ore');return {flags:x.rows.map(r=>r.flag),inc:x.rows.map(r=>r.included),n:x.n,real:x.real}}")
-    check(r["flags"].count("pack") == 1, f"Pack-Sprung nicht markiert: {r['flags']}")
-    check(r["n"] == len(r["flags"]) - 1 and abs(r["real"] - 1000) < 1e-6, f"Sprung wird mitgezählt: {r}")
+    r = a.js("()=>{const x=rateStats(s.plans[0],'7★ Rare Ore');return {flags:x.rows.map(r=>r.flag),inc:x.rows.map(r=>r.included),n:x.n,real:x.real,days:x.span}}")
+    check(r["flags"].count("spike") == 1 and all(r["inc"]), f"Sprung nicht als zählender Sprung markiert: {r}")
+    check(abs(r["real"] - 70000 / r["days"]) < 1e-6, f"Realistisch ist nicht der Durchschnitt: {r}")
+    # Packkauf genau in diesem Abschnitt: 2 Stationspacks à 30.000 Rare Ore
+    a.js("""()=>{const x=rateStats(s.plans[0],'7★ Rare Ore').rows.find(r=>r.flag==='spike');
+      s.packs[0].contents['7★ Rare Ore']={amount:30000};
+      s.packBuys=[{id:'pb-1',t:new Date((+x.from + +x.to)/2).toISOString(),pack:'station',n:2}];}""")
+    r = a.js("()=>{const x=rateStats(s.plans[0],'7★ Rare Ore');return {flags:x.rows.map(r=>r.flag),real:x.real,days:x.span,packs:x.rows.map(r=>r.packs)}}")
+    check(not any(r["flags"]) and abs(r["real"] - 10000 / r["days"]) < 1e-6, f"Packkauf nicht abgezogen: {r}")
+    check(sum(r["packs"]) == 60000, f"Packmenge falsch: {r['packs']}")
+    a.done()
+
+
+@test
+def verbautes_nur_mit_baufortschritt(b, html, tmp):
+    """Ab 5.3: Kostensenkung ohne Baufortschritt (z. B. neue Effizienzen) ist kein Bau; Zuordnung zum Export vor dem Import."""
+    a = App(b, html, tmp, state=load_v10_state())
+    r = a.js("""()=>{const t=s.snapshots.map(x=>new Date(snapTime(x)).getTime()).sort((a,b)=>a-b),m='7★ Rare Ore';
+      const h=(at,c,done)=>({at:new Date(at).toISOString(),resources:{[m]:{cost:c}},progress:{done,total:10}});
+      s.plans.push({id:'x1',name:'Test',planData:{history:[h(t[1]+6e5,1000,0),h(t[2]+6e5,600,0),h(t[3]+6e5,400,2)]}});
+      s.plans.push({id:'x2',name:'Test2',planData:{history:[h(t[1]+6e5,900,1),h(t[3]+6e5,750,3)]}});
+      return {a:builtBetween(m,t[1],t[2]),b:builtBetween(m,t[2],t[3]),c:builtBetween(m,t[3],t[4]),steps:buildSteps(s.plans.at(-2),m).length}}""")
+    check(r["a"] == 0, f"Kostensenkung ohne Fortschritt als Bau gezählt: {r}")
+    check(r["b"] == 200, f"Bau mit Fortschritt falsch (Maximum über die Pläne erwartet): {r}")
+    check(r["c"] == 0 and r["steps"] == 1, f"Bau dem falschen Abschnitt zugeordnet: {r}")
+    a.done()
+
+
+@test
+def packkauf_eintragen_und_loeschen(b, html, tmp):
+    a = App(b, html, tmp, state=load_v10_state())
+    a.click("#navLog")
+    check(a.js("()=>document.getElementById('pbPack').options.length") == 5, "Pack-Auswahl unvollständig")
+    a.fill("#pbTime", "2026-10-24T12:00")
+    a.select_option("#pbPack", "station")
+    a.fill("#pbN", "2")
+    a.click("#pbAdd")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.packBuys.length") == 1 and a.js("()=>s.packBuys[0].n") == 2, "Packkauf nicht gespeichert")
+    check("Pack gekauft" in a.text("#evRows") and "2× Stationspack" in a.text("#evRows"), "Packkauf fehlt in den Ereignissen")
+    check(a.js("()=>s.logs.at(-1)").startswith("Packkauf eingetragen"), "Kein Protokolleintrag")
+    a.click("#evRows [data-pb]")
+    a.wait_for_timeout(200)
+    check(a.js("()=>s.packBuys.length") == 0 and a.js("()=>s.logs.at(-1)").startswith("Packkauf gelöscht"), "Löschen geht nicht")
+    a.fill("#pbN", "0")
+    a.click("#pbAdd")
+    check("Anzahl" in a.text("#pbMsg") and a.js("()=>s.packBuys.length") == 0, "Ungültige Anzahl wird gespeichert")
+    a.done()
+
+
+@test
+def alte_mitrechnen_einstellungen_werden_entfernt(b, html, tmp):
+    st = dict(load_v10_state(), rateOverrides={"a>b": "include", "c>d": "exclude"})
+    a = App(b, html, tmp, state=st)
+    check(a.js("()=>JSON.stringify(s.rateOverrides)") == '{"c>d":"exclude"}', "Migration der Abschnitts-Einstellungen falsch")
+    check(any("Immer mitrechnen" in l for l in a.js("()=>s.logs")), "Migration ohne Protokolleintrag")
     a.done()
 
 

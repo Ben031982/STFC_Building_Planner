@@ -173,11 +173,7 @@
                       ><tbody id="fcRows"></tbody></table></div
                   ><div id="fcBuild" class="muted" style="margin-top: 8px; font-size: 12px"></div
                   ><details class="fcNote"><summary data-i18n="ui.so_wird_gerechnet">So wird gerechnet</summary><div class="chartNote" style="margin-top: 6px"
-                     data-i18n="ui.raten_aus_den_json">Raten aus den JSON-Snapshots der letzten 6 Wochen, Abschnitte mit mindestens 20 Stunden Abstand.
-                    Verbautes wird über die gesunkene Cost aus Plan-Importen herausgerechnet. Realistisch = Median,
-                    konservativ = unteres Viertel, optimistisch = oberes Viertel, jeweils nach Länge der Abschnitte
-                    gewichtet. Prognose ab 3 Abschnitten. 7★ Common
-                    zählt nicht für die Gesamtprognose (per Latinum kaufbar).</div></details
+                     data-i18n="ui.raten_aus_den_json">Raten aus den JSON-Snapshots der letzten 6 Wochen, Abschnitte mit mindestens 20 Stunden Abstand. Verbautes wird herausgerechnet, sobald ein Plan-Import mehr erledigte Stufen zeigt; eingetragene Packkäufe werden abgezogen. Realistisch = Durchschnitt (Event-Belohnungen zählen mit), konservativ = schwache Wochen, optimistisch = starke Wochen. Prognose ab 3 Abschnitten. 7★ Common zählt nicht für die Gesamtprognose (per Latinum kaufbar).</div></details
                   ></section
                 ><section class="panel" id="fhPanel"
                   ><h3 data-i18n="ui.verlauf_der_prognose">Verlauf der Prognose</h3
@@ -189,9 +185,7 @@
                 ><section class="panel"
                   ><h3><span data-i18n="ui.abschnitte">Abschnitte</span><span class="termInfo" tabindex="0" data-term="abschnitt">i</span></h3
                   ><p class="muted" style="margin: 4px 0 8px"
-                     data-i18n="ui.auffaellige_abschnitte_werden_automatisch">Auffällige Abschnitte werden automatisch markiert und nicht mitgerechnet: „vermutlich
-                    Pack/Ausgleich“ (mehr als das Dreifache des Medians) und „vermutlich Bau“ (stark negativ). Du kannst
-                    jede Markierung übersteuern.</p
+                     data-i18n="ui.auffaellige_abschnitte_werden_automatisch">Auffällige Abschnitte werden markiert: „vermutlich Bau“ (großer ungeklärter Rückgang) zählt nicht, „Sprung nach oben“ (z. B. Event) zählt mit. Gekaufte Packs trägst du im Protokoll ein. Einzelne Abschnitte kannst du auf „Nicht mitrechnen“ setzen.</p
                   ><div class="histWrap"
                     ><table class="histTable fcIv"
                       ><thead
@@ -214,18 +208,22 @@
                   ><div id="goalList"></div></section
                 ></div
                 ><div id="pane-log" class="tabPane"
+                ><section class="panel" id="packBuyPanel" style="margin-bottom: 12px"
+                  ><div class="chartHead"><h3 data-i18n="pb.titel">Packkäufe</h3><span id="pbCount" class="muted"></span></div
+                  ><p class="muted" style="margin: 4px 0 6px" data-i18n="pb.hinweis">Trag jeden gekauften Pack ein. Der Planner zieht den gepflegten Packinhalt im passenden Abschnitt vom Einkommen ab – so zählt als Einkommen nur, was du im Spiel und bei Events bekommst. Packs rechnet er separat unter „Packs bis zum Ziel“.</p
+                  ><div class="evForm"
+                    ><input id="pbTime" type="datetime-local" /><select id="pbPack"></select><input id="pbN" type="number" min="1" step="1" value="1" style="width: 64px" /><button id="pbAdd" class="btn" data-i18n="pb.eintragen">Kauf eintragen</button></div
+                  ><div id="pbMsg" class="muted" style="font-size: 12px"></div></section
                 ><section class="panel" id="eventPanel" style="margin-bottom: 12px"
                   ><div class="chartHead"><h3 data-i18n="ui.ereignisse">Ereignisse</h3><span id="evCount" class="muted"></span></div
                   ><p class="muted" style="margin: 4px 0 6px"
-                     data-i18n="ui.automatisch_plan_importe_erkannte">Automatisch: Plan-Importe, erkannte Sprünge (Pack/Ausgleich, Bau) und Gebäudeänderungen aus dem
-                    JSON. Eigene Ereignisse sind nur Markierungen und ändern keine Berechnung. Alle erscheinen auch als
-                    Linie im Diagramm „Ressourcenentwicklung“.</p
+                     data-i18n="ui.automatisch_plan_importe_erkannte">Automatisch: Plan-Importe, eingetragene Packkäufe, erkannte Sprünge (nach oben, Bau) und Gebäudeänderungen aus dem JSON. Eigene Ereignisse sind nur Markierungen und ändern keine Berechnung. Alle erscheinen auch als Linie im Diagramm „Ressourcenentwicklung“.</p
                   ><div class="evForm"
                     ><input id="evDate" type="date" /><input
                       id="evText"
                       type="text"
                       maxlength="120"
-                      placeholder="z. B. 2 Stationspacks gekauft"
+                      placeholder="z. B. Event „Raffinerie-Woche“ gestartet"
                      data-i18n-ph="ui.z_b_2_stationspacks"/><button id="evAdd" class="btn" data-i18n="ui.ereignis_eintragen">Ereignis eintragen</button></div
                   ><div class="histWrap"
                     ><table class="histTable"

@@ -158,6 +158,13 @@ function migrateState(st) {
   if (st.plans.length && !st.plans.some((p) => p.isMain)) st.plans[0].isMain = true;
   // ab 3.2: Schiffs-Packs je Klasse
   ensureShipPacks(st);
+  // ab 5.3: Packkäufe; „Immer mitrechnen“ gibt es nicht mehr (galt für alle Materialien und holte Bau-Abschnitte herein)
+  st.packBuys = Array.isArray(st.packBuys) ? st.packBuys.filter((b) => b && b.t && b.pack && +b.n > 0) : [];
+  if (st.rateOverrides && typeof st.rateOverrides === "object") {
+    const inc = Object.keys(st.rateOverrides).filter((k) => st.rateOverrides[k] !== "exclude");
+    inc.forEach((k) => delete st.rateOverrides[k]);
+    if (inc.length) st.logs.push(_t("pb.ov_reset", { n: inc.length }));
+  }
   return st;
 }
 let s = readStore(K),

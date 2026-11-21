@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.3.0] – in Arbeit
+
+### Neu
+- **Packkäufe eintragen (Protokoll):** Zeitpunkt, Pack (Stationspack oder Schiffs-Pack) und Anzahl. Der Planner zieht den gepflegten Packinhalt im passenden Abschnitt vom Einkommen ab. Käufe erscheinen als Ereignis „Pack gekauft“ und lassen sich wieder löschen.
+
+### Geändert
+- **Prognose rechnet mit deinem tatsächlichen Durchschnittseinkommen.** Bisher galten Abschnitte mit mehr als dem Dreifachen des Medians als „Pack“ und zählten nicht – bei Einkommen aus Events fiel so der Großteil heraus (in Bens Daten bis zu 96 % bei 7★ Uncommon Gas), die Termine lagen viel zu spät. Jetzt: realistisch = Durchschnitt der zählenden Abschnitte der letzten 6 Wochen, Event-Sprünge zählen mit („Sprung nach oben“), nur eingetragene Packkäufe werden abgezogen. Konservativ = schwache Wochen (unteres Viertel gleitender 7-Tage-Blöcke), optimistisch = starke Wochen (oberstes Zehntel).
+- **Verbautes nur noch bei Baufortschritt:** Sinkt die Cost beim Neuimport, ohne dass mehr Stufen erledigt sind (z. B. weil erstmals Effizienzen dabei sind), zählt das nicht mehr als verbaut. Der Bau wird dem Export vor dem Plan-Import zugeordnet und gilt für alle Pläne gleich – vorher rechnete jeder Plan mit eigenen Raten für dasselbe Material.
+- **„Immer mitrechnen“ entfällt:** Die Einstellung galt für alle Materialien eines Abschnitts und holte so auch Bau-Abschnitte herein. Vorhandene Einstellungen dieser Art werden entfernt (mit Protokolleintrag), „Nicht mitrechnen“ bleibt.
+- **Wochenbericht:** Einkommen = Bestandsänderung + Verbautes − eingetragene Packkäufe.
+- Gegenprobe mit Bens echten Daten (Oktober/November 2026): Abweichung zwischen Prognose und tatsächlichem Einkommen bis Datenende im Mittel Faktor 1,75 statt 2,6; das tatsächliche Einkommen lag in 15 statt 8 von 26 Fällen im Band konservativ–optimistisch.
+
 ## [5.2.0] – in Arbeit
 
 ### Neu

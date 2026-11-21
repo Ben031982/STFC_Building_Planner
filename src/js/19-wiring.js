@@ -167,6 +167,7 @@ $("reset").onclick = () => {
   };
 });
 $("restoreBtn").onclick = () => $("restoreFile").click();
+$("pbAdd").onclick = () => addPackBuy();
 $("evAdd").onclick = () => {
   const d = $("evDate").value,
     t = $("evText").value.trim();

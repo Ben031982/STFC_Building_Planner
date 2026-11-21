@@ -53,13 +53,16 @@ function sharedPlans(p, x) {
     .map((q) => q.name);
 }
 const CARE_DAYS = 3,
-  EV_COL = { plan: "#5fb4ff", pack: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff", goal: "#5bd2a0" },
+  EV_COL = { plan: "#5fb4ff", pack: "#ff8fcf", spike: "#ffd166", bau: "#ff9f6b", bld: "#7aeab0", manual: "#d9b8ff", goal: "#5bd2a0" },
   EV_LAB = {
     get plan() {
       return _t("ev.lab_plan");
     },
     get pack() {
       return _t("ev.lab_pack");
+    },
+    get spike() {
+      return _t("ev.lab_spike");
     },
     get bau() {
       return _t("ev.lab_bau");
@@ -162,6 +165,53 @@ function planImportEvents(p) {
 // Art des Plan-Imports ist auf Deutsch gespeichert (interner Wert) – nur die Anzeige wird übersetzt
 function histKindLabel(k) {
   return { Import: _t("ev.kind_import"), Fortschreibung: _t("ev.kind_fort"), Ausgangsstand: _t("ev.kind_base") }[k || "Import"] || k;
+}
+// ab 5.3: eingetragene Packkäufe
+function packBuyName(b) {
+  return b.pack === "station" ? _t("common.stationspack") : SHIP_CLASSES[b.pack] ? shipPackName(b.pack, (s.shipPacks || {})[b.pack]) : b.pack;
+}
+function packBuyEvents() {
+  return (s.packBuys || []).map((b) => ({ t: new Date(b.t).getTime(), type: "pack", text: _t("pb.ev_text", { n: b.n, name: packBuyName(b) }), pb: b.id }));
+}
+function renderPackBuys() {
+  const sel = $("pbPack");
+  if (!sel) return;
+  ensureShipPacks();
+  if (sel.dataset.lang !== curLang() || !sel.options.length) {
+    const v = sel.value;
+    sel.innerHTML =
+      `<option value="station">${escAttr(_t("common.stationspack"))}</option>` +
+      Object.keys(SHIP_CLASSES)
+        .map((c) => `<option value="${c}">${escAttr(shipPackName(c, s.shipPacks[c]))}</option>`)
+        .join("");
+    sel.dataset.lang = curLang();
+    if (v) sel.value = v;
+  }
+  if (!$("pbTime").value) {
+    const d = new Date(),
+      z = (n) => String(n).padStart(2, "0");
+    $("pbTime").value = `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+  }
+  const n = (s.packBuys || []).length;
+  $("pbCount").textContent = n ? _t(n === 1 ? "pb.anzahl1" : "pb.anzahl", { n }) : "";
+}
+function addPackBuy() {
+  const t = new Date($("pbTime").value),
+    n = Math.floor(+$("pbN").value),
+    pack = $("pbPack").value;
+  if (!$("pbTime").value || !Number.isFinite(t.getTime()) || !(n >= 1)) {
+    $("pbMsg").textContent = _t("pb.ungueltig");
+    return;
+  }
+  s.packBuys = Array.isArray(s.packBuys) ? s.packBuys : [];
+  const b = { id: "pb-" + Date.now(), t: t.toISOString(), pack, n };
+  s.packBuys.push(b);
+  s.logs.push(_t("pb.log", { n, name: packBuyName(b), d: fdt(t) }));
+  const pk = packBuyPack(b);
+  $("pbMsg").textContent = packEmptyOf(pk) ? _t("pb.leer", { name: packBuyName(b) }) : _t("pb.ok", { n, name: packBuyName(b) });
+  $("pbN").value = "1";
+  $("pbTime").value = "";
+  save();
 }
 function manualEvents() {
   return (Array.isArray(s.events) ? s.events : []).map((e) => ({
@@ -275,7 +325,7 @@ function jumpEvents(p, mats) {
 }
 function chartEvents(p, m) {
   return planImportEvents(p)
-    .concat(jumpEvents(p, [m]), bldEvents(), manualEvents())
+    .concat(jumpEvents(p, [m]), bldEvents(), manualEvents(), packBuyEvents())
     .filter((e) => Number.isFinite(e.t));
 }
 function allEvents(p) {
@@ -283,13 +333,14 @@ function allEvents(p) {
     (m) => !isLatinumMat(m),
   );
   return planImportEvents(p)
-    .concat(jumpEvents(p, mats), bldEvents(), manualEvents(), goalEvents())
+    .concat(jumpEvents(p, mats), bldEvents(), manualEvents(), packBuyEvents(), goalEvents())
     .filter((e) => Number.isFinite(e.t))
     .sort((a, b) => b.t - a.t);
 }
 function renderEvents() {
   const el = $("evRows");
   if (!el) return;
+  renderPackBuys();
   const p = activePlan(),
     ev = allEvents(p);
   if (!$("evDate").value) {
@@ -302,7 +353,7 @@ function renderEvents() {
     ? ev
         .map(
           (e) =>
-            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="${_t("ev.ereignis_loeschen")}">✕</button>` : ""}</td></tr>`,
+            `<tr><td>${e.type === "manual" ? new Date(e.t).toLocaleDateString(LOC()) : fdt(e.t)}</td><td><span class="evTag" style="border-left:3px solid ${EV_COL[e.type]}">${escAttr(EV_LAB[e.type])}</span></td><td style="white-space:normal">${escAttr(e.text)}</td><td>${e.type === "manual" ? `<button class="evDel" data-ev="${escAttr(e.id)}" title="${_t("ev.ereignis_loeschen")}">✕</button>` : e.pb ? `<button class="evDel" data-pb="${escAttr(e.pb)}" title="${_t("ev.ereignis_loeschen")}">✕</button>` : ""}</td></tr>`,
         )
         .join("")
     : `<tr><td colspan="4" class="muted">${_t("ev.keine_ereignisse")}</td></tr>`;
@@ -312,6 +363,15 @@ function renderEvents() {
         const e = (s.events || []).find((x) => x.id === b.dataset.ev);
         s.events = (s.events || []).filter((x) => x.id !== b.dataset.ev);
         if (e) s.logs.push(_t("ev.ereignis_geloescht", { t: e.text }));
+        save();
+      }),
+  );
+  el.querySelectorAll("[data-pb]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const x = (s.packBuys || []).find((y) => y.id === b.dataset.pb);
+        s.packBuys = (s.packBuys || []).filter((y) => y.id !== b.dataset.pb);
+        if (x) s.logs.push(_t("pb.geloescht", { t: _t("pb.ev_text", { n: x.n, name: packBuyName(x) }) + " · " + fdt(new Date(x.t)) }));
         save();
       }),
   );

@@ -58,22 +58,6 @@ function quantW(items, q) {
     if (t <= S[k + 1]) return S[k + 1] === S[k] ? a[k].v : a[k].v + ((a[k + 1].v - a[k].v) * (t - S[k])) / (S[k + 1] - S[k]);
   return a[n - 1].v;
 }
-function planCostAt(p, m, t) {
-  const d = p.planData || {},
-    h = (d.history || [])
-      .filter((x) => x.resources && x.resources[m] && isNum(x.resources[m].cost))
-      .sort((a, b) => new Date(a.at) - new Date(b.at));
-  if (!h.length) {
-    const r = (d.resources || {})[m];
-    return r && isNum(r.cost) ? r.cost : null;
-  }
-  let c = h[0].resources[m].cost;
-  for (const x of h) {
-    if (new Date(x.at) <= t) c = x.resources[m].cost;
-    else break;
-  }
-  return c;
-}
 function snapIntervals(m) {
   const pts = s.snapshots
       .filter((x) => x.values && isNum(x.values[m]))
@@ -89,50 +73,121 @@ function snapIntervals(m) {
   }
   return out;
 }
+// ---------------------------------------------------------------- Einkommen (ab 5.3)
+// Verbautes aus der Plan-Historie: nur Kostensenkungen, bei denen der Baufortschritt gestiegen ist. Ein Neuimport mit
+// neuen Effizienzen oder anderem Umfang senkt die Kosten auch, ist aber kein Bau (Bens Daten 13.11.2026).
+function buildSteps(p, m) {
+  const h = ((p.planData || {}).history || [])
+    .filter((x) => x.resources && x.resources[m] && isNum(x.resources[m].cost))
+    .map((x) => ({
+      t: new Date(x.at).getTime(),
+      c: x.resources[m].cost,
+      done: x.progress && isNum(x.progress.done) ? x.progress.done : null,
+    }))
+    .sort((a, b) => a.t - b.t);
+  const out = [];
+  for (let i = 1; i < h.length; i++) {
+    const a = h[i - 1],
+      b = h[i];
+    if (a.done != null && b.done != null && b.done > a.done && a.c > b.c) out.push({ t: b.t, d: a.c - b.c });
+  }
+  return out;
+}
+// Verbautes zwischen zwei Zeitpunkten, unabhängig vom Plan. Gebaut wurde vor dem Export, der dem Plan-Import vorausging –
+// deshalb zählt der Zeitpunkt dieses Exports. Derselbe Bau steht oft in mehreren Plänen: je Zeitraum das Maximum.
+function builtBetween(m, ta, tb) {
+  const ts = s.snapshots.map((x) => new Date(snapTime(x)).getTime()).sort((a, b) => a - b),
+    before = (t) => {
+      let r = null;
+      for (const x of ts) {
+        if (x > t) break;
+        r = x;
+      }
+      return r;
+    };
+  let best = 0;
+  for (const p of s.plans || []) {
+    if (!p.planData) continue;
+    let sum = 0;
+    for (const st of buildSteps(p, m)) {
+      const L = before(st.t);
+      if (L != null && L > ta && L <= tb) sum += st.d;
+    }
+    best = Math.max(best, sum);
+  }
+  return best;
+}
+// Eingetragene Packkäufe zwischen zwei Zeitpunkten: Anzahl × bekannter Packinhalt
+function packBuyPack(b) {
+  return b.pack === "station" ? (s.packs || [])[0] : (s.shipPacks || {})[b.pack];
+}
+function packsBetween(m, ta, tb) {
+  let sum = 0;
+  for (const b of s.packBuys || []) {
+    const t = new Date(b.t).getTime(),
+      pk = packBuyPack(b),
+      c = pk && pk.contents && pk.contents[m];
+    if (t > ta && t <= tb && c && +c.amount > 0) sum += (+b.n || 0) * +c.amount;
+  }
+  return sum;
+}
+// Raten je Material (ab 5.3, für alle Pläne gleich):
+// realistisch = Durchschnitt über die zählenden Abschnitte der letzten 6 Wochen (Event-Belohnungen zählen mit),
+// konservativ/optimistisch = schwache bzw. starke 7-Tage-Blöcke. Eingetragene Packkäufe werden abgezogen.
+// Nicht mitgezählt: große ungeklärte Abnahmen (vermutlich Bau) und Abschnitte, die du selbst ausschließt.
+// p bleibt als Parameter, damit alle Aufrufer unverändert bleiben.
 function rateStats(p, m) {
   const iv = snapIntervals(m);
   if (!iv.length) return { rows: [], n: 0, span: 0, cons: null, real: null, opt: null };
   const lastT = iv[iv.length - 1].b.t,
-    win = iv.filter((x) => (lastT - x.b.t) / 864e5 <= FC_WINDOW_DAYS),
     ov = s.rateOverrides || {};
-  const rows = win.map((x) => {
-    const days = (x.b.t - x.a.t) / 864e5,
-      ca = planCostAt(p, m, x.a.t),
-      cb = planCostAt(p, m, x.b.t),
-      built = ca != null && cb != null ? ca - cb : 0,
-      delta = x.b.v - x.a.v;
-    return {
-      key: x.a.id + ">" + x.b.id,
-      from: x.a.t,
-      to: x.b.t,
-      days,
-      delta,
-      built,
-      rate: (delta + built) / days,
-    };
-  });
-  const med = quant(
-    rows.filter((r) => ov[r.key] !== "exclude").map((r) => r.rate),
-    0.5,
-  );
+  const rows = iv
+    .filter((x) => (lastT - x.b.t) / 864e5 <= FC_WINDOW_DAYS)
+    .map((x) => {
+      const ta = x.a.t.getTime(),
+        tb = x.b.t.getTime(),
+        days = (tb - ta) / 864e5,
+        built = builtBetween(m, ta, tb),
+        packs = packsBetween(m, ta, tb),
+        delta = x.b.v - x.a.v;
+      return { key: x.a.id + ">" + x.b.id, from: x.a.t, to: x.b.t, days, delta, built, packs, rate: (delta + built - packs) / days };
+    });
+  const free = rows.filter((r) => ov[r.key] !== "exclude" && r.rate >= 0),
+    fd = free.reduce((a, r) => a + r.days, 0),
+    ref = fd > 0 ? free.reduce((a, r) => a + r.rate * r.days, 0) / fd : null;
   rows.forEach((r) => {
     r.flag = null;
-    if (med != null && med > 0) {
-      if (r.rate > 3 * med) r.flag = "pack";
-      else if (r.rate < -med) r.flag = "bau";
+    if (ref != null && ref > 0) {
+      if (r.rate < -ref) r.flag = "bau";
+      else if (r.rate > 3 * ref) r.flag = "spike";
     }
-    const o = ov[r.key];
-    r.included = o === "include" ? true : o === "exclude" ? false : !r.flag;
+    r.included = ov[r.key] === "exclude" ? false : r.flag !== "bau";
   });
-  const inc = rows.filter((r) => r.included).map((r) => ({ v: r.rate, w: r.days }));
-  return {
-    rows,
-    n: inc.length,
-    span: inc.reduce((a, x) => a + x.w, 0),
-    cons: quantW(inc, 0.25),
-    real: quantW(inc, 0.5),
-    opt: quantW(inc, 0.75),
-  };
+  const inc = rows.filter((r) => r.included),
+    span = inc.reduce((a, r) => a + r.days, 0),
+    real = span > 0 ? inc.reduce((a, r) => a + r.rate * r.days, 0) / span : null;
+  // Bandbreite aus gleitenden 7-Tage-Blöcken der zählenden Abschnitte: Event-Spitzen verteilen sich über die Woche.
+  // konservativ = schwache Wochen (unteres Viertel), optimistisch = starke Wochen (oberstes Zehntel). Das obere Viertel
+  // reicht nicht: bei Einkommen aus wenigen großen Event-Sprüngen liegt der Durchschnitt oft darüber.
+  // Unter 7 Tagen Daten: einzelne Abschnitte.
+  const blocks = [];
+  for (let i = 0; i < inc.length; i++) {
+    let d = 0,
+      g = 0;
+    for (let j = i; j < inc.length && d < 7; j++) {
+      d += inc[j].days;
+      g += inc[j].rate * inc[j].days;
+    }
+    if (d >= 7) blocks.push({ v: g / d, w: 1 });
+  }
+  const src = blocks.length >= 3 ? blocks : inc.map((r) => ({ v: r.rate, w: r.days }));
+  let cons = quantW(src, 0.25),
+    opt = quantW(src, 0.9);
+  if (real != null) {
+    cons = cons == null ? real : Math.min(cons, real);
+    opt = opt == null ? real : Math.max(opt, real);
+  }
+  return { rows, n: inc.length, span, blocks: blocks.length, cons, real, opt };
 }
 function planBottleneck(p, rows) {
   const b = getBottleneck(rows);
@@ -357,7 +412,7 @@ function renderForecast(p) {
     if (x.common) continue;
     for (const r of x.st.rows) {
       if (!ivs.has(r.key))
-        ivs.set(r.key, { key: r.key, from: r.from, to: r.to, days: r.days, pack: [], bau: [] });
+        ivs.set(r.key, { key: r.key, from: r.from, to: r.to, days: r.days, spike: [], bau: [] });
       if (r.flag) ivs.get(r.key)[r.flag].push(x.m.replace("7★ ", ""));
     }
   }
@@ -368,13 +423,13 @@ function renderForecast(p) {
         .map((v) => {
           const mk =
               [
-                v.pack.length ? _t("fc.verm_pack", { list: v.pack.join(", ") }) : "",
+                v.spike.length ? _t("fc.spike", { list: v.spike.join(", ") }) : "",
                 v.bau.length ? _t("fc.verm_bau", { list: v.bau.join(", ") }) : "",
               ]
                 .filter(Boolean)
                 .join(" · ") || "–",
             o = ov[v.key] || "auto";
-          return `<tr><td>${new Date(v.from).toLocaleDateString(LOC())} – ${new Date(v.to).toLocaleDateString(LOC())}</td><td>${v.days.toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td><td class="${mk === "–" ? "" : "red"}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o === "auto" ? " selected" : ""}>${_t("fc.ov_auto")}</option><option value="include"${o === "include" ? " selected" : ""}>${_t("fc.ov_incl")}</option><option value="exclude"${o === "exclude" ? " selected" : ""}>${_t("fc.ov_excl")}</option></select></td></tr>`;
+          return `<tr><td>${new Date(v.from).toLocaleDateString(LOC())} – ${new Date(v.to).toLocaleDateString(LOC())}</td><td>${v.days.toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td><td class="${v.bau.length ? "red" : ""}">${escAttr(mk)}</td><td><select data-ov="${v.key}"><option value="auto"${o !== "exclude" ? " selected" : ""}>${_t("fc.ov_auto")}</option><option value="exclude"${o === "exclude" ? " selected" : ""}>${_t("fc.ov_excl")}</option></select></td></tr>`;
         })
         .join("")
     : `<tr><td colspan="4" class="muted">${_t("fc.keine_abschnitte", { h: FC_GAP_H })}</td></tr>`;
