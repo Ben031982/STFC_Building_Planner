@@ -62,10 +62,14 @@ function planPack(p) {
 function packEmptyFor(p) {
   return packEmptyOf(planPack(p));
 }
+// Anzeigename eines Schiffs-Packs: Standardname (intern deutsch gespeichert) in der gewählten Sprache, eigener Name bleibt
+function shipPackName(cls, pk) {
+  return !pk || !pk.name || pk.name === shipPackNames()[cls] ? _t({ battleship: "pk.name_battleship", interceptor: "pk.name_interceptor", explorer: "pk.name_explorer", survey: "pk.name_survey" }[cls]) : pk.name;
+}
 // Bezeichnung in Texten: „Stationspack“ bzw. der Name des Schiffs-Packs
 function packLabel(p) {
   const pk = planPack(p);
-  return isShip(p) && pk ? pk.name : _t("common.stationspack");
+  return isShip(p) && pk ? shipPackName(p.ship.cls, pk) : _t("common.stationspack");
 }
 function packPlural(name, n) {
   return n === 1 ? name : /paket$/i.test(name) ? name + "e" : name + "s";
@@ -96,7 +100,7 @@ function renderShipPacks() {
   el.innerHTML = Object.entries(s.shipPacks)
     .map(([cls, pk]) => {
       const n = Object.values(pk.contents || {}).filter((c) => c && +c.amount > 0).length;
-      return `<tr><td>${SHIP_CLASSES[cls].label}</td><td>${escAttr(pk.name)}</td><td>${
+      return `<tr><td>${SHIP_CLASSES[cls].label}</td><td>${escAttr(shipPackName(cls, pk))}</td><td>${
         n ? _t(n === 1 ? "sp.n_mat1" : "sp.n_mat", { n }) : `<span class="muted">${_t("sp.nicht_gepflegt")}</span>`
       }</td><td>${pk.validFrom ? new Date(pk.validFrom).toLocaleDateString(LOC()) : "–"}</td><td>${_t("pk.eur", { p: fx(pk.priceEUR) })}</td><td><button class="miniBtn" data-shippack="${cls}">${_t("sp.bearbeiten")}</button></td></tr>`;
     })

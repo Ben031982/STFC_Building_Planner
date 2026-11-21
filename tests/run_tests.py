@@ -1671,6 +1671,25 @@ def i18n_schluessel_vollstaendig_und_englisch_sichtbar(b, html, tmp):
 
 
 @test
+def i18n_effizienzen_und_packnamen_englisch(b, html, tmp):
+    """Spock's Club zeigt Prozente auch im englischen Browser mit Punkt als Tausendertrennzeichen (Bens Kopie vom 21.11.2026)."""
+    a = App(b, html, tmp)
+    a.js("()=>{I18N().en.meta.complete=true;setLang('en')}")
+    r = a.js("()=>parseEfficiencyTable('Cost efficiencies\\nΣ-Parsteel\\n3.370 %\\n7★ Rare Refined Gas\\n2.511 %')")
+    check(sorted(r["rows"].values()) == [2511, 3370] and not r["errors"], f"Englische Kopie falsch gelesen: {r}")
+    r = a.js("()=>parseEfficiencyTable('Cost efficiencies\\nΣ-Parsteel\\n1,998 %')")
+    check(r["errors"] and "Spock's Club" in r["errors"][0], f"Komma-Format nicht erkannt: {r}")
+    names = a.js("()=>{ensureShipPacks();return [shipPackName('explorer',s.shipPacks.explorer),packPlural(shipPackName('explorer',s.shipPacks.explorer),3)]}")
+    check(names == ["Explorer pack", "Explorer packs"], f"Packname folgt der Sprache nicht: {names}")
+    a.js("()=>setLang('de')")
+    check(a.js("()=>shipPackName('explorer',s.shipPacks.explorer)") == "Ultra-Forschungsschiff-Machtpaket", "Deutscher Packname fehlt")
+    a.js("()=>{s.shipPacks.explorer.name='Mein Pack'}")
+    a.js("()=>setLang('en')")
+    check(a.js("()=>shipPackName('explorer',s.shipPacks.explorer)") == "Mein Pack", "Eigener Packname wurde übersetzt")
+    a.done()
+
+
+@test
 def kosten_gedeckt_spalte(b, html, tmp):
     a = App(b, html, tmp)
     a.import_exports(a.make_exports())

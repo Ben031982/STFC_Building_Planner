@@ -92,7 +92,11 @@ $("savePack").onclick = () => {
     }
   }
   pk.validFrom = $("packValid").value || pk.validFrom;
-  if (ship && $("packName").value.trim()) pk.name = $("packName").value.trim();
+  if (ship && $("packName").value.trim()) {
+    const nm = $("packName").value.trim();
+    // unveränderter Standardname bleibt intern der deutsche Standard, damit er der Sprache folgt
+    pk.name = nm === shipPackName(ship, { name: "" }) ? shipPackNames()[ship] : nm;
+  }
   s.logs.push(ship ? _t("w.schiffspack_log", { k: SHIP_CLASSES[ship].label }) : _t("w.station_log"));
   $("packModal").classList.remove("on");
   save();

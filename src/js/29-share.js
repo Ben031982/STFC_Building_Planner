@@ -541,7 +541,7 @@ function shareFileName() {
     d = new Date();
   const gl = o.plan.startsWith("goal:") ? (s.goals || []).find((x) => x.id === o.plan.slice(5)) : null;
   return (
-    "STFC_" + (o.plan === "week" ? "Woche" : gl ? "Ziel_" + gl.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : p && o.plan !== "all" ? p.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : "Ziele") + "_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".png"
+    "STFC_" + (o.plan === "week" ? _t("sh.fn_woche") : gl ? _t("sh.fn_ziel") + "_" + gl.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : p && o.plan !== "all" ? p.name.replace(/[^\wäöüÄÖÜß-]+/g, "_") : _t("sh.fn_ziele")) + "_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".png"
   );
 }
 function shareSave() {
